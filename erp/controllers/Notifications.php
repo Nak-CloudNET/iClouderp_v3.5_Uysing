@@ -11,10 +11,10 @@ class Notifications extends MY_Controller
             $this->session->set_userdata('requested_page', $this->uri->uri_string());
             redirect('login');
         }
-        if (!$this->Owner && !$this->Admin) {
+        /*if (!$this->Owner && !$this->Admin) {
             $this->session->set_flashdata('warning', lang('access_denied'));
             redirect($_SERVER["HTTP_REFERER"]);
-        }
+        }*/
         $this->lang->load('notifications', $this->Settings->language);
         $this->load->library('form_validation');
         $this->load->model('cmt_model');
@@ -23,10 +23,10 @@ class Notifications extends MY_Controller
 
     function index()
     {
-        if (!$this->Owner && !$this->Admin) {
+        /*if (!$this->Owner && !$this->Admin) {
             $this->session->set_flashdata('warning', lang('access_denied'));
             redirect($_SERVER["HTTP_REFERER"]);
-        }
+        }*/
 
         $this->data['error'] = validation_errors() ? validation_errors() : $this->session->flashdata('error');
         $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('notifications')));
