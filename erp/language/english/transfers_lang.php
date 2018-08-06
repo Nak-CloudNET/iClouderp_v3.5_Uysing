@@ -95,3 +95,4 @@ $lang['product_expiry']                                 		= "product_expiry";
 $lang['biller']                                 		        = "Project";
 $lang['product_transfer'] = "Product Transfer";
 $lang['list_stocks_transfers'] = "List Stocks Transfers";
+$lang['to_site'] = "To Site";

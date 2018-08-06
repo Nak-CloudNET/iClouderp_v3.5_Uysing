@@ -5,7 +5,7 @@
 <head>
     <meta charset="utf-8">
     <base href="<?= site_url() ?>" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
     <title>
         <?= $page_title ?>
             <?= $Settings->site_name ?>
@@ -243,6 +243,9 @@
 									<a href="#" id="cssGreen" class="green">
 										<i class="fa fa-stop"></i> Green
 									</a>
+                                    <a href="#" id="cssRed" class="red">
+                                        <i class="fa fa-stop"></i> Red
+                                    </a>
 								</li>
 							</ul>
 						</li>
@@ -277,6 +280,7 @@
 								<i class="fa fa-exclamation-triangle"></i><p><?= lang('alerts') ?></p>
 							</a>
 							<ul class="dropdown-menu pull-right">
+							
 							<?php if ($qty_alert_num > 0) { ?>
 								<li>
 									<a href="<?= site_url('reports/quantity_alerts') ?>" class="">
@@ -420,7 +424,8 @@
 							<?php } ?>
 						<?php } ?>
 						<li class="dropdown hidden-xs">
-							<a class="btn bred tip" title="<?= lang('reset') ?>" data-placement="bottom" id="clearLS" href="#">
+                            <a class="btn bred tip" title="<?= lang('reset') ?>" data-placement="bottom" id="clearLS"
+                               href="#" style="background-color: #d30000 !important">
 								<i class="fa fa-eraser"></i><p><?= lang('reset') ?></p> 
 							</a>
 						</li>
@@ -471,7 +476,6 @@
                                                 <span class="text"> <?= lang('add_product'); ?></span>
                                             </a>
                                         </li>
-                                        <!--
                                         <li id="products_list_convert" class="sub_navigation">
                                             <a class="submenu" href="<?= site_url('products/list_convert'); ?>">
                                                 <i class="fa fa-barcode"></i>
@@ -484,10 +488,10 @@
                                                 <span class="text"> <?= lang('add_convert'); ?></span>
                                             </a>
                                         </li>
-                                        <li id="products_return_products" class="sub_navigation">
-                                            <a class="submenu" href="<?= site_url('products/return_products'); ?>">
+                                        <!--<li id="products_return_products" class="sub_navigation">
+                                            <a class="submenu" href="<?/*= site_url('products/return_products'); */?>">
                                                 <i class="fa fa-retweet"></i>
-                                                <span class="text"> <?= lang('list_products_return'); ?></span>
+                                                <span class="text"> <?/*= lang('list_products_return'); */?></span>
                                             </a>
                                         </li>-->
 
@@ -500,13 +504,13 @@
                                         <li id="products_quantity_adjustments" class="sub_navigation">
                                             <a class="submenu" href="<?= site_url('products/quantity_adjustments'); ?>">
                                                 <i class="fa fa-filter"></i>
-                                                <span class="text"> <?= lang('adjustment_quantity'); ?></span>
+                                                <span class="text"> <?= lang('product_adjustment_list'); ?></span>
                                             </a>
                                         </li>
 										<li id="products_add_adjustment_multiple">
 											<a class="submenu" href="<?= site_url('products/add_adjustment_multiple'); ?>">
 												<i class="fa fa-plus-circle"></i>
-												<span class="text"> <?= lang('add_adjustment_multiple'); ?></span>
+                                                <span class="text"> <?= lang('add_product_adjustment'); ?></span>
 											</a>
 										</li>
 										<?php if ($GP['product_import']) { ?>
@@ -551,13 +555,13 @@
                                             <a class="submenu"
                                                href="<?= site_url('products/view_enter_using_stock'); ?>">
                                                 <i class="fa fa-filter"></i>
-                                                <span class="text"> <?= lang('list_stock_using'); ?></span>
+                                                <span class="text"> <?= lang('product_using_list'); ?></span>
                                             </a>
                                         </li>
 										<li id="products_using_stock" class="sub_navigation">
                                             <a class="submenu" href="<?= site_url('products/using_stock'); ?>">
                                                 <i class="fa fa-plus-circle"></i>
-                                                <span class="text"> <?= lang('add_stock_using'); ?></span>
+                                                <span class="text"> <?= lang('add_product_using'); ?></span>
                                             </a>
                                         </li>
 										<li id="products_barcode_count_stock" class="sub_navigation">
@@ -569,13 +573,13 @@
 										<li id="products_list_count_stock" class="sub_navigation">
                                             <a class="submenu" href="<?= site_url('products/list_count_stock'); ?>">
                                                 <i class="fa fa-filter"></i>
-                                                <span class="text"> <?= lang('list_count_stock'); ?></span>
+                                                <span class="text"> <?= lang('product_count_list'); ?></span>
                                             </a>
                                         </li>
 										<li id="products_add_count_stock" class="sub_navigation">
                                             <a class="submenu" href="<?= site_url('products/add_count_stock'); ?>">
                                                 <i class="fa fa-plus-circle"></i>
-                                                <span class="text"> <?= lang('add_count_stock'); ?></span>
+                                                <span class="text"> <?= lang('add_product_count'); ?></span>
                                             </a>
                                         </li>
 										<!--
@@ -648,13 +652,13 @@
 										<li id="sales_add_deliveries">
                                             <a class="submenu" href="<?= site_url('sales/add_deliveries'); ?>">
                                                 <i class="fa fa-plus-circle"></i>
-                                                <span class="text"> <?= lang('add_deliveries'); ?></span>
+                                                <span class="text"> <?= lang('add_delivery'); ?></span>
                                             </a>
                                         </li>
 										<li id="sales_customer_balance">
                                             <a class="submenu" href="<?= site_url('sales/customer_balance'); ?>">
                                                 <i class="fa fa-money"></i>
-                                                <span class="text"> <?= lang('customer_balance'); ?></span>
+                                                <span class="text"> <?= lang('customer_balance_list'); ?></span>
                                             </a>
                                         </li>
 										<?php if ($Owner || $Admin) { ?>
@@ -679,12 +683,12 @@
                                                 <span class="text"> <?= lang('list_sales_return'); ?></span>
                                             </a>
                                         </li>
-                                        <!--<li id="sales_add_return">
+                                        <li id="sales_add_return">
                                             <a class="submenu" href="<?= site_url('sales/add_return'); ?>">
                                                 <i class="fa fa-plus-circle"></i>
                                                 <span class="text"> <?= lang('add_sale_return'); ?></span>
                                             </a>
-                                        </li>--> 
+                                        </li>
 										
 										
                                     </ul>
@@ -758,7 +762,7 @@
 										<li id="purchases_supplier_balance">
                                             <a class="submenu" href="<?= site_url('purchases/supplier_balance'); ?>">
                                                 <i class="fa fa-money"></i>
-                                                <span class="text"> <?= lang('supplier_balance'); ?></span>
+                                                <span class="text"> <?= lang('supplier_balance_list'); ?></span>
                                             </a>
                                         </li>
 										<?php if ($Owner || $Admin) { ?>
@@ -811,12 +815,14 @@
                                     <ul>
                                         <li id="transfers_list_in_transfer">
                                             <a class="submenu" href="<?= site_url('transfers/list_in_transfer'); ?>">
-                                                <i class="fa fa-tags"></i><span class="text"> <?= lang('list_transfers'); ?></span>
+                                                <i class="fa fa-tags"></i><span
+                                                        class="text"> <?= lang('product_transfer_list'); ?></span>
                                             </a>
                                         </li>
                                         <li id="transfers_add">
                                             <a class="submenu" href="<?= site_url('transfers/add'); ?>">
-                                                <i class="fa fa-plus-circle"></i><span class="text"> <?= lang('add_transfer'); ?></span>
+                                                <i class="fa fa-plus-circle"></i><span
+                                                        class="text"> <?= lang('add_product_transfer'); ?></span>
                                             </a>
                                         </li>
 										<!--
@@ -828,8 +834,7 @@
 										-->
                                     </ul>
                                 </li>
-                                
-                                <!--
+
                                 <li class="mm_account">
                                     <a class="dropmenu" href="#">
                                         <i class="fa fa-book"></i>
@@ -898,7 +903,7 @@
                                                 <i class="fa fa-plus-circle"></i><span class="text"> <?= lang('add_ac_head'); ?></span>
                                             </a>
                                         </li>
-                                        
+                                        <!--
 										<li id="account_budget">
                                             <a class="submenu" href="<? /*= site_url('#'); */ ?>" data-toggle="modal" data-target="#myModal">
                                                 <i class="fa fa-plus-circle"></i><span class="text"> <? /*= lang('list_budget'); */ ?></span>
@@ -929,7 +934,7 @@
                                                 <i class="fa fa-plus-circle"></i><span class="text"> <? /*= lang('add_supplier_deposit'); */ ?></span>
                                             </a>
                                         </li>
-                                        
+                                        -->
 										<?php if ($Owner) { ?>
 										<li id="account_settings">
 											<a href="<?= site_url('account/settings') ?>">
@@ -939,7 +944,6 @@
 										<?php }?>
                                     </ul> 
                                 </li>
-                                -->
 
 								<!--<li class="mm_taxes">
                                     <a class="dropmenu" href="#">
@@ -1179,14 +1183,12 @@
 														<a href="<?= site_url('system_settings/units') ?>">
 															 <i class="fa fa-wrench"></i><span class="text"> <?= lang('units'); ?></span>
 														</a>
-													</li>                                       
-													<!--
+													</li>                                                    
                                                     <li id="system_settings_bom">
                                                         <a href="<?= site_url('system_settings/bom') ?>">
                                                             <i class="fa fa-tags"></i><span class="text"> <?= lang('bom'); ?></span>
                                                         </a>
                                                     </li>
-                                                    -->
                                                     <li id="system_settings_suspend">
                                                         <a href="<?= site_url('system_settings/suspend') ?>">
                                                             <i class="fa fa-tags"></i><span class="text"> <?= lang('suspend'); ?></span>
@@ -1378,17 +1380,17 @@
 															<span class="chevron closed"></span>
 														</a>
 													<ul> 
-													<!--<li id="reports_profit_loss">
-																		<a href="<?= site_url('reports/profit_loss') ?>">
-																			<i class="fa fa-money"></i><span class="text"> <?= lang('profit_and_loss'); ?></span>
-																		</a>
-																	</li>-->
+													<li id="reports_profit_loss">
+                                                        <a href="<?= site_url('reports/profit_loss') ?>">
+                                                            <i class="fa fa-money"></i><span class="text"> <?= lang('profit_and_loss'); ?></span>
+                                                        </a>
+                                                    </li>
 													<li id="reports_payments">
-																	<a href="<?= site_url('reports/payments') ?>">
-																			<i class="fa fa-money"></i><span class="text"> <?= lang('payments_report'); ?></span>
-																	</a>
+                                                        <a href="<?= site_url('reports/payments') ?>">
+                                                            <i class="fa fa-money"></i><span class="text"> <?= lang('payments_report'); ?></span>
+                                                        </a>
 													</li>
-																	<?php if (POS) { ?>
+                                                        <?php if (POS) { ?>
 														<li id="reports_register">
 															<a href="<?= site_url('reports/register') ?>">
 																<i class="fa fa-money"></i><span class="text"> <?= lang('register_report'); ?></span>
@@ -1437,16 +1439,16 @@
 																			<i class="fa fa-barcode"></i><span class="text"> <?= lang('daily_product'); ?></span>
 																		</a>
 																	</li>
-																	<li id="reports_categories">
-																		<a href="<?= site_url('reports/categories') ?>">
-																			<i class="fa fa-barcode"></i><span class="text"> <?= lang('categories_report'); ?></span>
+                                                    <!--<li id="reports_categories">
+																		<a href="<? /*= site_url('reports/categories') */ ?>">
+																			<i class="fa fa-barcode"></i><span class="text"> <? /*= lang('categories_report'); */ ?></span>
 																		</a>
 																	</li>
 																	<li id="reports_categories_value">
-																		<a href="<?= site_url('reports/categories_value') ?>">
-																			<i class="fa fa-barcode"></i><span class="text"> <?= lang('categories_value_report'); ?></span>
+																		<a href="<? /*= site_url('reports/categories_value') */ ?>">
+																			<i class="fa fa-barcode"></i><span class="text"> <? /*= lang('categories_value_report'); */ ?></span>
 																		</a>
-																	</li>
+																	</li>-->
 																	<li id="reports_adjustment_report">
 																		<a href="<?= site_url('reports/adjustment_report') ?>">
 																			<i class="fa fa-barcode"></i><span class="text"> <?= lang('adjustment_report'); ?></span>
@@ -1474,7 +1476,7 @@
 																	</li>
 																	<li id="reports_customer_sale_top">
 																		<a href="<?= site_url('reports/report_sale_top') ?>">
-																			<i class="fa fa-barcode"></i><span class="text"> <?= lang('Product_sale_top'); ?></span>
+																			<i class="fa fa-barcode"></i><span class="text"> <?= lang('product_sale_top'); ?></span>
 																		</a>
 																	</li>
 																	<li id="reports_production_report">
@@ -1486,7 +1488,13 @@
 																		<a href="<?= site_url('reports/transfers_report') ?>">
 																			<i class="fa fa-barcode"></i><span class="text"> <?= lang('transfers_report'); ?></span>
 																		</a>
-																	</li>																	
+                                                                    </li>
+                                                    <li id="reports_transfers_summary_report">
+                                                        <a href="<?= site_url('reports/transfers_summary_report') ?>">
+                                                            <i class="fa fa-barcode"></i><span
+                                                                    class="text"> <?= lang('transfers_summary_report'); ?></span>
+                                                        </a>
+                                                    </li>
 																	<li id="reports_list_using_stock_report">
 																		<a href="<?= site_url('reports/list_using_stock_report') ?>">
 																			<i class="fa fa-barcode"></i><span class="text"> <?= lang('list_using_stock_report'); ?></span>
@@ -1558,7 +1566,7 @@
 														</li>
 														<li id="reports_sales_detail_delivery">
 															<a href="<?= site_url('reports/sales_detail_delivery') ?>">
-																<i class="fa fa-heart"></i><span class="text"> <?= lang('Sales_Delivery_Detail'); ?></span>
+																<i class="fa fa-heart"></i><span class="text"> <?= lang('sales_delivery_detail'); ?></span>
 															</a>
 														</li>
 														<!--<li id="reports_suspend_report" <?=($this->uri->segment(2) === 'suspends' ? 'class="active"' : '')?> >
@@ -1583,7 +1591,7 @@
 														</li>
 														<li id="reports_saleman_detail">
 															<a href="<?= site_url('reports/saleman_detail') ?>">
-																<i class="fa fa-users"></i><span class="text"> <?= lang('saleman_detail_report_'); ?></span>
+																<i class="fa fa-users"></i><span class="text"> <?= lang('saleman_detail_report'); ?></span>
 															</a>
 														</li>
                                                         <li id="reports_shops">
@@ -1591,21 +1599,6 @@
 																<i class="fa fa-building"></i><span class="text"> <?= lang('biller_report'); ?></span>
 															</a>
 														</li>
-                                                       <!-- <li id="reports_project_manager_report">
-                                                            <a href="<?= site_url('reports/project_manager_report') ?>">
-                                                                <i class="fa fa-building"></i><span class="text"> <?= lang('project_manager_report'); ?></span>
-                                                            </a>
-                                                        </li>-->
-                                                        <!--<li id="reports_project_plan_report">
-															<a href="<?= site_url('reports/project_plan_report') ?>">
-																<i class="fa fa-barcode"></i><span class="text"> <?= lang('project_plan_report'); ?></span>
-															</a>
-														</li>
-														<li id="reports_project_plan_report">
-															<a href="<?= site_url('reports/project_plan_report') ?>">
-																<i class="fa fa-barcode"></i><span class="text"> <?= lang('project_plan_report'); ?></span>
-															</a>
-														</li>-->
 														<li id="reports_sale_payment_report">
 															<a href="<?= site_url('reports/sale_payment_report') ?>">
 																<i class="fa fa-money"></i><span class="text"> <?= lang('sale_payment_report'); ?></span>
@@ -1657,7 +1650,6 @@
 													</ul>
 												</li>
 												
-												<!--
 												<li class="mm_ac_report">
 													<a class="dropmenu" href="#">
 														<i class="fa fa-book"></i>
@@ -1700,11 +1692,11 @@
 																<i class="fa fa-money"></i><span class="text"> <?= lang('income_statement_by_customer'); ?></span>
 															</a>
 														</li>
-                                                        <li id="reports_income_by_project">
+                                                        <!--<li id="reports_income_by_project">
 															<a href="<?= site_url('reports/income_statement_by_project')?>">
 																<i class="fa fa-money"></i><span class="text">​ <?= lang('income_statement_by_project');?></span>
 															</a>
-														</li>
+														</li>-->
 														<li id="reports_cash_book_report" <?=($this->uri->segment(2) === 'cash_books' ? 'class="active"' : '')?> >
 															<a href="<?= site_url('reports/cash_books') ?>">
 																<i class="fa fa-money"></i><span class="text"> <?= lang('cash_book'); ?></span>
@@ -1712,7 +1704,7 @@
 														</li>
 													</ul>
 												</li>
-												-->
+												
 											</ul>
                                         </li>
                                         							
@@ -1788,13 +1780,14 @@
 											<?php if ($GP['products-adjustments']) { ?>
 													<li id="products_quantity_adjustments">
 														<a class="submenu" href="<?= site_url('products/quantity_adjustments'); ?>">
-															<i class="fa fa-filter"></i><span class="text"> <?= lang('adjustment_quantity'); ?></span>
+                                                            <i class="fa fa-filter"></i><span
+                                                                    class="text"> <?= lang('product_adjustment_list'); ?></span>
 														</a>
 													</li>
 													<li id="products_add_adjustment_multiple">
 														<a class="submenu" href="<?= site_url('products/add_adjustment_multiple'); ?>">
 															<i class="fa fa-plus-circle"></i>
-															<span class="text"> <?= lang('add_adjustment_multiple'); ?></span>
+                                                            <span class="text"> <?= lang('add_product_adjustment'); ?></span>
 														</a>
 													</li>
 											<?php } ?>
@@ -1812,7 +1805,7 @@
                                                 <li id="products_using_stock" class="sub_navigation">
                                                     <a class="submenu" href="<?= site_url('products/using_stock'); ?>">
 														<i class="fa fa-plus-circle"></i>
-														<span class="text"> <?= lang('add_stock_using'); ?></span>
+                                                        <span class="text"> <?= lang('add_product_using'); ?></span>
 													</a>
 												</li>
 											<?php } ?>
@@ -1826,13 +1819,13 @@
 													<li id="products_list_count_stock" class="sub_navigation">
 														<a class="submenu" href="<?= site_url('products/list_count_stock'); ?>">
 															<i class="fa fa-filter"></i>
-															<span class="text"> <?= lang('list_count_stock'); ?></span>
+                                                            <span class="text"> <?= lang('product_count_list'); ?></span>
 														</a>
 													</li>
 													<li id="products_add_count_stock" class="sub_navigation">
 														<a class="submenu" href="<?= site_url('products/add_count_stock'); ?>">
 															<i class="fa fa-plus-circle"></i>
-															<span class="text"> <?= lang('add_count_stock'); ?></span>
+                                                            <span class="text"> <?= lang('add_product_count'); ?></span>
 														</a>
 													</li>
 											<?php } ?>
@@ -1929,7 +1922,7 @@
 											<li id="sales_add_deliveries">
 												<a class="submenu" href="<?= site_url('sales/add_deliveries'); ?>">
 													<i class="fa fa-plus-circle"></i>
-													<span class="text"> <?= lang('add_deliveries'); ?></span>
+                                                    <span class="text"> <?= lang('add_delivery'); ?></span>
 												</a>
 											</li>
 										<?php }
@@ -1937,7 +1930,7 @@
 											<li id="sales_customer_balance">
 												<a class="submenu" href="<?= site_url('sales/customer_balance'); ?>">
 													<i class="fa fa-money"></i>
-													<span class="text"> <?= lang('customer_balance'); ?></span>
+                                                    <span class="text"> <?= lang('customer_balance_list'); ?></span>
 												</a>
 											</li>
 										<?php }														
@@ -2090,7 +2083,7 @@
 											<li id="purchases_supplier_balance">
 												<a class="submenu" href="<?= site_url('purchases/supplier_balance'); ?>">
 													<i class="fa fa-money"></i>
-													<span class="text"> <?= lang('supplier_balance'); ?></span>
+                                                    <span class="text"> <?= lang('supplier_balance_list'); ?></span>
 												</a>
 											</li>
 										<?php } ?>
@@ -2164,14 +2157,16 @@
 										<?php if ($GP['transfers-index']) { ?>
 										<li id="transfers_list_in_transfer">
 											<a class="submenu" href="<?= site_url('transfers/list_in_transfer'); ?>">
-												<i class="fa fa-tags"></i><span class="text"> <?= lang('list_transfers'); ?></span>
+                                                <i class="fa fa-tags"></i><span
+                                                        class="text"> <?= lang('product_transfer_list'); ?></span>
 											</a>
 										</li>
 										<?php } ?>
 										<?php if ($GP['transfers-add']) { ?>
 											<li id="transfers_add">
 												<a class="submenu" href="<?= site_url('transfers/add'); ?>">
-													<i class="fa fa-plus-circle"></i><span class="text"> <?= lang('add_transfer'); ?></span>
+                                                    <i class="fa fa-plus-circle"></i><span
+                                                            class="text"> <?= lang('add_product_transfer'); ?></span>
 												</a>
 											</li>
 										<?php } ?>
@@ -2185,8 +2180,7 @@
 									</ul>
 								</li>
 							<?php } ?>
-								
-							<!--													
+																				
 							<?php if ($GP['accounts-index'] || $GP['account-list_receivable'] || $GP['account-list_ar_aging'] || $GP['account-ar_by_customer'] || $GP['account-bill_receipt'] || $GP['account-list_payable'] || $GP['account-list_ap_aging'] || $GP['account-ap_by_supplier'] || $GP['account-bill_payable'] || $GP['account-list_ac_head'] || $GP['account-list_customer_deposit'] || $GP['account-list_supplier_deposit'] || $GP['account_setting']) { ?>											
 								<li class="mm_account">
 									<a class="dropmenu" href="#">
@@ -2283,7 +2277,7 @@
 											</li>
 										<?php } ?>
 										
-										<?php if ($GP['account-list_customer_deposit']) { ?>
+										<!-- <?php if ($GP['account-list_customer_deposit']) { ?>
 											<li id="account_deposits">
 												<a class="submenu" href="<?= site_url('account/deposits'); ?>">
 													<i class="fa fa-list"></i><span class="text"> <?= lang('list_customer_deposit'); ?></span>
@@ -2310,7 +2304,7 @@
 													<i class="fa fa-plus-circle"></i><span class="text"> <?= lang('add_supplier_deposit'); ?></span>
 												</a>
 											</li>
-										<?php } ?> 
+										<?php } ?> -->
 										<?php if ($GP['account_setting']) { ?>
 											<li id="account_settings">
 												<a href="<?= site_url('account/settings') ?>">
@@ -2322,7 +2316,6 @@
 									</ul>
 								</li>
 							<?php } ?>
-							-->
 												<!--
 												<li class="mm_taxes">
 													<a class="dropmenu" href="#">
@@ -2581,13 +2574,14 @@
 												<span class="text"> <?= lang('profit_report'); ?> </span>
 												<span class="chevron closed"></span>
 											</a>
-											<ul> 
-
+											<ul>
+                                                <?php if ($GP['report_profit-profit_andOr_lose']) { ?>
 												<li id="reports_profit_loss">
 													<a href="<?= site_url('reports/profit_loss') ?>">
 														<i class="fa fa-money"></i><span class="text"> <?= lang('profit_and_loss'); ?></span>
 													</a>
 												</li>
+                                                <?php } ?>
 
                                                 <?php if ($GP['report_profit-payments']) { ?>
 												<li id="reports_payments">
@@ -2597,7 +2591,7 @@
 												</li>
                                                 <?php } ?>
 
-												<?php if (POS) { ?>
+												<?php if ($GP['sale_report-register']) { ?>
 												<li id="reports_register">
 													<a href="<?= site_url('reports/register') ?>">
 														<i class="fa fa-money"></i><span class="text"> <?= lang('register_report'); ?></span>
@@ -2673,13 +2667,6 @@
 														</a>
 													</li>
 												<?php } ?>
-                                                <?php if($GP['product_report-categories_value']){ ?>
-                                                    <li id="reports_categories_value">
-                                                        <a href="<?= site_url('reports/categories_value') ?>">
-                                                            <i class="fa fa-folder-open"></i><span class="text"> <?= lang('categories_value_report'); ?></span>
-                                                        </a>
-                                                    </li>
-                                                <?php } ?>
                                                 <?php if($GP['products-adjustments']){ ?>
                                                 <li id="reports_adjustment_report">
                                                     <a href="<?= site_url('reports/adjustment_report') ?>">
@@ -2927,7 +2914,6 @@
 										</li>
 										<?php } ?>
 
-                                        <!--
 										<?php if($GP['account_report-index']){ ?>
 										<li class="mm_ac_report">
 											<a class="dropmenu" href="#">
@@ -2989,7 +2975,6 @@
 											
 										</li>
 										<?php }?>
-										-->
 									</ul>
 								</li>
 							<?php } ?>		
