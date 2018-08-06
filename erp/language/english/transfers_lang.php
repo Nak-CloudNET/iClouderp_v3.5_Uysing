@@ -36,6 +36,7 @@ $lang['transfer_quantity']                           			= "Transfer Quantity";
 $lang['please_select_warehouse']               					= "Please select warehouse";
 $lang['please_select_different_warehouse']   					= "Please select different warehouse";
 $lang['to_warehouse']                               			= "To Warehouse";
+$lang['to_size']                               			        = "To Size";
 $lang['from_warehouse']                           				= "From Warehouse";
 $lang['edit_transfer_quantity']                    				= "Edit Transfer Quantity";
 $lang['can_not_change_status_of_completed_transfer']    		= "You can't change the status of completed transfer";

@@ -368,7 +368,7 @@
                                     </div>
 									<div class="col-md-4">
 										<div class="form-group">
-											<?= lang("to_warehouse", "to_warehouse"); ?>
+											<?= lang("to_size", "to_warehouse"); ?>
 											<?php 
 											$t_wh[''] = '';
 											foreach ($to_warehouse as $warehouse) {
