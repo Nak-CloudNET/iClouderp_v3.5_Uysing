@@ -1411,6 +1411,7 @@ class Purchases_model extends CI_Model
                         purchases.reference_no,
 						purchases.type_of_po,
                         companies.name,
+                        companies.invoice_footer,
                         purchases.status,
 						purchases.biller_id,
 						purchases.warehouse_id,

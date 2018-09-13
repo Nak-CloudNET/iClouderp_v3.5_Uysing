@@ -2131,7 +2131,7 @@ class Products_model extends CI_Model
     public function getUsingStockProjectByRef($r_r)
 	{
         $ref = str_replace('_', '&', $r_r);
-        $this->db->select('erp_companies.*, erp_enter_using_stock.*,warehouses.name as warehouse_name, authorize.username as authorize_name, employee.username as employee_name');
+        $this->db->select('erp_companies.*, erp_enter_using_stock.*,warehouses.name as warehouse_name,warehouses.address as w_address, authorize.username as authorize_name, employee.username as employee_name,employee.first_name,employee.last_name,employee.company');
         $this->db->from('erp_enter_using_stock');
         $this->db->join('erp_companies','erp_enter_using_stock.shop = erp_companies.id','left');
         $this->db->join('erp_warehouses', 'erp_enter_using_stock.warehouse_id = erp_warehouses.id', 'left');

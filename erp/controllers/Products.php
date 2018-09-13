@@ -5210,6 +5210,7 @@ class Products extends MY_Controller
                 <li class="edit_using"><a href="'.site_url('products/edit_using_stock_by_id/$1/$2').'" ><i class="fa fa-edit"></i>'.lang('edit_using_stock').'</a></li> 
                 <li class="add_return" ><a href="'.site_url('products/return_using_stock/$1/$2').'" ><i class="fa fa-reply"></i>'.lang('return_using_stock').'</a></li> 
                 <li><a href="' . site_url('products/print_using_stock_by_id/$1/$2') . '" ><i class="fa fa-print"></i>' . lang('print_using_stock') . '</a></li>
+                <li><a href="' . site_url('products/stock_using_issue_a5/$1/$2') . '" ><i class="fa fa-print"></i>' . lang('Stock_Using_Issue_a5') . '</a></li>
                 <!--<li><a href="' . site_url('products/print_sample_form_ppcp/$1/$2') . '" ><i class="fa fa-newspaper-o"></i>' . lang('print_sample_form_ppcp') . '</a></li>-->
             </ul>
         </div>';
@@ -5712,6 +5713,34 @@ class Products extends MY_Controller
             $this->data['biller']       = $this->products_model->getUsingStockProject($id);
             $this->data['invs'] = $this->products_model->getUsingStockProjectByRef($ref_no);
             $this->load->view($this->theme.'products/print_enter_using_stock_return',$this->data);
+        }
+    }
+    public function stock_using_issue_a5($id, $type)
+    {
+        $this->erp->checkPermissions('using_stock');
+        if($type=="use"){
+            $using_stock = $this->products_model->get_enter_using_stock_by_id($id);
+            $ref_no      = $using_stock->reference_no;
+            $stock_item  = $this->products_model->get_enter_using_stock_item_by_ref($ref_no);
+
+            $this->data['using_stock']  = $using_stock;
+            $this->data['stock_item']   = $stock_item;
+            $this->data['info']         = $this->products_model->get_enter_using_stock_info();
+            $this->data['biller']       = $this->products_model->getUsingStockProject($id);
+            $this->data['invs'] = $this->products_model->getUsingStockProjectByRef($ref_no);
+            $this->data['au_info']      = $this->products_model->getAuInfo($id);
+            $this->load->view($this->theme.'products/stock_using_issue_a5',$this->data);
+        }
+        if($type=="return"){
+            $using_stock = $this->products_model->get_enter_using_stock_by_id($id);
+            $ref_no=$using_stock->reference_no;
+            $stock_item=$this->products_model->get_enter_using_stock_item_by_ref($id);
+            $this->data['using_stock'] = $using_stock;
+            $this->data['stock_item'] = $stock_item;
+            $this->data['au_info']      = $this->products_model->getAuInfo($id);
+            $this->data['biller']       = $this->products_model->getUsingStockProject($id);
+            $this->data['invs'] = $this->products_model->getUsingStockProjectByRef($ref_no);
+            $this->load->view($this->theme.'products/stock_using_issue_a5',$this->data);
         }
     }
     public function print_sample_form_ppcp($id, $type)

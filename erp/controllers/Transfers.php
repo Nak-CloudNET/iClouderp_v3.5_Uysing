@@ -58,12 +58,7 @@ class Transfers extends MY_Controller
             . lang('actions') . ' <span class="caret"></span></button>
         <ul class="dropdown-menu pull-right" role="menu">
             <li>' . $detail_link . '</li>
-			<li>' . $view_document . '</li>
-			<li>' . $transfer_back . '</li>
             <li>' . $edit_link . '</li>
-            <li>' . $pdf_link . '</li>
-            <li>' . $email_link . '</li>
-            <li>' . $delete_link . '</li>
         </ul></div></div>';
 
         $this->load->library('datatables');
@@ -112,10 +107,6 @@ class Transfers extends MY_Controller
 			<!--<li>' . $view_document . '</li>-->'
 			
             .(($this->Owner || $this->Admin) ? '<li>'.$edit_link.'</li>' : ($this->GP['transfers-edit'] ? '<li>'.$edit_link.'</li>' : '')).
-			 (($this->Owner || $this->Admin) ? '<li>'.$pdf_link.'</li>' : ($this->GP['transfers-export'] ? '<li>'.$pdf_link.'</li>' : '')).            
-             (($this->Owner || $this->Admin) ? '<li>'.$email_link.'</li>' : ($this->GP['transfers-email'] ? '<li>'.$email_link.'</li>' : '')).
-             (($this->Owner || $this->Admin) ? '<li>'.$print_barcode.'</li>' : ($this->GP['products-print_barcodes'] ? '<li>'.$print_barcode.'</li>' : '')).
-			 (($this->Owner || $this->Admin) ? '<li>'.$delete_link.'</li>' : ($this->GP['transfers-delete'] ? '<li>'.$delete_link.'</li>' : '')).
 
         '</ul></div></div>';
 
