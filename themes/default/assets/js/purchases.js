@@ -693,11 +693,11 @@ $('#podiscount').focus(function () {
         if(total_unit_cost == 0){
             $("#poption option").each(function() {
                 var qty_unit = $(this).attr('title');
-                var total_product_cost = product_cost * qty_unit;
+                //var total_product_cost = product_cost * qty_unit;
                 $(this).attr('product_cost',total_product_cost);
             });
         }
-        $("#pquantity").trigger("change");
+        $("#piece").trigger("change");
     });
 
     $(document).on('change','#poption',function(){
@@ -1071,7 +1071,7 @@ function loadItems() {
 		if(__getItem('order_ref')){
 			$('#posupplier').select2("readonly", true);
 		}
-
+        //console.log(poitems);
         $.each(poitems, function () {
         	var item 			= this;
             var item_id 		= site.settings.item_addition == 1 ? item.id : item.id;
@@ -1081,7 +1081,7 @@ function loadItems() {
 			    item_type 		= item.row.type,
 			    combo_items 	= item.combo_items,
 			    item_cost 		= item.row.cost,
-			    item_qty 		= (item.row.type == 'service' ? 1 : item.row.qty),
+			    item_qty 		= (item.row.type == 'service' ? 1 : item.row.piece),
 			    item_bqty 		= item.row.quantity_balance,
 			    item_expiry 	= item.row.expiry,
 			    item_tax_method = item.row.tax_method,
@@ -1255,7 +1255,6 @@ function loadItems() {
                 tr_html += '<td class="rec_con"><input name="ordered_quantity[]" type="hidden" class="oqty" value="' + item_qty + '"><input class="form-control text-center received number_only" name="received[]" required value="' + formatPurDecimal(qty_received) + '" data-id="' + row_no + '" data-item="' + item_id + '" id="received_' + row_no + '" onClick="this.select();"><input class="form-control text-center received_hidden" name="received_hidden[]" type="hidden" value="' + formatPurDecimal(qty_received) + '" data-id="' + row_no + '" data-item="' + item_id + '" id="received_hidden_' + row_no + '""><input type="hidden" class="need_qty" value="' + (qty_received) + '"> </td>';
 				item_qty = qty_received;
 			}
-
 			/* Stock In Hand */
 			tr_html += '<td class="text-right"><input class="form-control input-sm text-right rstock" name="rstock[]" type="hidden" id="stock_' + stock_in_hand + '" value="' + stock_in_hand + '"><input class="rstock" name="rstock[]" type="hidden" value="' + stock_in_hand + '"><input class="rstock" name="rstock[]" type="hidden" value="' + stock_in_hand + '"><span class="text-right scost" id="sstock_' + row_no + '">' + stock_in_hand + '</span></td>';
 

@@ -264,7 +264,9 @@
                 </table>
             </div>
         </div><br>
-        <table class="table">
+        <div class="row">
+            <div class="col-sm-12 col-xs-12">
+                <table class="table">
             <thead>
             <tr class="border thead print" style="background-color: #444 !important; color: #FFF !important;">
                 <th>ល.រ<br /><?= strtoupper(lang('no')) ?></th>
@@ -283,10 +285,10 @@
                 <th>ចំនួន<br /><?= strtoupper(lang('qty')) ?></th>
                 <th>តម្លៃ<br /><?= strtoupper(lang('cost')) ?></th>
 
-                <?php if ($Settings->product_discount) { ?>
+                <?php if ($row->item_discount!=0) { ?>
                     <th>បញ្ចុះតម្លៃ<br /><?= strtoupper(lang('discount')) ?></th>
                 <?php } ?>
-                <?php if ($Settings->tax1) { ?>
+                <?php if ($row->item_tax !=0) { ?>
                     <th style="width: 10%">ពន្ធទំនិញ<br /><?= strtoupper(lang('tax')) ?></th>
                 <?php } ?>
                 <th>តម្លៃសរុប<br /><?= strtoupper(lang('subtotal')) ?></th>
@@ -350,7 +352,7 @@
                     <td style="vertical-align: middle; text-align: right">
                         <?= $this->erp->formatMoney($row->unit_cost); ?>
                     </td>
-                    <?php if ($row->item_discount) {?>
+                    <?php if ($row->item_discount !=0) {?>
                         <td style="vertical-align: middle; text-align: center">
                             <?php
                             if(strpos($row->discount,"%")){
@@ -360,7 +362,7 @@
                             ?>
                         </td>
                     <?php } ?>
-                    <?php if ($row->item_tax) {?>
+                    <?php if ($row->item_tax !=0) {?>
                         <td style="vertical-align: middle; text-align: center">
                             <?=$this->erp->formatMoney($row->item_tax);?></td>
                     <?php } ?>
@@ -375,80 +377,67 @@
 //                    if ($totalRow % 25 == 0) {
 //                        echo '<tr class="pageBreak"></tr>';
 //                    }
-
+                $discount=$row->item_discount;
             }
+
             ?>
             <?php
             if($erow<16){
                 $k=16 - $erow;
                 for($j=1;$j<=$k;$j++) {
-                    if($discount != 0) {
                         echo  '<tr class="border">
                                     <td height="34px" style="text-align: center; vertical-align: middle">'.$no.'</td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
                                     <td></td>
                                     <td></td>';
                         if($total_piece !=0){
                             echo '<td></td>
                                           <td></td>';
                         }
-                        echo '<td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                </tr>';
-
-                    }else {
-                        echo  '<tr class="border">
-                                    <td height="34px" style="text-align: center; vertical-align: middle">'.$no.'</td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>';
-                        if($total_piece !=0){
-                            echo '<td></td>
-                                          <td></td>';
+                        if($row->item_discount != 0){
+                            echo '<td></td>';
+                        }
+                        if($row->item_tax != 0){
+                            echo '<td></td>';
                         }
                         echo '<td></td>
                                     <td></td>
                                     <td></td>
+                                    <td></td>
                                 </tr>';
-                    }
                     $no++;
                 }
             }
             ?>
             <?php
-            //$this->erp->print_arrays($invs);
+
             $row = 1;
-            $col =6;
+            $col =5;
             if ($discount != 0) {
-                $col = 5;
+                $col=4;
+            }else{
+                $col=3;
             }
             if ($invs->grand_total != $invs->total) {
                 $row++;
             }
             if ($invs->order_discount != 0) {
                 $row++;
-                $col =6;
+                $col++;
             }
             if($total_piece !=0){
                 $row++;
-                $col =6;
+                $col++;
             }else{
                 $row++;
-                $col =4;
+                $col++;
             }
             if ($invs->shipping != 0) {
                 $row++;
-                $col =6;
+                $col++;
             }
             if ($invs->order_tax != 0) {
                 $row++;
-                $col =6;
+                $col++;
             }
             if($invs->paid != 0 && $invs->deposit != 0) {
                 $row += 4;
@@ -587,6 +576,8 @@
             </tfoot>
 
         </table>
+            </div>
+        </div>
     </div>
 
 
