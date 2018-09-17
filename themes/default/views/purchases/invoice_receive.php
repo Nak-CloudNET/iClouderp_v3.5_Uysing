@@ -1,4 +1,4 @@
-<?php //$this->erp->print_arrays($invs) ?>
+<?php //$this->erp->print_arrays($rows) ?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -14,7 +14,6 @@
     .container {
         width: 100%;
         margin: 20px auto;
-        padding-top: 25px !important;
         padding: 10px;
         font-size: 14px;
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
@@ -98,9 +97,8 @@
         padding:5px;
     }
     .title{
-        font-family: "Khmer OS Muol Light" !important;
-        -moz-font-family: "Khmer OS Muol Light" !important;
-        -webkit-font-family: "Khmer OS Muol Light" !important;
+        font-family:"Khmer OS Muol Light";
+        -mox-font-family:"Khmer OS Muol Light";
         font-size: 15px;
     }
     h4{
@@ -146,133 +144,128 @@
     }
     ?>
     <div class="row">
-        <table class="table">
-            <thead>
-            <tr class="thead" style="border-left:none;border-right: none;border-top:none;">
-                <th colspan="9" style="border-left:none;border-right: none;border-top:none;border-bottom: 1px solid #000 !important;">
-                    <div class="row" style="margin-top: 0px !important;">
-                        <div class="col-sm-3 col-xs-3 " style="margin-top: 0px !important; height: 0 !important">
-                            <?php if(!empty($billers->logo)) { ?>
-                                <img class="img-responsive myhide" src="<?= base_url() ?>assets/uploads/logos/<?= $billers->logo; ?>"id="hidedlo" style="width: 140px; margin-left: 25px;margin-top: -10px;" />
+        <div class="row" style="margin-top: 0px !important;">
+            <div class="col-sm-3 col-xs-3 " style="margin-top: 0px !important;">
+                <?php if(!empty($billers->logo)) { ?>
+                    <img class="img-responsive myhide" src="<?= base_url() ?>assets/uploads/logos/<?= $billers->logo; ?>"id="hidedlo" style="width: 140px; margin-left: 25px;margin-top: -10px;" />
+                <?php } ?>
+            </div>
+            <div  class="col-sm-7 col-xs-7 company_addr "  style="margin-top: -20px !important;">
+                <div class="myhide">
+                    <center >
+                        <?php if($billers->company) { ?>
+                            <h3 class="header"><?= $billers->company ?></h3>
+                        <?php } ?>
+                        <div style="margin-top: 15px;">
+                            <?php if(!empty($billers->vat_no)) { ?>
+                                <p>លេខអត្តសញ្ញាណកម្ម អតប (VAT No):&nbsp;<?= $billers->vat_no; ?></p>
+                            <?php } ?>
+
+                            <?php if(!empty($billers->address)) { ?>
+                                <p style="margin-top:-10px !important;">អាសយដ្ឋាន ៖ &nbsp;<?= $billers->address; ?></p>
+                            <?php } ?>
+
+                            <?php if(!empty($billers->phone)) { ?>
+                                <p style="margin-top:-10px ;">ទូរស័ព្ទលេខ (Tel):&nbsp;<?= $billers->phone; ?></p>
+                            <?php } ?>
+
+                            <?php if(!empty($billers->email)) { ?>
+                                <p style="margin-top:-10px !important;">សារអេឡិចត្រូនិច (E-mail):&nbsp;<?= $billers->email; ?></p>
                             <?php } ?>
                         </div>
-                        <div  class="col-sm-7 col-xs-7 company_addr "  style="margin-top: -20px !important;">
-                            <div class="myhide">
-                                <center >
-                                    <?php if ($billers->company) { ?>
-                                        <h3 class="header"><?= $billers->company ?></h3>
-                                    <?php }?>
 
-                                    <div style="margin-top: 15px;">
-                                        <?php if(!empty($billers->vat_no)) { ?>
-                                            <p>លេខអត្តសញ្ញាណកម្ម អតប (VAT No):&nbsp;<?= $billers->vat_no; ?></p>
-                                        <?php } ?>
+                    </center>
+                </div>
+                <div class="invoice" style="margin-top:20px;">
+                    <center>
+                        <h4 class="title">វិក្កយបត្រ​បញ្ជា​ទិញ</h4>
+                        <h4 class="title" style="margin-top: 3px;">Purchase Order Invoice</h4>
+                    </center>
 
-                                        <?php if(!empty($billers->address)) { ?>
-                                            <p style="margin-top:-10px !important;">អាសយដ្ឋាន ៖ &nbsp;<?= $billers->address; ?></p>
-                                        <?php } ?>
+                </div>
+            </div>
+            <div class="col-sm-2 col-xs-2 pull-right">
+                <div class="row">
+                    <button type="button" class="btn btn-xs btn-default no-print pull-right" style="margin-right:15px;" onclick="window.print();">
+                        <i class="fa fa-print"></i> <?= lang('print'); ?>
+                    </button>
+                </div>
+                <div class="row">
+                    <button type="button" class="btn btn-xs btn-default no-print pull-right " id="hide" style="margin-right:15px;" onclick="">
+                        <i class="fa"></i> <?= lang('Hide/Show_header'); ?>
+                    </button>
+                </div>
 
-                                        <?php if(!empty($billers->phone)) { ?>
-                                            <p style="margin-top:-10px ;">ទូរស័ព្ទលេខ (Tel):&nbsp;<?= $billers->phone; ?></p>
-                                        <?php } ?>
+            </div>
+        </div>
+        <div class="row" style="text-align: left;">
+            <div class="col-sm-7 col-xs-7">
+                <table >
+                    <?php
 
-                                        <?php if(!empty($billers->email)) { ?>
-                                            <p style="margin-top:-10px !important;">សារអេឡិចត្រូនិច (E-mail):&nbsp;<?= $billers->email; ?></p>
-                                        <?php } ?>
-                                    </div>
-
-                                </center>
-                            </div>
-                            <div class="invoice" style="margin-top:20px;">
-                                <center>
-                                    <h4 class="title">វិក្កយបត្រ</h4>
-                                    <h4 class="title" style="margin-top: 3px;">Invoice</h4>
-                                </center>
-
-                            </div>
-                        </div>
-                        <div class="col-sm-2 col-xs-2 pull-right">
-                            <div class="row">
-                                <button type="button" class="btn btn-xs btn-default no-print pull-right" style="margin-right:15px;" onclick="window.print();">
-                                    <i class="fa fa-print"></i> <?= lang('print'); ?>
-                                </button>
-                            </div>
-                            <div class="row">
-                                <button type="button" class="btn btn-xs btn-default no-print pull-right " id="hide" style="margin-right:15px;" onclick="">
-                                    <i class="fa"></i> <?= lang('Hide/Show_header'); ?>
-                                </button>
-                            </div>
-
-                        </div>
-                    </div>
-                    <div class="row" style="text-align: left;">
-                        <div class="col-sm-7 col-xs-7">
-                            <table >
-                                <?php
-
-                                if(!empty($invs->supplier)) { ?>
-                                    <tr>
-                                        <td style="width: 40%;">អ្នកផ្គត់ផ្គង់ / Supplier</td>
-                                        <td style="width: 5%;">:</td>
-                                        <td style="width: 30%;"><?= $invs->supplier ?></td>
-                                    </tr>
-                                <?php } ?>
-                                <?php if(!empty($supplier->address_kh || $supplier->address)) { ?>
-                                    <tr>
-                                        <td>អាសយដ្ឋាន / Address </td>
-                                        <td>:</td>
-                                        <?php if(!empty($supplier->address_kh)) { ?>
-                                            <td><?= $supplier->address_kh?></td>
-                                        <?php }else { ?>
-                                            <td><?= $supplier->address ?></td>
-                                        <?php } ?>
-                                    </tr>
-                                <?php } ?>
-                                <?php if(!empty($supplier->address_kh || $supplier->address)) { ?>
-                                    <tr>
-                                        <td>ទូរស័ព្ទលេខ (Tel)</td>
-                                        <td>:</td>
-                                        <td><?= $supplier->phone ?></td>
-                                    </tr>
-                                <?php } ?>
-                                <?php if(!empty($supplier->vat_no)) { ?>
-                                    <tr>
-                                        <td style="width: 20% !important">លេខអត្តសញ្ញាណកម្ម អតប </td>
-                                        <td>:</td>
-                                        <td><?= $supplier->vat_no ?></td>
-                                    </tr>
-                                <?php } ?>
-                            </table>
-                        </div>
-                        <div class="col-sm-5 col-xs-5">
-                            <table class="noPadding" border="none">
-                                <tr>
-                                    <td style="width: 45%;">លេខរៀង / N<sup>o</sup></sup></td>
-                                    <td style="width: 5%;">:</td>
-                                    <td style="width: 50%;"><?= $invs->reference_no ?></td>
-                                </tr>
-                                <tr>
-                                    <td>កាលបរិច្ឆេទ / Date</td>
-                                    <td>:</td>
-                                    <td><?= $this->erp->hrld($invs->date); ?></td>
-                                </tr>
-                                <?php if ($invs->payment_term) { ?>
-                                    <tr>
-                                        <td>រយៈពេលបង់ប្រាក់ </td>
-                                        <td>:</td>
-                                        <td><?= $invs->payment_term ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 30% !important">កាលបរិច្ឆេទនៃការបង់ប្រាក់ </td>
-                                        <td>:</td>
-                                        <td><?= $this->erp->hrsd($invs->due_date) ?></td>
-                                    </tr>
-                                <?php } ?>
-                            </table>
-                        </div>
-                    </div>
-                </th>
-            </tr>
+                    if(!empty($supplier->company)) { ?>
+                        <tr>
+                            <td style="width: 25%;">អ្នកផ្គត់ផ្គង់ / Supplier</td>
+                            <td style="width: 5%;">:</td>
+                            <td style="width: 30%;"><?= $supplier->company ?></td>
+                        </tr>
+                    <?php } ?>
+                    <?php if(!empty($supplier->address_kh || $supplier->address)) { ?>
+                        <tr>
+                            <td>អាសយដ្ឋាន / Address </td>
+                            <td>:</td>
+                            <?php if(!empty($supplier->address_kh)) { ?>
+                                <td><?= $supplier->address_kh?></td>
+                            <?php }else { ?>
+                                <td><?= $supplier->address ?></td>
+                            <?php } ?>
+                        </tr>
+                    <?php } ?>
+                    <?php if(!empty($supplier->address_kh || $supplier->address)) { ?>
+                        <tr>
+                            <td>ទូរស័ព្ទលេខ (Tel)</td>
+                            <td>:</td>
+                            <td><?= $supplier->phone ?></td>
+                        </tr>
+                    <?php } ?>
+                    <?php if(!empty($supplier->vat_no)) { ?>
+                        <tr>
+                            <td style="width: 20% !important">លេខអត្តសញ្ញាណកម្ម អតប </td>
+                            <td>:</td>
+                            <td><?= $supplier->vat_no ?></td>
+                        </tr>
+                    <?php } ?>
+                </table>
+            </div>
+            <div class="col-sm-5 col-xs-5">
+                <table class="noPadding" border="none" style="margin-left: 35px">
+                    <tr>
+                        <td style="width: 45%;">លេខរៀង / N<sup>o</sup></sup></td>
+                        <td style="width: 5%;">:</td>
+                        <td style="width: 50%;"><?= $invs->reference_no ?></td>
+                    </tr>
+                    <tr>
+                        <td>កាលបរិច្ឆេទ / Date</td>
+                        <td>:</td>
+                        <td><?= $this->erp->hrld($invs->date); ?></td>
+                    </tr>
+                    <?php if ($invs->payment_term) { ?>
+                        <tr>
+                            <td>រយៈពេលបង់ប្រាក់ </td>
+                            <td>:</td>
+                            <td><?= $invs->payment_term ?></td>
+                        </tr>
+                        <tr>
+                            <td style="width: 30% !important">កាលបរិច្ឆេទនៃការបង់ប្រាក់ </td>
+                            <td>:</td>
+                            <td><?= $this->erp->hrsd($invs->due_date) ?></td>
+                        </tr>
+                    <?php } ?>
+                </table>
+            </div>
+        </div><br>
+        <table class="table">
+            <thead>
             <tr class="border thead print" style="background-color: #444 !important; color: #FFF !important;">
                 <th>ល.រ<br /><?= strtoupper(lang('no')) ?></th>
                 <th>កូដ<br /><?= strtoupper(lang('Code')) ?></th>
@@ -344,15 +337,15 @@
                     </td>
                     <?php if($total_piece !=0){ ?>
                         <td style="vertical-align: middle; text-align: center">
-                            <?=$row->piece?$this->erp->formatQuantity($row->quantity):'';?>
+                            <?=$row->piece?round($row->quantity,2):'';?>
                         </td>
                         <td style="vertical-align: middle; text-align: center">
-                            <?=$row->wpiece?$this->erp->formatQuantity($row->wpiece):'';?>
+                            <?=$row->wpiece?round($row->wpiece,2):'';?>
                         </td>
                     <?php } ?>
 
                     <td style="vertical-align: middle; text-align: center">
-                        <?= $row->piece?$this->erp->formatQuantity($row->piece):$this->erp->formatQuantity($row->quantity);?>
+                        <?= $row->piece?round($row->piece,2):round($row->quantity,2);?>
                     </td>
                     <td style="vertical-align: middle; text-align: right">
                         <?= $this->erp->formatMoney($row->unit_cost); ?>
@@ -557,7 +550,7 @@
             <tfoot class="tfoot">
             <tr>
                 <th colspan="9">
-                    <?php if($invs->note){ ?>
+                    <?php if(trim(htmlspecialchars_decode($invs->note))){ ?>
                         <div style="border-radius: 5px 5px 5px 5px;border:1px solid black;height: auto;" id="note" class="col-md-12 col-xs-12">
                             <p style="margin-left: 10px;margin-top:10px;"><?php echo strip_tags(htmlspecialchars_decode($invs->note)); ?></p>
                         </div>
@@ -605,5 +598,6 @@
         </a>
     </div>
 </div>
+
 </body>
 </html>

@@ -621,18 +621,18 @@ $(document).on('click', '.podel', function () {
 	$('#piece').focus(function() {
 		$(this).select();
 	});
-	
-	$(document).on('change','#piece,#wpiece',function(){
-		var piece  = $('#piece').val()-0;
-		var wpiece = $("#wpiece").val()-0;
-		if(Number(piece) && Number(wpiece)) {
-			var total  = (piece*wpiece);
-			$("#pquantity").val(formatDecimal(total)).trigger("change");
-			$("#pnote").val(piece+" x "+wpiece);
-		}else {
-			$("#pnote").val('');
-		}	
-	});
+
+    $(document).on('change','#pquantity,#wpiece',function(){
+        var pquantity  = $('#pquantity').val()-0;
+        var wpiece = $("#wpiece").val()-0;
+        if(Number(pquantity) && Number(wpiece)) {
+            var total  = (pquantity*wpiece);
+            $("#piece").val(formatDecimal(total)).trigger("change");
+            $("#pnote").val(pquantity+" x "+wpiece);
+        }else {
+            $("#pnote").val('');
+        }
+    });
 
 	var previous = "";
     $('#prModal').on('shown.bs.modal', function (e) {
