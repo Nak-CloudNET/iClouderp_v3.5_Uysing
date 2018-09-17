@@ -1156,20 +1156,6 @@
 							<div class="col-sm-8" id="serial"></div>
 						</div>
                     <?php } ?>
-					<div class="form-group" id="dvpiece">
-                        <label for="piece" id="lbpiece" class="col-sm-4 control-label"><?= lang('piece') ?></label>
-
-                        <div class="col-sm-8">
-                            <input type="text" class="form-control" id="piece">
-                        </div>
-                    </div>
-					<div class="form-group" id="dvwpiece">
-                        <label for="wpiece" class="col-sm-4 control-label"><?= lang('wpiece') ?></label>
-
-                        <div class="col-sm-8">
-                            <input type="text" class="form-control" id="wpiece">
-                        </div>
-                    </div>
                     <div class="form-group">
                         <label for="pquantity" class="col-sm-4 control-label"><?= lang('quantity'); ?></label>
 
@@ -1177,6 +1163,22 @@
                             <input type="text" class="form-control" id="pquantity">
                         </div>
                     </div>
+
+					<div class="form-group" id="dvwpiece">
+                        <label for="wpiece" class="col-sm-4 control-label"><?= lang('wpiece') ?></label>
+
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="wpiece">
+                        </div>
+                    </div>
+                    <div class="form-group" id="dvpiece">
+                        <label for="piece" id="lbpiece" class="col-sm-4 control-label"><?= lang('piece') ?></label>
+
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="piece">
+                        </div>
+                    </div>
+
                     <?php if ($Settings->product_expiry) { ?>
                         <div class="form-group">
                             <label for="pexpiry" class="col-sm-4 control-label"><?= lang('expiry_date'); ?></label>
