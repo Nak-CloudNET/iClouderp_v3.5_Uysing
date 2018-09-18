@@ -984,6 +984,7 @@ function loadItems() {
 				item_type 		= item.row.type,
 				combo_items 	= item.combo_items,
 				item_cost 		= item.row.cost,
+				qty             = item.row.qty,
 				item_qty 		= (item.row.type == 'service'?1:item.row.piece),
 				item_bqty 		= item.row.quantity_balance,
 				item_expiry 	= item.row.expiry,
