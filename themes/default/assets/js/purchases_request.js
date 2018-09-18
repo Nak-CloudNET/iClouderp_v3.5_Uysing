@@ -991,7 +991,7 @@ function loadItems() {
 				item_ds 		= item.row.discount,
 				item_discount 	= 0,
 				item_option 	= item.row.option,
-				piece			= item.row.piece,
+				piece			= item.row.qty,
 				wpiece			= item.row.wpiece,
 				item_code 		= item.row.code,
 				item_name 		= item.row.name,

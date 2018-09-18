@@ -366,7 +366,7 @@
                         <td style="vertical-align: middle; text-align: center">
                             <?=$this->erp->formatMoney($row->item_tax);?></td>
                     <?php } ?>
-                    <td style="vertical-align: middle; text-align: right"><?= $this->erp->formatMoney($row->subtotal);?>
+                    <td style="vertical-align: middle; text-align: right"><?= $this->erp->formatMoney($row->subtotal/1000);?>
                     </td>
                 </tr>
 

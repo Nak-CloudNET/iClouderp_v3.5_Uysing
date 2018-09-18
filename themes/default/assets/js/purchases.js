@@ -697,7 +697,7 @@ $('#podiscount').focus(function () {
                 $(this).attr('product_cost',total_product_cost);
             });
         }
-        $("#piece").trigger("change");
+        $("#pquantity").trigger("change");
     });
 
     $(document).on('change','#poption',function(){
@@ -1081,14 +1081,14 @@ function loadItems() {
 			    item_type 		= item.row.type,
 			    combo_items 	= item.combo_items,
 			    item_cost 		= item.row.cost,
-			    item_qty 		= (item.row.type == 'service' ? 1 : item.row.piece),
+			    piece		= (item.row.type == 'service' ? 1 : item.row.piece),
 			    item_bqty 		= item.row.quantity_balance,
 			    item_expiry 	= item.row.expiry,
 			    item_tax_method = item.row.tax_method,
 			    item_ds 		= item.row.discount,
 			    item_discount 	= 0,
 			    item_option 	= item.row.option,
-				piece			= item.row.piece,
+                item_qty 		= item.row.qty,
 				wpiece			= item.row.wpiece,
 			    item_code 		= item.row.code,
 				pur_order_id	= item.row.pur_order_id,
@@ -1267,7 +1267,7 @@ function loadItems() {
             }
 
 			/* Sub Total */
-            tr_html += '<td class="text-right"><span class="text-right ssubtotal" id="subtotal_' + row_no + '">' + formatMoney((parseFloat(item_cost) + parseFloat(pr_tax_val)) * (item_qty - 0)) + '</span></td>';
+            tr_html += '<td class="text-right"><span class="text-right ssubtotal" id="subtotal_' + row_no + '">' + formatMoney((parseFloat(item_cost) + parseFloat(pr_tax_val)) * (piece - 0)) + '</span></td>';
 
             tr_html += '<td class="text-center"><i class="fa fa-times tip podel" id="' + row_no + '" title="Remove" style="cursor:pointer;"></i></td>';
 
