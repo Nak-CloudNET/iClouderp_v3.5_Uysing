@@ -536,14 +536,23 @@ $('#podiscount').focus(function () {
 		}else {
 			var qty = row.children().children('.received').val();
 		}
+        // alert(row.children().children('.ucost_t').val());
+         if(row.children().children('.ucost_t').val()===NaN || row.children().children('.ucost_t').val()===undefined )
+         {
+             var ucost_t = 0;
+         }else {
+             var ucost_t = row.children().children('.ucost_t').val();
+		 }
 
         var product_option 	= row.children().children('.roption').val(),
         unit_cost 			= row.children().children('.realucost').val(),
+
         realcost 			= row.children().children('.realcost').val(),
         discount 			= row.children().children('.rdiscount').val(),
         supplier 			= row.children().children('.rsupplier_id').val();
 		tax_method 	 		= row.children().children('.tax_method').val();
         var net_cost 		= unit_cost;
+
         $('#prModalLabel').text(item.row.name + ' (' + item.row.code + ')');
 		var code 			= item.row.code;
 
@@ -646,6 +655,10 @@ $('#podiscount').focus(function () {
         $('#old_qty').val(qty);
         $('#pcost').val(unit_cost);
 		$('#pcost_none').val(formatDecimal(unit_cost));
+		//alert(formatDecimal(ucost_t));
+
+		 $('#ucost_t').val(formatDecimal(item.row.ucost_t === NaN || item.row.ucost_t === undefined ? 0 :  item.row.ucost_t));
+
         $('#punit_cost').val(formatPurDecimal(parseFloat(unit_cost)+parseFloat(pr_tax_val)));
         $('#poption').select2('val', item.row.option);
         $('#old_cost').val(unit_cost);
@@ -674,6 +687,15 @@ $('#podiscount').focus(function () {
 			$("#pnote").val(pquantity+" x "+wpiece);
 		}else {
 			$("#pnote").val('');
+		}
+	});
+	$(document).on('change','#ucost_t,#wpiece',function(){
+		var ucost_t  = $('#ucost_t').val()-0;
+		var wpiece = $("#wpiece").val()-0;
+
+		if(Number(ucost_t) && Number(wpiece)) {
+			var total  = ((ucost_t*wpiece)/1000);
+			$("#pcost_none").val(formatDecimal(total)).trigger("change");
 		}
 	});
 
@@ -877,6 +899,7 @@ $('#podiscount').focus(function () {
 			poitems[item_id].row.qty = parseFloat($('#pquantity').val());
 		}
 
+		poitems[item_id].row.ucost_t 		= $("#ucost_t").val()-0;
 		poitems[item_id].row.piece 		= $("#piece").val()-0;
 		poitems[item_id].row.wpiece 	= $("#wpiece").val()-0;
         poitems[item_id].row.real_unit_cost = parseFloat($('#pcost').val()),
@@ -1081,14 +1104,15 @@ function loadItems() {
 			    item_type 		= item.row.type,
 			    combo_items 	= item.combo_items,
 			    item_cost 		= item.row.cost,
-			    piece		= (item.row.type == 'service' ? 1 : item.row.piece),
+                item_qty		= (item.row.type == 'service' ? 1 : item.row.qty),
 			    item_bqty 		= item.row.quantity_balance,
 			    item_expiry 	= item.row.expiry,
 			    item_tax_method = item.row.tax_method,
 			    item_ds 		= item.row.discount,
 			    item_discount 	= 0,
 			    item_option 	= item.row.option,
-                item_qty 		= item.row.qty,
+                piece 		=item.row.piece,
+                ucost_t 		=item.row.ucost_t,
 				wpiece			= item.row.wpiece,
 			    item_code 		= item.row.code,
 				pur_order_id	= item.row.pur_order_id,
@@ -1218,7 +1242,18 @@ function loadItems() {
 
 			tr_html = '<td class="text-right"><span class="text-center">#'+ no_ +'<input name="create_id[]" type="hidden" class="create_id" value="' + create_id + '"><input name="pur_id[]" type="hidden" class="pur_id" value="' + pur_id + '"><input type="hidden" class="count" value="' + item_id + '"><input name="create_order_id[]" type="hidden" class="create_order_id" value="' + create_order_id + '"><input name="pur_order_id[]" type="hidden" class="pur_order_id" value="' + pur_order_id + '"></td>';
 
-            tr_html += '<td><input name="product_id[]" type="hidden" class="rid" value="' + product_id + '"><input name="product[]" type="hidden" class="rcode" value="' + item_code + '"><input name="product_name[]" type="hidden" class="rname" value="' + item_name + '"><input name="type[]" type="hidden" class="rtype" value="' + type + '"><input type="hidden" name="tax_method[]" class="tax_method" value="' + item_tax_method + '" /><input name="product_option[]" type="hidden" class="roption" value="' + item_option + '"><input name="part_no[]" type="hidden" class="rpart_no" value="' + item_supplier_part_no + '"><input name="rsupplier_id[]" type="hidden" class="rsupplier_id" value="' + supplier_id + '"><input name="piece[]" type="hidden" class="piece" value="' + piece + '"><input name="wpiece[]" type="hidden" class="wpiece" value="' + wpiece + '"><span class="sname" id="name_' + row_no + '">' + item_name + ' (' + item_code + ')'+(sel_opt != '' ? ' ('+sel_opt+')' : '')+' <span class="">'+ supplier_name +'</span><span class="label label-default">'+item_supplier_part_no+'</span></span> <i class="pull-right fa fa-edit tip edit" id="' + row_no + '" data-item="' + item_id + '" title="Edit" style="cursor:pointer;"></i></td>';
+            tr_html += '<td><input name="product_id[]" type="hidden" class="rid" value="' + product_id + '">' +
+				'<input name="product[]" type="hidden" class="rcode" value="' + item_code + '">' +
+				'<input name="product_name[]" type="hidden" class="rname" value="' + item_name + '">' +
+				'<input name="type[]" type="hidden" class="rtype" value="' + type + '">' +
+				'<input type="hidden" name="tax_method[]" class="tax_method" value="' + item_tax_method + '" />' +
+				'<input name="product_option[]" type="hidden" class="roption" value="' + item_option + '">' +
+				'<input name="part_no[]" type="hidden" class="rpart_no" value="' + item_supplier_part_no + '">' +
+				'<input name="rsupplier_id[]" type="hidden" class="rsupplier_id" value="' + supplier_id + '">' +
+				'<input name="piece[]" type="hidden" class="piece" value="' + piece + '">' +
+				'<input name="ucost_t[]" type="hidden" class="ucost_t" value="' + ucost_t + '">' +
+				'<input name="wpiece[]" type="hidden" class="wpiece" value="' + wpiece + '">' +
+				'<span class="sname" id="name_' + row_no + '">' + item_name + ' (' + item_code + ')'+(sel_opt != '' ? ' ('+sel_opt+')' : '')+' <span class="">'+ supplier_name +'</span><span class="label label-default">'+item_supplier_part_no+'</span></span> <i class="pull-right fa fa-edit tip edit" id="' + row_no + '" data-item="' + item_id + '" title="Edit" style="cursor:pointer;"></i></td>';
 
             if (site.settings.product_expiry == 1){
                 tr_html += '<td><input class="form-control date rexpiry" name="expiry[]" type="text" value="' + item_expiry + '" data-id="' + row_no + '" data-item="' + item_id + '" id="expiry_' + row_no + '"></td>';
@@ -1234,9 +1269,15 @@ function loadItems() {
 
             /* Unit Cost */
 			if(owner || admin || purchase_cost) {
-				tr_html += '<td class="text-right"><input class="form-control text-center sp" name="serial[]" type="hidden" value="' + serial_no + '"><input class="form-control number_only text-center rcost" name="net_cost[]" type="text" id="cost_' + row_no + '" value="' + net_unit_cost + '"><input class="rucost" name="unit_cost[]" type="hidden" value="' + net_unit_cost + '"><input class="realucost" name="real_unit_cost[]" type="hidden" value="' + net_unit_cost + '"><input class="realcost" type="hidden" value="' + item.row.real_cost + '"></td>';
+				tr_html += '<td class="text-right"><input class="form-control text-center sp" name="serial[]" type="hidden" value="' + serial_no + '">' +
+					'<input class="form-control number_only text-center rcost" name="net_cost[]" type="text" id="cost_' + row_no + '" value="' + net_unit_cost + '">' +
+					'<input class="rucost" name="unit_cost[]" type="hidden" value="' + net_unit_cost + '">' +
+					'<input class="realucost" name="real_unit_cost[]" type="hidden" value="' + net_unit_cost + '">' +
+					'<input class="realcost" type="hidden" value="' + item.row.real_cost + '"></td>';
 			} else {
-				tr_html += '<input class="rucost" name="unit_cost[]" type="hidden" value="' + net_unit_cost + '"><input class="realucost" name="real_unit_cost[]" type="hidden" value="' + net_unit_cost + '"><input class="realcost" type="hidden" value="' + item.row.real_cost + '">';
+				tr_html += '<input class="rucost" name="unit_cost[]" type="hidden" value="' + net_unit_cost + '">' +
+					'<input class="realucost" name="real_unit_cost[]" type="hidden" value="' + net_unit_cost + '">' +
+					'<input class="realcost" type="hidden" value="' + item.row.real_cost + '">';
 			}
             /* Unit Cost when user don't have permission*/
             if(owner==null && admin==null && purchase_cost==null){
@@ -1244,7 +1285,8 @@ function loadItems() {
 			}
 
 			if(__getItem('purchase_order_id')){
-				tr_html += '<td><input name="quantity_balance[]" type="hidden" class="rbqty" value="' + item_bqty + '"> <input name="old_quantity[]" type="hidden" class="old_qty" value="' + formatPurDecimal(qty_received) + '">' +
+				tr_html += '<td><input name="quantity_balance[]" type="hidden" class="rbqty" value="' + item_bqty + '"> ' +
+					'<input name="old_quantity[]" type="hidden" class="old_qty" value="' + formatPurDecimal(qty_received) + '">' +
 					'<input class="form-control text-center rquantity number_only" name="quantity[]" type="text" value="' + formatPurDecimal(item_qty) + '" data-id="' + row_no + '" data-item="' + item_id + '" id="quantity_' + row_no + '" readonly onClick="this.select();"></td>';
 			} else {
 				tr_html += '<td><input name="quantity_balance[]" type="hidden" class="rbqty" value="' + item_bqty + '"><input class="form-control text-center rquantity number_only" name="quantity[]" type="text" value="' + formatPurDecimal(item_qty) + '" data-id="' + row_no + '" data-item="' + item_id + '" id="quantity_' + row_no + '" onClick="this.select();"></td>';
@@ -1267,7 +1309,7 @@ function loadItems() {
             }
 
 			/* Sub Total */
-            tr_html += '<td class="text-right"><span class="text-right ssubtotal" id="subtotal_' + row_no + '">' + formatMoney((parseFloat(item_cost) + parseFloat(pr_tax_val)) * (piece - 0)) + '</span></td>';
+            tr_html += '<td class="text-right"><span class="text-right ssubtotal" id="subtotal_' + row_no + '">' + formatMoney((parseFloat(item_cost) + parseFloat(pr_tax_val)) * (item_qty - 0)) + '</span></td>';
 
             tr_html += '<td class="text-center"><i class="fa fa-times tip podel" id="' + row_no + '" title="Remove" style="cursor:pointer;"></i></td>';
 

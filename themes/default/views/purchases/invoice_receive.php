@@ -350,7 +350,7 @@
                         <?= $row->piece?round($row->piece,2):round($row->quantity,2);?>
                     </td>
                     <td style="vertical-align: middle; text-align: right">
-                        <?= $this->erp->formatMoney($row->unit_cost); ?>
+                        <?= $this->erp->formatMoney($row->unitcost_ton); ?>
                     </td>
                     <?php if ($row->item_discount !=0) {?>
                         <td style="vertical-align: middle; text-align: center">
@@ -366,7 +366,7 @@
                         <td style="vertical-align: middle; text-align: center">
                             <?=$this->erp->formatMoney($row->item_tax);?></td>
                     <?php } ?>
-                    <td style="vertical-align: middle; text-align: right"><?= $this->erp->formatMoney($row->subtotal/1000);?>
+                    <td style="vertical-align: middle; text-align: right"><?= $this->erp->formatMoney($row->subtotal);?>
                     </td>
                 </tr>
 

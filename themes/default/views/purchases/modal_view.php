@@ -167,6 +167,7 @@
 
                     <?php $r = 1;
                     $tax_summary = array();
+                   //$this->erp->print_arrays($rows);
                     if (is_array($rows)) {
                         foreach ($rows as $row):
 							if($row->subtotal == 0){
@@ -182,7 +183,7 @@
                                     <?= $row->details ? '<br>' . $row->details : ''; ?>
                                     <?= ($row->expiry && $row->expiry != '0000-00-00') ? '<br>' . $this->erp->hrsd($row->expiry) : ''; ?>
                                 </td>
-                                <td style="width: 80px; text-align:center; vertical-align:middle;"><?= $this->erp->formatQuantity($row->quantity); ?></td>
+                                <td style="width: 80px; text-align:center; vertical-align:middle;"><?= round($row->piece,2); ?></td>
                                 <td style="width: 80px; text-align:center; vertical-align:middle;">
                                     <?=($row->variant ? $row->variant : $row->unit); ?>
                                 </td>
@@ -192,7 +193,7 @@
 									}
                                 ?>
                                 <?php if($Owner || $Admin || $GP['purchases-cost']) {?>
-    								<td style="text-align:right; width:100px;"><?= $this->erp->formatMoney($row->unit_cost); ?></td>
+    								<td style="text-align:right; width:100px;"><?= $this->erp->formatMoney($row->unitcost_ton); ?></td>
                                 <?php } ?>
     							<?php
 									if ($Settings->product_discount) {

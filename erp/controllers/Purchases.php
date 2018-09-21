@@ -2282,6 +2282,7 @@ class Purchases extends MY_Controller
 				$amount 			= array();
 				$qty 				= array();
 				$i 					= sizeof($_POST['product']);
+
 				$sum_same_pro 		= 0;
 				$item_cost 			= 0;
 				for ($r = 0; $r < $i; $r++) {
@@ -2296,10 +2297,12 @@ class Purchases extends MY_Controller
 					$create_id 		= $_POST['create_id'][$r];
 					$p_supplier 	= $_POST['rsupplier_id'][$r];
 					$p_price 		= $_POST['price'][$r];
+
 					$p_type 		= $_POST['type'][$r];
 					$tax_method		= $_POST['tax_method'][$r];
 					$pur_order_id	= $_POST['pur_order_id'][$r];
 					$item_piece		= $_POST['piece'][$r];
+					$ucost_t		= $_POST['ucost_t'][$r];
 					$item_wpiece	= $_POST['wpiece'][$r];
 					$item_option 	= isset($_POST['product_option'][$r]) ? $_POST['product_option'][$r] : NULL;
 
@@ -2429,6 +2432,7 @@ class Purchases extends MY_Controller
 							'product_type' 		=> $p_type,
 							'pur_order_id'		=> $pur_order_id,
 							'piece'				=> $item_piece,
+							'unitcost_ton'				=> $ucost_t,
 							'wpiece'			=> $item_wpiece
 						);
 
@@ -4990,6 +4994,8 @@ class Purchases extends MY_Controller
 					$qty_received 		= $_POST['received'][$r];
 					$tax_method			= $_POST['tax_method'][$r];
 					$item_piece			= $_POST['piece'][$r];
+					$ucost_t			= $_POST['ucost_t	'][$r];
+
 					$item_wpiece		= $_POST['wpiece'][$r];
 					$item_type			= $_POST['type'][$r];
 					$item_option 		= isset($_POST['product_option'][$r]) && $_POST['product_option'][$r] != 'false' ? $_POST['product_option'][$r] : null;
@@ -5157,9 +5163,10 @@ class Purchases extends MY_Controller
 							'supplier_id' 		=> $p_supplier,
 							'old_quantity'		=> $item_details->quantity,
 							'piece'				=> $item_piece,
+							'unitcost_ton'				=> $ucost_t,
 							'wpiece'			=> $item_wpiece
 						);
-
+//$this->erp->print_arrays($products);
 						$total += $subtotal;
 						if($product_details->type != "service") {
 							$stotal += ($subtotal);
@@ -5634,6 +5641,7 @@ class Purchases extends MY_Controller
 						$row->tax_method 		= $item->tax_method;
 						$row->piece				= $item->piece;
 						$row->wpiece 			= $item->wpiece;
+						$row->ucost_t 			= $item->unitcost_ton;
 
     					$test = $this->sales_model->getWP2($item->product_id, $item->warehouse_id);
     					$row->quantity = $test->quantity;

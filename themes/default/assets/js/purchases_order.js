@@ -634,6 +634,16 @@ $(document).on('click', '.podel', function () {
         }
     });
 
+    $(document).on('change','#ucost_t,#wpiece',function(){
+        var ucost_t  = $('#ucost_t').val()-0;
+        var wpiece = $("#wpiece").val()-0;
+
+        if(Number(ucost_t) && Number(wpiece)) {
+            var total  = ((ucost_t*wpiece)/1000);
+            $("#pcost_none").val(formatDecimal(total)).trigger("change");
+        }
+    });
+
 	var previous = "";
     $('#prModal').on('shown.bs.modal', function (e) {
         if($('#poption').select2('val') != '') {
