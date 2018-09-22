@@ -2865,6 +2865,7 @@ class Purchases extends MY_Controller
                     $pr = array();
 					$c = rand(100000, 9999999);
 					foreach ($inv_items as $item) {
+					    //$this->erp->print_arrays($item);
 						$row 				 = $this->site->getProductByID($item->product_id);
 						$row->expiry 		 = (($item->expiry && $item->expiry != '0000-00-00') ? $this->erp->fsd($item->expiry) : '');
 						$row->qty 			 = $item->quantity;
@@ -2883,6 +2884,7 @@ class Purchases extends MY_Controller
 						$row->pur_order_id	 = $item->id;
 						$row->piece			 = $item->piece;
 						$row->wpiece		 = $item->wpiece;
+						$row->ucost_t		 = $item->unitcost_ton;
                         $test                = $this->sales_model->getWP2($row->id, $pur->warehouse_id);
                         if($test->quantity) {
                             $row->quantity = $test->quantity;
@@ -9397,6 +9399,7 @@ class Purchases extends MY_Controller
 					$row->tax_method = $item->tax_method;
 					$row->piece	 	= $item->piece;
 					$row->wpiece 	= $item->wpiece;
+					$row->ucost_t 	= $item->unitcost_ton;
 
 					$pii = $this->purchases_model->getPurcahseItemByPurchaseID($quote_id);
 

@@ -695,7 +695,7 @@ $('#podiscount').focus(function () {
 
 		if(Number(ucost_t) && Number(wpiece)) {
 			var total  = ((ucost_t*wpiece)/1000);
-			$("#pcost_none").val(formatDecimal(total)).trigger("change");
+			$("#pcost_none").val(total).trigger("change");
 		}
 	});
 

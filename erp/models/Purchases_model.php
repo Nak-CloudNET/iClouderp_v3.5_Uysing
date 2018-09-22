@@ -861,6 +861,7 @@ class Purchases_model extends CI_Model
 							products.name as pname, 
 							purchase_order_items.piece,
 							purchase_order_items.wpiece,
+							purchase_order_items.unitcost_ton,
 							product_variants.name as variant,companies.name')
             ->join('products', 'products.id=purchase_order_items.product_id', 'left')
 			->join('companies', 'companies.id=purchase_order_items.supplier_id', 'left')

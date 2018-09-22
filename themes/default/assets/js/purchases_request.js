@@ -612,7 +612,7 @@ $(document).on('click', '.podel', function () {
 
         if(Number(ucost_t) && Number(wpiece)) {
             var total  = ((ucost_t*wpiece)/1000);
-            $("#pcost").val(formatDecimal(total)).trigger("change");
+            $("#pcost").val(total).trigger("change");
         }
     });
 

@@ -335,7 +335,7 @@
                             </td>
 
                             <td style="vertical-align: middle; text-align: center">
-                                <?= $product_unit?$product_unit:$row->unit; ?>
+                                <?= $product_unit?$product_unit:$row->pro_unit; ?>
                             </td>
                             <?php if($total_piece !=0){ ?>
                                 <td style="vertical-align: middle; text-align: center">
