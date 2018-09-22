@@ -811,14 +811,14 @@
                             </div>
                         </div>
                     <?php } ?>
-					<div class="form-group" id="dvpiece">
-                        <label for="piece" id="lbpiece" class="col-sm-4 control-label"><?= lang('piece') ?></label>
+                    <div class="form-group" id="dvpiece">
+                        <label for="pquantity" id="lbpiece" class="col-sm-4 control-label"><?= lang('piece') ?></label>
 
                         <div class="col-sm-8">
-                            <input type="text" class="form-control" id="piece">
+                            <input type="text" class="form-control" id="pquantity">
                         </div>
                     </div>
-					<div class="form-group" id="dvwpiece">
+                    <div class="form-group" id="dvwpiece">
                         <label for="wpiece" class="col-sm-4 control-label"><?= lang('wpiece') ?></label>
 
                         <div class="col-sm-8">
@@ -826,10 +826,10 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="pquantity" class="col-sm-4 control-label"><?= lang('quantity') ?></label>
+                        <label for="piece" class="col-sm-4 control-label"><?= lang('quantity'); ?></label>
 
                         <div class="col-sm-8">
-                            <input type="text" class="form-control" id="pquantity">
+                            <input type="text" class="form-control" id="piece">
                         </div>
                     </div>
                     <div class="form-group">
@@ -850,6 +850,12 @@
                         </div>
                     <?php } ?>
 					<?php if($Owner || $Admin || $GP['purchase_order-cost']) {?>
+                        <div class="form-group">
+                            <label for="ucost_t" class="col-sm-4 control-label"><?= lang('Unitcost/Ton'); ?></label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" id="ucost_t" >
+                            </div>
+                        </div>
 						<div class="form-group">
 							<label for="pcost" class="col-sm-4 control-label"><?= lang('unit_cost') ?></label>
 

@@ -4478,6 +4478,7 @@ class Purchases extends MY_Controller
 				$unit_cost_real = $unit_cost;
 				// Price
 				$p_price 		= $_POST['price'][$r];
+				$ucost_t		= $_POST['ucost_t'][$r];
 
                 // Supplier
 				$p_supplier 	= $_POST['rsupplier_id'][$r];
@@ -4629,7 +4630,8 @@ class Purchases extends MY_Controller
 						'price' 			=> $p_price,
                         'supplier_id' 		=> $p_supplier,
 						'piece'				=> $item_piece,
-						'wpiece'			=> $item_wpiece
+						'wpiece'			=> $item_wpiece,
+						'unitcost_ton'			=> $ucost_t
                     );
 					/*if($item_option != 0) {
 						if($item_net_cost == $option_cost){
@@ -4852,6 +4854,7 @@ class Purchases extends MY_Controller
                 $row->tax_rate 			= $item->tax_rate_id;
 				$row->net_cost 			= $item->unit_cost;
 				$row->price 			= $item->price;
+                $row->ucost_t 			= $item->unitcost_ton;
 				$test 					= $this->sales_model->getWP2($item->product_id, $item->warehouse_id);
 				if ($test->quantity) {
                     $row->quantity 		= $test->quantity;
@@ -8950,6 +8953,7 @@ class Purchases extends MY_Controller
                 $real_unit_cost = $_POST['real_unit_cost'][$r];
 
                 $item_quantity 	= $_POST['quantity'][$r];
+                $ucost_t 	= $_POST['ucost_t'][$r];
 				$serial_no 		= $_POST['serial'][$r];
                 $p_supplier 	= $_POST['rsupplier_id'][$r];
 				$create_id 		= $_POST['create_id'][$r];
@@ -9076,7 +9080,8 @@ class Purchases extends MY_Controller
 						'supplier_id' 		=> $p_supplier?$p_supplier:'',
                         'type'              => $p_type,
 						'piece'				=> $item_piece,
-						'wpiece'			=> $item_wpiece
+						'wpiece'			=> $item_wpiece,
+						'unitcost_ton'			=> $ucost_t
 					);
 
 					$serial[] = array(

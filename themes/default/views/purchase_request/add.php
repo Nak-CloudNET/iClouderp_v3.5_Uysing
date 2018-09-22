@@ -684,6 +684,12 @@
                         </div>
                     <?php } ?>
                     <?php if ($Owner || $Admin || $GP['purchase_request-cost']) { ?>
+                        <div class="form-group">
+                            <label for="ucost_t" class="col-sm-4 control-label"><?= lang('Unitcost/Ton'); ?></label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" id="ucost_t" >
+                            </div>
+                        </div>
                     <div class="form-group">
                         <label for="pcost" class="col-sm-4 control-label"><?= lang('unit_cost') ?></label>
 

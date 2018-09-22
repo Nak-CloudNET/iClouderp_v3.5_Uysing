@@ -512,7 +512,15 @@ $(document).on('click', '.podel', function () {
         unit_cost 		= row.children('.realucost').val(),
         discount 		= row.children().children('.rdiscount').val(),
         supplier 		= row.children().children('.rsupplier_id').val();
-		tax_method 		= row.children().children('.tax_method').val();
+        //alert(ucost_t);
+        if(row.children().children('.ucost_t').val()===NaN || row.children().children('.ucost_t').val()===undefined )
+        {
+            var ucost_t = 0;
+        }else {
+            var ucost_t = row.children().children('.ucost_t').val();
+        }
+
+        tax_method 		= row.children().children('.tax_method').val();
         var net_cost 	= unit_cost;
         $('#prModalLabel').text(item.row.name + ' (' + item.row.code + ')');
 		var code 		= item.row.code;
@@ -602,6 +610,7 @@ $(document).on('click', '.podel', function () {
         $('#pquantity').val(qty);
         $('#old_qty').val(qty);
         $('#pcost').val(unit_cost);
+        $('#ucost_t').val(formatDecimal(item.row.ucost_t === NaN || item.row.ucost_t === undefined ? 0 :  item.row.ucost_t));
 		$('#pcost_none').val(formatDecimal(unit_cost));
 		$('#tax_method').select2('val', tax_method);
         $('#punit_cost').val(formatPurDecimal(parseFloat(unit_cost)+parseFloat(pr_tax_val)));
@@ -823,6 +832,7 @@ $(document).on('click', '.podel', function () {
 		});
 		
 		poitems[item_id].row.piece 		= $("#piece").val()-0;
+         poitems[item_id].row.ucost_t 		= $("#ucost_t").val()-0;
 		poitems[item_id].row.wpiece 	= $("#wpiece").val()-0;
         poitems[item_id].row.qty 		= parseFloat($('#pquantity').val()),
         poitems[item_id].row.real_unit_cost = parseFloat($('#pcost').val()),
@@ -1024,7 +1034,7 @@ function loadItems() {
 		if(__getItem('pur_ref')){
 			$('#posupplier').select2("readonly", true);
 		}
-		//console.log(poitems);
+		console.log(poitems);
         $.each(poitems, function () {
             $('#slbiller').select2("readonly", true);
             var item = this;
@@ -1043,11 +1053,12 @@ function loadItems() {
 			item_discount 	= 0, 
 			item_option 	= item.row.option, 
 			piece			= item.row.piece,
+			ucost_t 		=item.row.ucost_t,
 			wpiece			= item.row.wpiece,
 			item_code 		= item.row.code, 
 			item_name 		= item.row.name, 
 			serial_no 		= item.row.serial;
-
+//alert(ucost_t);
 			if(product_id){		
             var qty_received = (item.row.received >= 0) ? item.row.received : item.row.qty;
             var item_supplier_part_no = item.row.supplier_part_no ? item.row.supplier_part_no : '';
@@ -1170,7 +1181,17 @@ function loadItems() {
             var newTr = $('<tr id="row_' + row_no + '" class="row_' + item_id + '" data-item-id="' + item_id + '"></tr>');
 			tr_html = '<td class="text-right"><span class="text-center">#'+ no_ +'<input name="create_id[]" type="hidden" class="create_id" value="' + create_id + '"><input type="hidden" class="count" value="' + item_id + '"><input name="create_request_id[]" type="hidden" class="create_request_id" value="' + create_request_id + '"></td>';
 			
-            tr_html += '<td><input name="product_id[]" type="hidden" class="rid" value="' + product_id + '"><input name="product[]" type="hidden" class="rcode" value="' + item_code + '"><input name="product_name[]" type="hidden" class="rname" value="' + item_name + '"><input name="type[]" type="hidden" class="rtype" value="' + type + '"><input type="hidden" name="tax_method[]" class="tax_method" value="' + item_tax_method + '" /><input name="product_option[]" type="hidden" class="roption" value="' + item_option + '"><input name="part_no[]" type="hidden" class="rpart_no" value="' + item_supplier_part_no + '"><input name="rsupplier_id[]" type="hidden" class="rsupplier_id" value="' + supplier_id + '"><input name="piece[]" type="hidden" class="piece" value="' + piece + '"><input name="wpiece[]" type="hidden" class="wpiece" value="' + wpiece + '"><span class="sname" id="name_' + row_no + '">' + item_name + ' (' + item_code + ')'+(sel_opt != '' ? ' ('+sel_opt+')' : '')+' <span class="">'+ supplier_name +'</span><span class="label label-default">'+item_supplier_part_no+'</span></span> <i class="pull-right fa fa-edit tip edit" id="' + row_no + '" data-item="' + item_id + '" title="Edit" style="cursor:pointer;"></i></td>';
+            tr_html += '<td><input name="product_id[]" type="hidden" class="rid" value="' + product_id + '">' +
+				'<input name="product[]" type="hidden" class="rcode" value="' + item_code + '">' +
+				'<input name="product_name[]" type="hidden" class="rname" value="' + item_name + '">' +
+				'<input name="type[]" type="hidden" class="rtype" value="' + type + '">' +
+				'<input type="hidden" name="tax_method[]" class="tax_method" value="' + item_tax_method + '" />' +
+				'<input name="product_option[]" type="hidden" class="roption" value="' + item_option + '">' +
+				'<input name="part_no[]" type="hidden" class="rpart_no" value="' + item_supplier_part_no + '">' +
+				'<input name="rsupplier_id[]" type="hidden" class="rsupplier_id" value="' + supplier_id + '">' +
+				'<input name="piece[]" type="hidden" class="piece" value="' + piece + '">' +
+                '<input name="ucost_t[]" type="hidden" class="ucost_t" value="' + ucost_t + '">' +
+				'<input name="wpiece[]" type="hidden" class="wpiece" value="' + wpiece + '"><span class="sname" id="name_' + row_no + '">' + item_name + ' (' + item_code + ')'+(sel_opt != '' ? ' ('+sel_opt+')' : '')+' <span class="">'+ supplier_name +'</span><span class="label label-default">'+item_supplier_part_no+'</span></span> <i class="pull-right fa fa-edit tip edit" id="' + row_no + '" data-item="' + item_id + '" title="Edit" style="cursor:pointer;"></i></td>';
 			
             /*if (site.settings.product_expiry == 1){
                 tr_html += '<td><input class="form-control date rexpiry" name="expiry[]" type="text" value="' + item_expiry + '" data-id="' + row_no + '" data-item="' + item_id + '" id="expiry_' + row_no + '"></td>';

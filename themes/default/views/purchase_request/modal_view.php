@@ -139,6 +139,7 @@
                     <?php $r = 1;
                     $tax_summary = array();
                     foreach ($rows as $row):
+                        //$this->erp->print_arrays($row);
                     ?>
                         <tr>
                             <td style="text-align:center; width:40px; vertical-align:middle;"><?= $r; ?></td>
@@ -147,7 +148,7 @@
                                 <?= $row->details ? '<br>' . $row->details : ''; ?>
                                 <?= ($row->expiry && $row->expiry != '0000-00-00') ? '<br>' . $this->erp->hrsd($row->expiry) : ''; ?>
                             </td> 
-                            <td style="width: 80px; text-align:center; vertical-align:middle;"><?= $this->erp->formatQuantity($row->quantity); ?></td>
+                            <td style="width: 80px; text-align:center; vertical-align:middle;"><?= round($row->piece,2); ?></td>
                             <td>
                                 <?php if($row->variant){ echo $row->variant;}else{echo $row->pro_unit;}?>
                             </td>
@@ -157,7 +158,7 @@
                             }
                             ?>
                             <?php if($Owner || $Admin || $GP['purchase_request-cost']) {?>
-								<td style="text-align:right; width:100px;"><?= $this->erp->formatMoney($row->unit_cost); ?></td>
+								<td style="text-align:right; width:100px;"><?= $this->erp->formatMoney($row->unitcost_ton); ?></td>
                             <?php } ?>
                             <?php
                             if ($Settings->product_discount) {

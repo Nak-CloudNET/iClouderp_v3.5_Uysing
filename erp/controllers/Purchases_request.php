@@ -546,6 +546,7 @@ class Purchases_request extends MY_Controller
                 $item_quantity  = $_POST['quantity'][$r];
 				
 				$serial_no  	= $_POST['serial'][$r];
+				$ucost_t  	= $_POST['ucost_t'][$r];
                 $p_supplier 	= $_POST['rsupplier_id'][$r];
 				$p_price    	= $_POST['price'][$r];
                 $p_type     	= $_POST['type'][$r];
@@ -680,7 +681,8 @@ class Purchases_request extends MY_Controller
 						'note' 				=> $pro_note,
 						'type' 				=> $p_type,
 						'piece'				=> $item_peice,
-						'wpiece' 			=> $item_wpeice
+						'wpiece' 			=> $item_wpeice,
+						'unitcost_ton' 			=> $ucost_t
 					);
 					
 					$serial[] = array(
@@ -846,6 +848,7 @@ class Purchases_request extends MY_Controller
                         $row->code = $item->product_code;
                         $row->name = $item->product_name;
                         $row->qty = $item->quantity;
+                        $row->ucost_t = $item->unitcost_ton;
                         $row->option = $item->option_id;
                         $row->discount = $item->discount ? $item->discount : '0';
                         $row->cost = $row->cost ? $row->cost : 0;
@@ -960,7 +963,8 @@ class Purchases_request extends MY_Controller
 				$unit_cost_real = $unit_cost;
                 $real_unit_cost = $_POST['real_unit_cost'][$r];
                 $item_quantity 	= $_POST['quantity'][$r];
-				
+                $ucost_t 	= $_POST['ucost_t'][$r];
+
 				$serial_no 		= isset($_POST['serial'][$r])?$_POST['serial'][$r]:null;
                 $p_supplier 	= $_POST['rsupplier_id'][$r];
 				$p_price 		= isset($_POST['price'][$r])?$_POST['price'][$r]:0;
@@ -1096,9 +1100,9 @@ class Purchases_request extends MY_Controller
 						'supplier_id' 		=> $p_supplier,
 						'type' 				=> $p_type,
 						'piece'				=> $item_peice,
-						'wpiece'			=> $item_wpeice
+						'wpiece'			=> $item_wpeice,
+						'unitcost_ton'			=> $ucost_t
 					);
-					
 					$serial[] = array(
 						'product_id'    => $product_details->id,
 						'serial_number' => $serial_no,
@@ -1251,7 +1255,8 @@ class Purchases_request extends MY_Controller
 						$row->tax_method = $item->tax_method;
 						$row->piece		= $item->piece;
 						$row->wpiece	= $item->wpiece;
-						
+						$row->ucost_t	= $item->unitcost_ton;
+
 						$pii = $this->purchases_model->getPurcahseItemByPurchaseID($id);
 						
 						unset($row->details, $row->product_details, $row->file, $row->product_group_id);

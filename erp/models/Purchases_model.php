@@ -803,6 +803,7 @@ class Purchases_model extends CI_Model
 							purchase_order_items.tax_method,
 							purchase_order_items.piece,
 							purchase_order_items.wpiece,
+							purchase_order_items.unitcost_ton,
 							purchase_order_items.price,purchase_order_items.create_id, tax_rates.code as tax_code, tax_rates.name as tax_name, tax_rates.rate as tax_rate, units.name as unit, products.details as details,products.image,products.name as pname, product_variants.name as variant,companies.name')
             ->join('products', 'products.id=purchase_order_items.product_id', 'left')
             ->join('units', 'products.unit = units.id', 'left')
