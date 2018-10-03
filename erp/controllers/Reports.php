@@ -1,3 +1,4 @@
+
 <?php defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Reports extends MY_Controller
@@ -123,6 +124,7 @@ class Reports extends MY_Controller
 		
         echo $this->datatables->generate();
     }
+
 	function profit_chart()
     {
         $this->erp->checkPermissions('profit',NULL,'chart_report');
@@ -5187,6 +5189,7 @@ class Reports extends MY_Controller
         $this->page_construct('reports/sales', $meta, $this->data);
     }
 
+
      function getSalesReport($pdf = NULL, $xls = NULL)
     {
         $customer = $this->input->get('customer');  
@@ -5222,6 +5225,11 @@ class Reports extends MY_Controller
             $warehouse = $this->input->get('warehouse');
         } else {
             $warehouse = NULL;
+        }
+        if ($this->input->get('saleman')) {
+            $saleman            = $this->input->get('saleman');
+        } else {
+            $saleman            = NULL;
         }
         if ($this->input->get('reference_no')) {
             $reference_no = $this->input->get('reference_no');
@@ -5421,19 +5429,26 @@ class Reports extends MY_Controller
             $this->datatables
                 ->select($this->db->dbprefix('sales').".id as id, 
 				".$this->db->dbprefix('sales').".date,
+				
 				".$this->db->dbprefix('payments').".date as pdate,
-				".$this->db->dbprefix('sales').".reference_no, biller.company, ".$this->db->dbprefix('sales').".customer, 
-										sale_status, ".$this->db->dbprefix('sales').".grand_total,  
+				".$this->db->dbprefix('sales').".reference_no, biller.company, 
+				".$this->db->dbprefix('sales').".customer,
+				".$this->db->dbprefix('users').".username,
+				".$this->db->dbprefix('sales').".sale_status,
+										
+				".$this->db->dbprefix('sales').".grand_total,  
 										COALESCE((SELECT SUM(erp_return_sales.grand_total) FROM erp_return_sales WHERE erp_return_sales.sale_id = erp_sales.id), 0) as return_sale,
 										COALESCE((SELECT SUM(IF((erp_payments.paid_by != 'deposit' AND ISNULL(erp_payments.return_id)), erp_payments.amount, IF(NOT ISNULL(erp_payments.return_id), ((-1)*erp_payments.amount), 0))) FROM erp_payments WHERE erp_payments.sale_id = erp_sales.id),0) as paid, 
 										COALESCE((SELECT SUM(IF(erp_payments.paid_by = 'deposit', erp_payments.amount, 0)) FROM erp_payments WHERE erp_payments.sale_id = erp_sales.id), 0) as deposit,
 										COALESCE((SELECT SUM(erp_payments.discount) FROM erp_payments WHERE erp_payments.sale_id = erp_sales.id), 0) as discount, 
-										(".$this->db->dbprefix('sales').".grand_total - COALESCE((SELECT SUM(erp_return_sales.grand_total) FROM erp_return_sales WHERE erp_return_sales.sale_id = erp_sales.id), 0) - COALESCE((SELECT SUM(IF((erp_payments.paid_by != 'deposit' AND ISNULL(erp_payments.return_id)), erp_payments.amount, IF(NOT ISNULL(erp_payments.return_id), ((-1)*erp_payments.amount), 0))) FROM erp_payments WHERE erp_payments.sale_id = erp_sales.id),0) - COALESCE((SELECT SUM(IF(erp_payments.paid_by = 'deposit', erp_payments.amount, 0)) FROM erp_payments WHERE erp_payments.sale_id = erp_sales.id), 0) - COALESCE((SELECT SUM(erp_payments.discount) FROM erp_payments WHERE erp_payments.sale_id = erp_sales.id), 0)) as balance, 
+										(
+				".$this->db->dbprefix('sales').".grand_total - COALESCE((SELECT SUM(erp_return_sales.grand_total) FROM erp_return_sales WHERE erp_return_sales.sale_id = erp_sales.id), 0) - COALESCE((SELECT SUM(IF((erp_payments.paid_by != 'deposit' AND ISNULL(erp_payments.return_id)), erp_payments.amount, IF(NOT ISNULL(erp_payments.return_id), ((-1)*erp_payments.amount), 0))) FROM erp_payments WHERE erp_payments.sale_id = erp_sales.id),0) - COALESCE((SELECT SUM(IF(erp_payments.paid_by = 'deposit', erp_payments.amount, 0)) FROM erp_payments WHERE erp_payments.sale_id = erp_sales.id), 0) - COALESCE((SELECT SUM(erp_payments.discount) FROM erp_payments WHERE erp_payments.sale_id = erp_sales.id), 0)) as balance, 
 										sales.payment_status")
                 ->from('sales')
                 ->join('payments', 'payments.sale_id=sales.id', 'left')
                 ->join('erp_return_sales', 'erp_return_sales.sale_id = sales.id', 'left')
                 ->join('companies', 'companies.id=sales.customer_id', 'left')
+                ->join('users', 'users.id = sales.saleman_by', 'left')
                 ->join('companies as erp_biller', 'biller.id = sales.biller_id', 'inner')
                 ->group_by('sales.id');
             
@@ -5459,6 +5474,9 @@ class Reports extends MY_Controller
             }
             if ($customer) {
                 $this->datatables->where('sales.customer_id', $customer);
+            }
+            if($saleman){
+                $this->datatables->where('sales.saleman_by', $saleman);
             }
             if($customer_group){
 			   $this->datatables->where('companies.customer_group_id', $customer_group);                
@@ -12313,7 +12331,7 @@ class Reports extends MY_Controller
                 ->join('users', 'users.id=pos_register.user_id', 'left')
                 ->order_by('date desc');
             //->where('status', 'close');
-			
+
 			if(!$this->Owner && !$this->Admin && $this->session->userdata('view_right') == 0){
 				if ($user) {
 					$this->db->where('pos_register.user_id', $user);
@@ -12429,7 +12447,7 @@ class Reports extends MY_Controller
         } else {
 
             $user_id = $this->session->userdata('user_id');
-            
+
             $this->load->library('datatables');
             $this->datatables
                 ->select("erp_pos_register.id as idd, date, closed_at, CONCAT(" . $this->db->dbprefix('users') . ".first_name, ' ', " . $this->db->dbprefix('users') . ".last_name) as user, cash_in_hand, CONCAT(total_cc_slips, ' (', total_cc_slips_submitted, ')'), CONCAT(total_cheques, ' (', total_cheques_submitted, ')'), CONCAT(total_member_slips, ' (', total_member_slips_submitted, ')'),CONCAT(total_voucher_slips, ' (', total_voucher_slips_submitted, ')'), CONCAT(total_cash, ' (', total_cash_submitted, ')'), pos_register.note", FALSE)
@@ -12447,11 +12465,8 @@ class Reports extends MY_Controller
             }
 
             echo $this->datatables->generate();
-
         }
-
     }
-	
 	function view_sale_detail($product_code = NULL)
     {		
         $this->erp->checkPermissions('product', false, 'product_report');
@@ -13182,15 +13197,15 @@ class Reports extends MY_Controller
 
         if(!$this->Owner && !$this->Admin) {
             if($user->biller_id){
-                $billers = $this->site->getCompanyByArray($user->biller_id);
+                $this->data['billers'] = $this->site->getCompanyByArray($user->biller_id);
             }else{
-                $billers = $this->site->getAllCompanies('biller');
+                $this->data['billers'] = $this->site->getAllCompanies('biller');
             }
         }else{
-            $billers = $this->site->getAllCompanies('biller', $biller_id, $xls);
+            $this->data['billers'] = $this->site->getAllCompanies('biller');
         }
 
-        $this->data['billers'] = $billers;
+
         $this->data['start'] = urldecode($start_date);
         $this->data['end'] = urldecode($end_date);
         $totalBeforeAyear = date('Y', strtotime($this->data['start'])) - 1;
@@ -13202,11 +13217,11 @@ class Reports extends MY_Controller
         $this->data['from_date'] = $from_date;
         $this->data['to_date'] = $to_date;
 
-        $dataIncome = $this->accounts_model->getStatementByBalaneSheetDate('40,70',$from_date,$to_date,$biller_id);
+        $dataIncome = $this->accounts_model->getStatementByBalaneSheetDated('40,70',$from_date,$to_date,$biller_id);
 
-        $dataCost = $this->accounts_model->getStatementByBalaneSheetDate('50',$from_date,$to_date,$biller_id);
-        $dataExpense = $this->accounts_model->getStatementByBalaneSheetDate('60,80,90',$from_date,$to_date,$biller_id);
-        $IncomeData = $this->accounts_model->getStatementByBalaneSheetDate('40,70',$from_date,$to_date,$biller_id);
+        $dataCost = $this->accounts_model->getStatementByBalaneSheetDated('50',$from_date,$to_date,$biller_id);
+        $dataExpense = $this->accounts_model->getStatementByBalaneSheetDated('60,80,90',$from_date,$to_date,$biller_id);
+        $IncomeData = $this->accounts_model->getStatementByBalaneSheetDated('40,70',$from_date,$to_date,$biller_id);
         $this->data['totalBeforeAyear'] = $totalBeforeAyear;
         $this->data['dataIncome'] = $dataIncome;
         $this->data['dataCost'] = $dataCost;
@@ -14076,38 +14091,36 @@ class Reports extends MY_Controller
             $end = $this->db->escape(urldecode($end_date));
         }
 		$user = $this->site->getUser();
-        if ($biller_id != NULL) {
+        if($biller_id != NULL){
             $this->data['biller_id_no_sep'] = $biller_id;
             $biller_sep = explode('-', $biller_id);
 
             $bills = '';
-            for ($i = 0; $i < count($biller_sep); $i++) {
+            for($i=0; $i < count($biller_sep); $i++){
                 $bills .= $biller_sep[$i] . ',';
             }
-            $biller_id = rtrim($bills, ',');
+            $biller_id =  rtrim($bills, ',');
+
             $this->data['biller_id'] = $biller_id;
-        } else {
-            if ($user->biller_id) {
-                $this->data['biller_id'] = $user->biller_id;
-                $biller_id = $user->biller_id;
-            } else {
+        }else{
+            if($user->biller_id){
+                $this->data['biller_id'] = json_decode($user->biller_id);
+                $biller_id = json_decode($user->biller_id);
+
+            }else{
                 $this->data['biller_id'] = "";
             }
         }
-		if(!$this->Owner && !$this->Admin) {
-			if($user->biller_id){
-                $billers = $this->site->getCompanyByArray($user->biller_id);
-				$this->data['billers'] = $this->site->getCompanyByArray(json_decode($user->biller_id));
-			}else{
-                $billers = $this->site->getAllCompanies('biller');
-				$this->data['billers'] = $this->site->getAllCompanies('biller');
-			}
-		}else{
-            $billers = $this->site->getAllCompanies('biller', $biller_id, $xls);
-			$this->data['billers'] = $this->site->getAllCompanies('biller');
-		}
+        if(!$this->Owner && !$this->Admin) {
+            if($user->biller_id){
+                $this->data['billers'] = $this->site->getCompanyByArray(json_decode($user->biller_id));
+            }else{
+                $this->data['billers'] = $this->site->getAllCompanies('biller');
+            }
+        }else{
+            $this->data['billers'] = $this->site->getAllCompanies('biller');
+        }
 
-        $this->data['billers'] = $billers;
 		$this->data['start'] = urldecode($start_date);
         $this->data['end'] = urldecode($end_date);
 		
@@ -15024,16 +15037,22 @@ class Reports extends MY_Controller
 		
         $this->page_construct('reports/income_statement_detail', $meta, $this->data);
 	}
-	
-	function balance_sheet($start_date = NULL, $end_date = NULL, $pdf = NULL, $xls = NULL, $biller_id = NULL)
+
+    function balance_sheet($start_date = NULL, $end_date = NULL, $pdf = NULL, $xls = NULL, $biller_id = NULL)
     {
-		$this->erp->checkPermissions('balance_sheet',NULL,'account_report');
-		$user = $this->site->getUser();
-		if (!$start_date) {
-            $start = $this->db->escape(date('Y-m') . '-1');
-			$start_date = date('Y-m') . '-1';
+        $this->erp->checkPermissions('balance_sheet',NULL,'account_report');
+        $user = $this->site->getUser();
+        if ($this->input->post('start_date')) {
+            $start_date = $this->input->post('start_date');
+            $start=explode('/',$start_date);
+            $start['0']; $start['1']; $start['2'];
+            $st=$start['2']."-".$start['1']."-".$start['0'];
+
         } else {
-            $start = $this->db->escape(urldecode($start_date));
+            $st =$start_date;
+        }
+        if($start_date==''){
+            $start_date=date('Y-m-d');
         }
         if (!$end_date) {
             $end = $this->db->escape(date('Y-m-t 23:59'));
@@ -15041,84 +15060,85 @@ class Reports extends MY_Controller
         } else {
             $end = $this->db->escape(urldecode($end_date));
         }
-		
-		if($biller_id != NULL){
-			
-			$this->data['biller_id_no_sep'] = $biller_id;
-			$biller_sep = explode('-', $biller_id);
-			$this->data['excel_biller_id'] = $biller_id;
-			$bills = '';
-			for($i=0; $i < count($biller_sep); $i++){
-				$bills .= $biller_sep[$i] . ',';
-			}
-			$biller_id =  rtrim($bills, ',');	
-			$this->data['biller_id'] = $biller_id;
-		}else{
-			if($user->biller_id){
-				$this->data['biller_id'] = json_decode($user->biller_id);
-				$biller_id = json_decode($user->biller_id);
-			}else{
-				$biller_id = array();
-				$billers =  $this->site->getAllCompanies('biller');
-				foreach($billers as $biller){
-					$biller_id[] = $biller->id;
-				}
-				$biller_id = implode(',', $biller_id);
-				$this->data['biller_id'] = "";
-			}
-		}
-		if(!$this->Owner && !$this->Admin) {
-			if($user->biller_id){
-				$this->data['billers'] = $this->site->getCompanyByArray($user->biller_id);
-			}else{
-				$this->data['billers'] = $this->site->getAllCompanies('biller');
-			}
-		}else{
-			$this->data['billers'] = $this->site->getAllCompanies('biller');
-		}
-		
-		$this->data['start'] = urldecode($start_date);
+
+        if($biller_id != NULL){
+
+            $this->data['biller_id_no_sep'] = $biller_id;
+            $biller_sep = explode('-', $biller_id);
+            $this->data['excel_biller_id'] = $biller_id;
+            $bills = '';
+            for($i=0; $i < count($biller_sep); $i++){
+                $bills .= $biller_sep[$i] . ',';
+            }
+            $biller_id =  rtrim($bills, ',');
+            $this->data['biller_id'] = $biller_id;
+        }else{
+            if($user->biller_id){
+                $this->data['biller_id'] = json_decode($user->biller_id);
+                $biller_id = json_decode($user->biller_id);
+            }else{
+                $biller_id = array();
+                $billers =  $this->site->getAllCompanies('biller');
+                foreach($billers as $biller){
+                    $biller_id[] = $biller->id;
+                }
+                $biller_id = implode(',', $biller_id);
+                $this->data['biller_id'] = "";
+            }
+        }
+        if(!$this->Owner && !$this->Admin) {
+            if($user->biller_id){
+                $this->data['billers'] = $this->site->getCompanyByArray($user->biller_id);
+            }else{
+                $this->data['billers'] = $this->site->getAllCompanies('biller');
+            }
+        }else{
+            $this->data['billers'] = $this->site->getAllCompanies('biller');
+        }
+
+        $this->data['start'] = urldecode($start_date);
         $this->data['end'] = urldecode($end_date);
-		
+
         $this->data['error'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('error');
-        
+
         $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('reports/balance_sheet')));
         $meta = array('page_title' => lang('balance_sheet'), 'bc' => $bc);
-		$from_date = date('Y-m-d',strtotime(urldecode($start_date)));//'2014-08-01';
-		$to_date = date('Y-m-d',strtotime(urldecode($end_date)));//'2015-09-01'; before, it use in select query.
-		
-		$this->data['from_date'] = $from_date;
-		$this->data['to_date'] = $to_date;
-		
-		$rep_space_end=str_replace(' ','_',urldecode($end_date));
-		$end_dates=str_replace(':','-',$rep_space_end);//replace  $to_date.
-		
-		$totalBeforeAyear = date('Y', strtotime($this->data['start'])) - 1;
+        $from_date = $st;//'2014-08-01';
+        $to_date = date('Y-m-d',strtotime(urldecode($end_date)));//'2015-09-01'; before, it use in select query.
+
+        $this->data['from_date'] = $st;
+        $this->data['to_date'] = $to_date;
+
+        $rep_space_end=str_replace(' ','_',urldecode($end_date));
+        $end_dates=str_replace(':','-',$rep_space_end);//replace  $to_date.
+
+        $totalBeforeAyear = date('Y', strtotime($this->data['start'])) - 1;
 
         $this->data['totalBeforeAyear'] = $totalBeforeAyear;
-		
-		$dataAsset = $this->accounts_model->getStatementByBalaneSheetDate('10,11',$from_date,$to_date,json_decode($biller_id));
-		$this->data['dataAsset'] = $dataAsset;
-		
-		$dataLiability = $this->accounts_model->getStatementByBalaneSheetDate('20,21',$from_date,$to_date,json_decode($biller_id));
-		$this->data['dataLiability'] = $dataLiability;
-		
-		$dataEquity = $this->accounts_model->getStatementByBalaneSheetDate('30',$from_date,$to_date,json_decode($biller_id));
-		$this->data['dataEquity'] = $dataEquity;
-		
-		$dataIncome = $this->accounts_model->getStatementByBalaneSheetDate('40,70',$from_date,$to_date,json_decode($biller_id));
-		$this->data['dataIncome'] = $dataIncome;
-		
-		$dataAllIncome = $this->accounts_model->getStatementBalaneSheetByDateBill('40,70',$from_date,$to_date,json_decode($biller_id));
-		$this->data['dataAllIncome'] = $dataAllIncome;
-		
-		$dataAllExpense = $this->accounts_model->getStatementBalaneSheetByDateBill('50,60,80,90',$from_date,$to_date,json_decode($biller_id));
-		$this->data['dataAllExpense'] = $dataAllExpense;
-		
-		$dataExpense = $this->accounts_model->getStatementByBalaneSheetDate('50,60,80,90',$from_date,$to_date,json_decode($biller_id));
-		$this->data['dataExpense'] = $dataExpense;
-		
-		if ($pdf) {
+
+        $dataAsset = $this->accounts_model->getStatementByBalaneSheetDates('10,11',$from_date,json_decode($biller_id));
+        //$this->erp->print_arrays($dataAsset);
+        $this->data['dataAsset'] = $dataAsset;
+
+        $dataLiability = $this->accounts_model->getStatementByBalaneSheetDates('20,21',$from_date,json_decode($biller_id));
+        $this->data['dataLiability'] = $dataLiability;
+
+        $dataEquity = $this->accounts_model->getStatementByBalaneSheetDates('30',$from_date,json_decode($biller_id));
+        $this->data['dataEquity'] = $dataEquity;
+
+        $dataIncome = $this->accounts_model->getStatementByBalaneSheetDates('40,70',$from_date,json_decode($biller_id));
+        $this->data['dataIncome'] = $dataIncome;
+
+        $dataAllIncome = $this->accounts_model->getStatementBalaneSheetByDateBill('40,70',$from_date,json_decode($biller_id));
+        $this->data['dataAllIncome'] = $dataAllIncome;
+
+        $dataAllExpense = $this->accounts_model->getStatementBalaneSheetByDateBill('50,60,80,90',$from_date,json_decode($biller_id));
+        $this->data['dataAllExpense'] = $dataAllExpense;
+
+        $dataExpense = $this->accounts_model->getStatementByBalaneSheetDate('50,60,80,90',$from_date,json_decode($biller_id));
+        $this->data['dataExpense'] = $dataExpense;
+
+        if ($pdf) {
             $html = $this->load->view($this->theme . 'reports/balance_sheet', $this->data, true);
             $name = lang("balance_sheet") . "_" . date('Y_m_d_H_i_s') . ".pdf";
             $html = str_replace('<p class="introtext">' . lang("reports_balance_text") . '</p>', '', $html);
@@ -15872,23 +15892,23 @@ class Reports extends MY_Controller
         }
 
         $this->page_construct('reports/balance_sheet', $meta, $this->data);
-	}
-	
-	function balance_sheet_details($start_date = NULL, $end_date = NULL, $pdf = NULL, $xls = NULL, $biller_id = NULL)
+    }
+
+    function balance_sheet_details($start_date = NULL, $end_date = NULL, $pdf = NULL, $xls = NULL, $biller_id = NULL)
     {
         $this->erp->checkPermissions('balance_sheet',NULL,'account_report');
-		$user = $this->site->getUser();
-		if (!$start_date) {
-            $start = $this->db->escape(date('Y-m') . '-1');
-			//$gl_ = $this->accounts_model->getGLYearMonth();
-			//if($gl_){
-				//$gl_full = $gl_->min_year . '-' . $gl_->min_month;
-				//$start_date = date('Y-m', strtotime($gl_full)) . '-1';
-			//}else{
-				$start_date = date('Y-m') . '-1';
-			//}
+        $user = $this->site->getUser();
+
+        if ($this->input->post('start_date')) {
+            $start_date = $this->input->post('start_date');
+            $start=explode('/',$start_date);
+            $start['0']; $start['1']; $start['2'];
+            $st=$start['2']."-".$start['1']."-".$start['0'];
         } else {
-            $start = $this->db->escape(urldecode($start_date));
+            $st =$start_date;
+        }
+        if($start_date==''){
+            $start_date=date('Y-m-d');
         }
         if (!$end_date) {
             $end = $this->db->escape(date('Y-m-t 23:59'));
@@ -15896,321 +15916,331 @@ class Reports extends MY_Controller
         } else {
             $end = $this->db->escape(urldecode($end_date));
         }
-		
-		if($biller_id != NULL){
-			$this->data['biller_id_no_sep'] = $biller_id;
-			$biller_sep = explode('-', $biller_id);
-			
-			$bills = '';
-			for($i=0; $i < count($biller_sep); $i++){
-				$bills .= $biller_sep[$i] . ',';
-			}
-			$biller_id =  rtrim($bills, ',');
 
-			$this->data['biller_id'] = $biller_id;
-		}else{
-			if($user->biller_id){
-				$this->data['biller_id'] = json_decode($user->biller_id);
-				$biller_id = json_decode($user->biller_id);
-				
-			}else{
-				$this->data['biller_id'] = "";
-			}
-		}
-		if(!$this->Owner && !$this->Admin) {
-			if($user->biller_id){
-				$this->data['billers'] = $this->site->getCompanyByArray(json_decode($user->biller_id));
-			}else{
-				$this->data['billers'] = $this->site->getAllCompanies('biller');
-			}
-		}else{
-			$this->data['billers'] = $this->site->getAllCompanies('biller');
-		}
-		
-		$this->data['start'] = urldecode($start_date);
+        if($biller_id != NULL){
+            $this->data['biller_id_no_sep'] = $biller_id;
+            $biller_sep = explode('-', $biller_id);
+
+            $bills = '';
+            for($i=0; $i < count($biller_sep); $i++){
+                $bills .= $biller_sep[$i] . ',';
+            }
+            $biller_id =  rtrim($bills, ',');
+
+            $this->data['biller_id'] = $biller_id;
+        }else{
+            if($user->biller_id){
+                $this->data['biller_id'] = json_decode($user->biller_id);
+                $biller_id = json_decode($user->biller_id);
+
+            }else{
+                $this->data['biller_id'] = "";
+            }
+        }
+        if(!$this->Owner && !$this->Admin) {
+            if($user->biller_id){
+                $this->data['billers'] = $this->site->getCompanyByArray(json_decode($user->biller_id));
+            }else{
+                $this->data['billers'] = $this->site->getAllCompanies('biller');
+            }
+        }else{
+            $this->data['billers'] = $this->site->getAllCompanies('biller');
+        }
+
+        $this->data['start'] = urldecode($start_date);
         $this->data['end'] = urldecode($end_date);
-		
-		$acc_setting = $this->site->get_Acc_setting();
-		$this->data['acc_setting'] = $acc_setting;
+
+        $acc_setting = $this->site->get_Acc_setting();
+        $this->data['acc_setting'] = $acc_setting;
 
         $this->data['error'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('error');
-        
-        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('reports/balance_sheet')));
-        $meta = array('page_title' => lang('balance_sheet'), 'bc' => $bc);
-		$from_date = date('Y-m-d',strtotime(urldecode($start_date)));//'2014-08-01';
-		$to_date = date('Y-m-d',strtotime(urldecode($end_date)));//'2015-09-01'; before, it use in select query.
-		
-		$rep_space_end=str_replace(' ','_',urldecode($end_date));
-		$end_dates=str_replace(':','-',$rep_space_end);//replace  $to_date.
-		
-		$totalBeforeAyear = date('Y', strtotime($this->data['start'])) - 1;
+
+        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('reports/balance_sheet_details')));
+        $meta = array('page_title' => lang('balance_sheet_details'), 'bc' => $bc);
+        $from_date = $st;//'2014-08-01';
+        $to_date = date('Y-m-d',strtotime(urldecode($end_date)));//'2015-09-01'; before, it use in select query.
+
+        $rep_space_end=str_replace(' ','_',urldecode($end_date));
+        $end_dates=str_replace(':','-',$rep_space_end);//replace  $to_date.
+
+        $totalBeforeAyear = date('Y', strtotime($this->data['start'])) - 1;
 
         $this->data['totalBeforeAyear'] = $totalBeforeAyear;
-		$dataAsset = $this->accounts_model->getStatementByDate('10,11',$from_date,$to_date,json_decode($biller_id));
-		$this->data['dataAsset'] = $dataAsset;
-		
-		$dataLiability = $this->accounts_model->getStatementByDate('20,21',$from_date,$to_date,json_decode($biller_id));
-		$this->data['dataLiability'] = $dataLiability;
-		
-		$dataEquity = $this->accounts_model->getStatementByDate('30',$from_date,$to_date,json_decode($biller_id));
-		$this->data['dataEquity'] = $dataEquity;
-		
-		$dataIncome = $this->accounts_model->getStatementByDate('40,70',$from_date,$to_date,json_decode($biller_id));
-		$this->data['dataIncome'] = $dataIncome;
-		
-		$dataAllIncome = $this->accounts_model->getStatementByDateBill('40,70',$from_date,$to_date,json_decode($biller_id));
-		$this->data['dataAllIncome'] = $dataAllIncome;
-		
-		$dataAllExpense = $this->accounts_model->getStatementByDateBill('50,60,80,90',$from_date,$to_date,json_decode($biller_id));
-		$this->data['dataAllExpense'] = $dataAllExpense;
-		
-		$dataExpense = $this->accounts_model->getStatementByDate('50,60,80,90',$from_date,$to_date,json_decode($biller_id));
-		$this->data['dataExpense'] = $dataExpense;
 
-		//$this->data['assetDetails'] = $this->accounts_model->getBalanceSheetDetailByAccCode('10,11',$from_date,$to_date,$biller_id);
+        $assetDetails = $this->accounts_model->getBalanceSheetDetailByAccCodess('', '10,11',$from_date,json_decode($biller_id));
+        $this->data['assetDetails'] = $assetDetails;
 
-		$this->data['from_date'] = $from_date;
-		$this->data['end_dates'] = $to_date;
-		
-		if ($pdf) {
-            $html = $this->load->view($this->theme . 'reports/balance_sheet', $this->data, true);
-            $name = lang("balance_sheet") . "_" . date('Y_m_d_H_i_s') . ".pdf";
+        $libDetails = $this->accounts_model->getBalanceSheetDetailPurByAccCodes('', '20,21',$from_date,json_decode($biller_id));
+        $this->data['libDetails'] = $libDetails;
+
+        $eqDetails = $this->accounts_model->getBalanceSheetDetailByAccCodess('', '30',$from_date,json_decode($biller_id));
+        $this->data['eqDetails'] = $eqDetails;
+
+        $dataAsset = $this->accounts_model->getStatementByDatess('10,11',$from_date,json_decode($biller_id));
+        $this->data['dataAsset'] = $dataAsset;
+
+        $dataLiability = $this->accounts_model->getStatementByDatess('20,21',$from_date,json_decode($biller_id));
+        $this->data['dataLiability'] = $dataLiability;
+
+        $dataEquity = $this->accounts_model->getStatementByDatess('30',$from_date,json_decode($biller_id));
+        $this->data['dataEquity'] = $dataEquity;
+
+        $dataIncome = $this->accounts_model->getStatementByDatess('40,70',$from_date,json_decode($biller_id));
+        $this->data['dataIncome'] = $dataIncome;
+
+        $dataAllIncome = $this->accounts_model->getStatementByDateBilled('40,70',$from_date,json_decode($biller_id));
+        $this->data['dataAllIncome'] = $dataAllIncome;
+
+        $dataAllExpense = $this->accounts_model->getStatementByDateBilled('50,60,80,90',$from_date,json_decode($biller_id));
+        $this->data['dataAllExpense'] = $dataAllExpense;
+
+        $dataExpense = $this->accounts_model->getStatementByDated('50,60,80,90',$from_date,json_decode($biller_id));
+        $this->data['dataExpense'] = $dataExpense;
+
+        //$this->data['assetDetails'] = $this->accounts_model->getBalanceSheetDetailByAccCode('10,11',$from_date,$to_date,$biller_id);
+
+        $this->data['from_date'] = $st;
+        $this->data['end_dates'] = $to_date;
+
+        if ($pdf) {
+            $html = $this->load->view($this->theme . 'reports/balance_sheet_details', $this->data, true);
+            $name = lang("balance_sheet_details") . "_" . date('Y_m_d_H_i_s') . ".pdf";
             $html = str_replace('<p class="introtext">' . lang("reports_balance_text") . '</p>', '', $html);
             $this->erp->generate_pdf($html, $name, null, null, null, null, null, 'L');
         }
-		if($xls){
-			$styleArray = array(
-				'font'  => array(
-					'bold'  => true,
-					'color' => array('rgb' => '000000'),
-					'size'  => 10,
-					'name'  => 'Verdana'
-				)
-			);
-			$bold = array(
-				'font' => array(
-					'bold' => true
-				)
-			);
-			$this->load->library('excel');
-			$this->excel->setActiveSheetIndex(0);
-			$this->excel->getActiveSheet()->getStyle('A1:E1')->applyFromArray($styleArray);
-			$this->excel->getActiveSheet()->setTitle(lang('Balance Sheet'));
-			$this->excel->getActiveSheet()->SetCellValue('A1', lang('account_name'));
-			$this->excel->getActiveSheet()->SetCellValue('B1', lang('debit'));
-			$this->excel->getActiveSheet()->SetCellValue('C1', lang('credit'));
-			$this->excel->getActiveSheet()->SetCellValue('D1', lang("debit") . ' (' . $totalBeforeAyear . ')');
-			$this->excel->getActiveSheet()->SetCellValue('E1', lang("credit") . ' (' . $totalBeforeAyear . ')');
-			
-			$this->excel->getActiveSheet()->getStyle('A2:B2')->applyFromArray($bold);
-			$this->excel->getActiveSheet()->mergeCells('A2:B2')->setCellValue('A2' , lang('asset'));
-			$this->excel->getActiveSheet()->mergeCells('C2:E2');
-			$total_asset = 0;
-			$totalBeforeAyear_asset = 0;
-			$Asset = 3;
-			foreach($dataAsset->result() as $row){
-				$total_asset += $row->amount;
-				$query = $this->db->query("SELECT
+        if($xls){
+            $styleArray = array(
+                'font'  => array(
+                    'bold'  => true,
+                    'color' => array('rgb' => '000000'),
+                    'size'  => 10,
+                    'name'  => 'Verdana'
+                )
+            );
+            $bold = array(
+                'font' => array(
+                    'bold' => true
+                )
+            );
+            $this->load->library('excel');
+            $this->excel->setActiveSheetIndex(0);
+            $this->excel->getActiveSheet()->getStyle('A1:E1')->applyFromArray($styleArray);
+            $this->excel->getActiveSheet()->setTitle(lang('balance_sheet_details'));
+            $this->excel->getActiveSheet()->SetCellValue('A1', lang('account_name'));
+            $this->excel->getActiveSheet()->SetCellValue('B1', lang('debit'));
+            $this->excel->getActiveSheet()->SetCellValue('C1', lang('credit'));
+            $this->excel->getActiveSheet()->SetCellValue('D1', lang("debit") . ' (' . $totalBeforeAyear . ')');
+            $this->excel->getActiveSheet()->SetCellValue('E1', lang("credit") . ' (' . $totalBeforeAyear . ')');
+
+            $this->excel->getActiveSheet()->getStyle('A2:B2')->applyFromArray($bold);
+            $this->excel->getActiveSheet()->mergeCells('A2:B2')->setCellValue('A2' , lang('asset'));
+            $this->excel->getActiveSheet()->mergeCells('C2:E2');
+            $total_asset = 0;
+            $totalBeforeAyear_asset = 0;
+            $Asset = 3;
+            foreach($dataAsset->result() as $row){
+                $total_asset += $row->amount;
+                $query = $this->db->query("SELECT
 				SUM(CASE WHEN erp_gl_trans.amount < 0 THEN erp_gl_trans.amount ELSE 0 END) as NegativeTotal,
 				SUM(CASE WHEN erp_gl_trans.amount >= 0 THEN erp_gl_trans.amount ELSE 0 END) as PostiveTotal
 				FROM
 					erp_gl_trans
 				WHERE
 					DATE(tran_date) = '$totalBeforeAyear' AND account_code = '" . $row->account_code . "';");
-				$totalBeforeAyearRows = $query->row();
-				$totalBeforeAyear_asset += ($totalBeforeAyearRows->NegativeTotal + $totalBeforeAyearRows->PostiveTotal);
-				
-				if ($row->amount>0){
-					$this->excel->getActiveSheet()->SetCellValue('A' . $Asset, $row->account_code.' - '.$row->accountname);
-					$this->excel->getActiveSheet()->SetCellValue('B' . $Asset, number_format(abs($row->amount),2));
-					$this->excel->getActiveSheet()->SetCellValue('C' . $Asset, '');
-					$this->excel->getActiveSheet()->SetCellValue('D' . $Asset, number_format(abs($totalBeforeAyearRows->PostiveTotal),2));
-					$this->excel->getActiveSheet()->SetCellValue('E' . $Asset, '');
-				}else{
-					$this->excel->getActiveSheet()->SetCellValue('A' . $Asset, $row->account_code.' - '.$row->accountname);
-					$this->excel->getActiveSheet()->SetCellValue('B' . $Asset, '');
-					$this->excel->getActiveSheet()->SetCellValue('C' . $Asset, number_format(abs($row->amount),2));
-					$this->excel->getActiveSheet()->SetCellValue('D' . $Asset, '');
-					$this->excel->getActiveSheet()->SetCellValue('E' . $Asset, number_format(abs($totalBeforeAyearRows->NegativeTotal),2));
-				}
-				$Asset++;
-			}
-			
-			$this->excel->getActiveSheet()->getStyle('A3:A'.($Asset-1))->getAlignment()->setIndent(2);
-			
-			$this->excel->getActiveSheet()->getStyle('B'.$Asset.':E'.$Asset)->applyFromArray($bold);
-			$this->excel->getActiveSheet()->SetCellValue('A' . $Asset, lang('total_asset'));
-			$this->excel->getActiveSheet()->SetCellValue('B' . $Asset, number_format(abs($total_asset),2));
-			$this->excel->getActiveSheet()->SetCellValue('C' . $Asset, '');
-			$this->excel->getActiveSheet()->SetCellValue('D' . $Asset,  number_format(abs($totalBeforeAyear_asset),2));
-			$this->excel->getActiveSheet()->SetCellValue('E' . $Asset, '');
-			
-			$eq = $Asset + 1;
-			$this->excel->getActiveSheet()->getStyle('A'.$eq.':B'.$eq)->applyFromArray($bold);
-			$this->excel->getActiveSheet()->mergeCells('A'.$eq.':B'.$eq)->setCellValue('A' . $eq , lang('liabilities'));
-			$this->excel->getActiveSheet()->mergeCells('C'.$eq.':E'.$eq);
-			$total_liability = 0;
-			$totalBeforeAyear_liability = 0;
-			$Liability = $Asset + 2;
-			foreach($dataLiability->result() as $rowlia){
-				$total_liability += $rowlia->amount;
+                $totalBeforeAyearRows = $query->row();
+                $totalBeforeAyear_asset += ($totalBeforeAyearRows->NegativeTotal + $totalBeforeAyearRows->PostiveTotal);
 
-				$query = $this->db->query("SELECT
+                if ($row->amount>0){
+                    $this->excel->getActiveSheet()->SetCellValue('A' . $Asset, $row->account_code.' - '.$row->accountname);
+                    $this->excel->getActiveSheet()->SetCellValue('B' . $Asset, number_format(abs($row->amount),2));
+                    $this->excel->getActiveSheet()->SetCellValue('C' . $Asset, '');
+                    $this->excel->getActiveSheet()->SetCellValue('D' . $Asset, number_format(abs($totalBeforeAyearRows->PostiveTotal),2));
+                    $this->excel->getActiveSheet()->SetCellValue('E' . $Asset, '');
+                }else{
+                    $this->excel->getActiveSheet()->SetCellValue('A' . $Asset, $row->account_code.' - '.$row->accountname);
+                    $this->excel->getActiveSheet()->SetCellValue('B' . $Asset, '');
+                    $this->excel->getActiveSheet()->SetCellValue('C' . $Asset, number_format(abs($row->amount),2));
+                    $this->excel->getActiveSheet()->SetCellValue('D' . $Asset, '');
+                    $this->excel->getActiveSheet()->SetCellValue('E' . $Asset, number_format(abs($totalBeforeAyearRows->NegativeTotal),2));
+                }
+                $Asset++;
+            }
+
+            $this->excel->getActiveSheet()->getStyle('A3:A'.($Asset-1))->getAlignment()->setIndent(2);
+
+            $this->excel->getActiveSheet()->getStyle('B'.$Asset.':E'.$Asset)->applyFromArray($bold);
+            $this->excel->getActiveSheet()->SetCellValue('A' . $Asset, lang('total_asset'));
+            $this->excel->getActiveSheet()->SetCellValue('B' . $Asset, number_format(abs($total_asset),2));
+            $this->excel->getActiveSheet()->SetCellValue('C' . $Asset, '');
+            $this->excel->getActiveSheet()->SetCellValue('D' . $Asset,  number_format(abs($totalBeforeAyear_asset),2));
+            $this->excel->getActiveSheet()->SetCellValue('E' . $Asset, '');
+
+            $eq = $Asset + 1;
+            $this->excel->getActiveSheet()->getStyle('A'.$eq.':B'.$eq)->applyFromArray($bold);
+            $this->excel->getActiveSheet()->mergeCells('A'.$eq.':B'.$eq)->setCellValue('A' . $eq , lang('liabilities'));
+            $this->excel->getActiveSheet()->mergeCells('C'.$eq.':E'.$eq);
+            $total_liability = 0;
+            $totalBeforeAyear_liability = 0;
+            $Liability = $Asset + 2;
+            foreach($dataLiability->result() as $rowlia){
+                $total_liability += $rowlia->amount;
+
+                $query = $this->db->query("SELECT
 					SUM(CASE WHEN erp_gl_trans.amount < 0 THEN erp_gl_trans.amount ELSE 0 END) as NegativeTotal,
 					SUM(CASE WHEN erp_gl_trans.amount >= 0 THEN erp_gl_trans.amount ELSE 0 END) as PostiveTotal
 					FROM
 						erp_gl_trans
 					WHERE
 						DATE(tran_date) = '$totalBeforeAyear' AND account_code = '" . $rowlia->account_code . "';");
-				$totalBeforeAyearRows = $query->row();
-				$totalBeforeAyear_liability += ($totalBeforeAyearRows->NegativeTotal + $totalBeforeAyearRows->PostiveTotal);
-				if ($rowlia->amount>0){
-					$this->excel->getActiveSheet()->SetCellValue('A' . $Liability, $rowlia->account_code.' - '.$rowlia->accountname);
-					$this->excel->getActiveSheet()->SetCellValue('B' . $Liability, number_format(abs($rowlia->amount),2));
-					$this->excel->getActiveSheet()->SetCellValue('C' . $Liability, '');
-					$this->excel->getActiveSheet()->SetCellValue('D' . $Liability, number_format(abs($totalBeforeAyearRows->PostiveTotal),2));
-					$this->excel->getActiveSheet()->SetCellValue('E' . $Liability, '');
-				}else{
-					$this->excel->getActiveSheet()->SetCellValue('A' . $Liability, $rowlia->account_code.' - '.$rowlia->accountname);
-					$this->excel->getActiveSheet()->SetCellValue('B' . $Liability, '');
-					$this->excel->getActiveSheet()->SetCellValue('C' . $Liability, number_format(abs($rowlia->amount),2));
-					$this->excel->getActiveSheet()->SetCellValue('D' . $Liability, '');
-					$this->excel->getActiveSheet()->SetCellValue('E' . $Liability, number_format(abs($totalBeforeAyearRows->NegativeTotal),2));
-				}
-				$Liability++;
-			}
-			
-			$this->excel->getActiveSheet()->getStyle('A'.($Asset+2).':A'.($Liability-1))->getAlignment()->setIndent(2);
-			$this->excel->getActiveSheet()->getStyle('B'.$Liability.':E'.$Liability)->applyFromArray($bold);
-			$this->excel->getActiveSheet()->SetCellValue('A' . $Liability, lang('total_liabilities'));
-			$this->excel->getActiveSheet()->SetCellValue('B' . $Liability, '');
-			$this->excel->getActiveSheet()->SetCellValue('C' . $Liability, number_format(abs($total_liability),2));
-			$this->excel->getActiveSheet()->SetCellValue('D' . $Liability, '');
-			$this->excel->getActiveSheet()->SetCellValue('E' . $Liability, number_format(abs($totalBeforeAyear_liability),2));
-			
-			$equ = $Liability + 1;
-			$this->excel->getActiveSheet()->getStyle('A'.$equ.':B'.$equ)->applyFromArray($bold);
-			$this->excel->getActiveSheet()->mergeCells('A'.$equ.':B'.$equ)->setCellValue('A' . $equ , lang('equities'));
-			$this->excel->getActiveSheet()->mergeCells('C'.$equ.':E'.$equ);
-			$total_income = 0;
-			$total_expense = 0;
-			$total_returned = 0;
-			$equities = $Liability + 2;
-			$total_income_beforeAyear = 0;
-			$total_expense_beforeAyear = 0;
-			$total_returned_beforeAyear = 0;
-			$queryIncom = $this->db->query("SELECT sum(erp_gl_trans.amount) AS amount FROM
+                $totalBeforeAyearRows = $query->row();
+                $totalBeforeAyear_liability += ($totalBeforeAyearRows->NegativeTotal + $totalBeforeAyearRows->PostiveTotal);
+                if ($rowlia->amount>0){
+                    $this->excel->getActiveSheet()->SetCellValue('A' . $Liability, $rowlia->account_code.' - '.$rowlia->accountname);
+                    $this->excel->getActiveSheet()->SetCellValue('B' . $Liability, number_format(abs($rowlia->amount),2));
+                    $this->excel->getActiveSheet()->SetCellValue('C' . $Liability, '');
+                    $this->excel->getActiveSheet()->SetCellValue('D' . $Liability, number_format(abs($totalBeforeAyearRows->PostiveTotal),2));
+                    $this->excel->getActiveSheet()->SetCellValue('E' . $Liability, '');
+                }else{
+                    $this->excel->getActiveSheet()->SetCellValue('A' . $Liability, $rowlia->account_code.' - '.$rowlia->accountname);
+                    $this->excel->getActiveSheet()->SetCellValue('B' . $Liability, '');
+                    $this->excel->getActiveSheet()->SetCellValue('C' . $Liability, number_format(abs($rowlia->amount),2));
+                    $this->excel->getActiveSheet()->SetCellValue('D' . $Liability, '');
+                    $this->excel->getActiveSheet()->SetCellValue('E' . $Liability, number_format(abs($totalBeforeAyearRows->NegativeTotal),2));
+                }
+                $Liability++;
+            }
+
+            $this->excel->getActiveSheet()->getStyle('A'.($Asset+2).':A'.($Liability-1))->getAlignment()->setIndent(2);
+            $this->excel->getActiveSheet()->getStyle('B'.$Liability.':E'.$Liability)->applyFromArray($bold);
+            $this->excel->getActiveSheet()->SetCellValue('A' . $Liability, lang('total_liabilities'));
+            $this->excel->getActiveSheet()->SetCellValue('B' . $Liability, '');
+            $this->excel->getActiveSheet()->SetCellValue('C' . $Liability, number_format(abs($total_liability),2));
+            $this->excel->getActiveSheet()->SetCellValue('D' . $Liability, '');
+            $this->excel->getActiveSheet()->SetCellValue('E' . $Liability, number_format(abs($totalBeforeAyear_liability),2));
+
+            $equ = $Liability + 1;
+            $this->excel->getActiveSheet()->getStyle('A'.$equ.':B'.$equ)->applyFromArray($bold);
+            $this->excel->getActiveSheet()->mergeCells('A'.$equ.':B'.$equ)->setCellValue('A' . $equ , lang('equities'));
+            $this->excel->getActiveSheet()->mergeCells('C'.$equ.':E'.$equ);
+            $total_income = 0;
+            $total_expense = 0;
+            $total_returned = 0;
+            $equities = $Liability + 2;
+            $total_income_beforeAyear = 0;
+            $total_expense_beforeAyear = 0;
+            $total_returned_beforeAyear = 0;
+            $queryIncom = $this->db->query("SELECT sum(erp_gl_trans.amount) AS amount FROM
 										erp_gl_trans
 									INNER JOIN erp_gl_charts ON erp_gl_charts.accountcode = erp_gl_trans.account_code
 									WHERE DATE(tran_date) = '$totalBeforeAyear' AND	erp_gl_trans.sectionid IN ('40,70') GROUP BY erp_gl_trans.account_code;");
-			$total_income_beforeAyear = $queryIncom->amount;
+            $total_income_beforeAyear = $queryIncom->amount;
 
-			$queryExpense = $this->db->query("SELECT sum(erp_gl_trans.amount) AS amount FROM
+            $queryExpense = $this->db->query("SELECT sum(erp_gl_trans.amount) AS amount FROM
 										erp_gl_trans
 									INNER JOIN erp_gl_charts ON erp_gl_charts.accountcode = erp_gl_trans.account_code
 									WHERE DATE(tran_date) = '$totalBeforeAyear' AND	erp_gl_trans.sectionid IN ('50,60,80,90') GROUP BY erp_gl_trans.account_code;");
-			$total_expense_beforeAyear = $queryExpense->amount;
+            $total_expense_beforeAyear = $queryExpense->amount;
 
-			$total_returned_beforeAyear = abs($total_income_beforeAyear)-abs($total_expense_beforeAyear);
+            $total_returned_beforeAyear = abs($total_income_beforeAyear)-abs($total_expense_beforeAyear);
 
-			foreach($dataIncome->result() as $rowincome){
-				$total_income += $rowincome->amount;
-			}
-			foreach($dataExpense->result() as $rowexpense){
-				$total_expense += $rowexpense->amount;
-			}
-			$total_returned = abs($total_income)-abs($total_expense);
-			$this->excel->getActiveSheet()->SetCellValue('A' . $equities, '300000 - Retained Earnings');
-			if($total_returned<0) {
-				$this->excel->getActiveSheet()->SetCellValue('B' . $equities, number_format(abs($total_returned),2));
-				$this->excel->getActiveSheet()->SetCellValue('C' . $equities, '');
-				$this->excel->getActiveSheet()->SetCellValue('D' . $equities, number_format($total_returned_beforeAyear,2));
-				$this->excel->getActiveSheet()->SetCellValue('E' . $equities, '');
-			}else{
-				$this->excel->getActiveSheet()->SetCellValue('B' . $equities, '');
-				$this->excel->getActiveSheet()->SetCellValue('C' . $equities, number_format(abs($total_returned),2));
-				$this->excel->getActiveSheet()->SetCellValue('D' . $equities, '');
-				$this->excel->getActiveSheet()->SetCellValue('E' . $equities, number_format($total_returned_beforeAyear,2));
-			}
-			
-			$total_equity = 0;
-			$totalBeforeAyear_equity = 0;
-			$equity = $equities + 1;
-			foreach($dataEquity->result() as $rowequity){
-				$total_equity += $rowequity->amount;
+            foreach($dataIncome->result() as $rowincome){
+                $total_income += $rowincome->amount;
+            }
+            foreach($dataExpense->result() as $rowexpense){
+                $total_expense += $rowexpense->amount;
+            }
+            $total_returned = abs($total_income)-abs($total_expense);
+            $this->excel->getActiveSheet()->SetCellValue('A' . $equities, '300000 - Retained Earnings');
+            if($total_returned<0) {
+                $this->excel->getActiveSheet()->SetCellValue('B' . $equities, number_format(abs($total_returned),2));
+                $this->excel->getActiveSheet()->SetCellValue('C' . $equities, '');
+                $this->excel->getActiveSheet()->SetCellValue('D' . $equities, number_format($total_returned_beforeAyear,2));
+                $this->excel->getActiveSheet()->SetCellValue('E' . $equities, '');
+            }else{
+                $this->excel->getActiveSheet()->SetCellValue('B' . $equities, '');
+                $this->excel->getActiveSheet()->SetCellValue('C' . $equities, number_format(abs($total_returned),2));
+                $this->excel->getActiveSheet()->SetCellValue('D' . $equities, '');
+                $this->excel->getActiveSheet()->SetCellValue('E' . $equities, number_format($total_returned_beforeAyear,2));
+            }
 
-				$query = $this->db->query("SELECT
+            $total_equity = 0;
+            $totalBeforeAyear_equity = 0;
+            $equity = $equities + 1;
+            foreach($dataEquity->result() as $rowequity){
+                $total_equity += $rowequity->amount;
+
+                $query = $this->db->query("SELECT
 					sum(erp_gl_trans.amount) AS amount
 				FROM
 					erp_gl_trans
 				WHERE
 					DATE(tran_date) = '$totalBeforeAyear' AND account_code = '" . $rowequity->account_code . "';");
-				$totalBeforeAyearRows = $query->row();
-				$totalBeforeAyear_equity += $totalBeforeAyearRows->amount;
-				if($rowequity->amount<0) {
-					$this->excel->getActiveSheet()->SetCellValue('A' . $equity, $rowequity->account_code.' - '.$rowequity->accountname);
-					$this->excel->getActiveSheet()->SetCellValue('B' . $equity, '');
-					$this->excel->getActiveSheet()->SetCellValue('C' . $equity, number_format(abs($rowequity->amount),2));
-					$this->excel->getActiveSheet()->SetCellValue('D' . $equity, number_format(abs($totalBeforeAyearRows->amount),2));
-					$this->excel->getActiveSheet()->SetCellValue('E' . $equity, '');
-				}else{
-					$this->excel->getActiveSheet()->SetCellValue('A' . $equity, $rowequity->account_code.' - '.$rowequity->accountname);
-					$this->excel->getActiveSheet()->SetCellValue('B' . $equity, number_format(abs($rowequity->amount),2));
-					$this->excel->getActiveSheet()->SetCellValue('C' . $equity, '');
-					$this->excel->getActiveSheet()->SetCellValue('D' . $equity, number_format(abs($totalBeforeAyearRows->amount),2));
-					$this->excel->getActiveSheet()->SetCellValue('E' . $equity, '');
-				}
-				$equity++;
-			}
-			
-			$this->excel->getActiveSheet()->getStyle('A'.($Liability+2).':A'.($equity-1))->getAlignment()->setIndent(2);
-			
-			$this->excel->getActiveSheet()->getStyle('B'.$equity.':E'.$equity)->applyFromArray($bold);
-			$this->excel->getActiveSheet()->SetCellValue('A' . $equity, lang('total_equities'));
-			$this->excel->getActiveSheet()->SetCellValue('B' . $equity, '');
-			$this->excel->getActiveSheet()->SetCellValue('C' . $equity, number_format(abs($total_equity-$total_returned),2));
-			$this->excel->getActiveSheet()->SetCellValue('D' . $equity,  '');
-			$this->excel->getActiveSheet()->SetCellValue('E' . $equity, number_format(abs($totalBeforeAyear_equity-$total_returned_beforeAyear),2));
-			
-			$totalL = $equity + 1;
-			$this->excel->getActiveSheet()->getStyle('B'.$totalL.':E'.$totalL)->applyFromArray($bold);
-			$this->excel->getActiveSheet()->SetCellValue('A' . $totalL, lang('total_liabilities_equities'));
-			$this->excel->getActiveSheet()->SetCellValue('B' . $totalL, '');
-			$this->excel->getActiveSheet()->SetCellValue('C' . $totalL, number_format(abs($total_equity+$total_liability-$total_returned),2));
-			$this->excel->getActiveSheet()->SetCellValue('D' . $totalL,  '');
-			$this->excel->getActiveSheet()->SetCellValue('E' . $totalL, number_format(abs($totalBeforeAyear_equity+$totalBeforeAyear_liability-$total_returned_beforeAyear),2));
-			
-			$totalA = $totalL + 1;
-			$this->excel->getActiveSheet()->getStyle('A'.$totalA.':E'.$totalA)->applyFromArray($bold);
-			$this->excel->getActiveSheet()->SetCellValue('A' . $totalA, lang('Total ASSET = LIABILITIES + EQUITY'));
-			$this->excel->getActiveSheet()->SetCellValue('B' . $totalA, '');
-			$this->excel->getActiveSheet()->SetCellValue('C' . $totalA, number_format(abs($total_equity+$total_liability-$total_returned)-abs($total_asset),2));
-			$this->excel->getActiveSheet()->SetCellValue('D' . $totalA,  '');
-			$this->excel->getActiveSheet()->SetCellValue('E' . $totalA, number_format(abs($totalBeforeAyear_equity+$totalBeforeAyear_liability+$total_returned_beforeAyear)-abs($totalBeforeAyear_asset),2));
-			
-			
-			$this->excel->getActiveSheet()->getColumnDimension('A')->setWidth(40);
-			$this->excel->getActiveSheet()->getColumnDimension('B')->setWidth(20);
-			$this->excel->getActiveSheet()->getColumnDimension('C')->setWidth(20);
-			$this->excel->getActiveSheet()->getColumnDimension('D')->setWidth(15);
-			$this->excel->getActiveSheet()->getColumnDimension('E')->setWidth(15);
-			$this->excel->getDefaultStyle()->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
-			$filename = 'Balance_Sheet' . date('Y_m_d_H_i_s');
-			if ($xls) {
-				header('Content-Type: application/vnd.ms-excel');
-				header('Content-Disposition: attachment;filename="' . $filename . '.xls"');
-				header('Cache-Control: max-age=0');
+                $totalBeforeAyearRows = $query->row();
+                $totalBeforeAyear_equity += $totalBeforeAyearRows->amount;
+                if($rowequity->amount<0) {
+                    $this->excel->getActiveSheet()->SetCellValue('A' . $equity, $rowequity->account_code.' - '.$rowequity->accountname);
+                    $this->excel->getActiveSheet()->SetCellValue('B' . $equity, '');
+                    $this->excel->getActiveSheet()->SetCellValue('C' . $equity, number_format(abs($rowequity->amount),2));
+                    $this->excel->getActiveSheet()->SetCellValue('D' . $equity, number_format(abs($totalBeforeAyearRows->amount),2));
+                    $this->excel->getActiveSheet()->SetCellValue('E' . $equity, '');
+                }else{
+                    $this->excel->getActiveSheet()->SetCellValue('A' . $equity, $rowequity->account_code.' - '.$rowequity->accountname);
+                    $this->excel->getActiveSheet()->SetCellValue('B' . $equity, number_format(abs($rowequity->amount),2));
+                    $this->excel->getActiveSheet()->SetCellValue('C' . $equity, '');
+                    $this->excel->getActiveSheet()->SetCellValue('D' . $equity, number_format(abs($totalBeforeAyearRows->amount),2));
+                    $this->excel->getActiveSheet()->SetCellValue('E' . $equity, '');
+                }
+                $equity++;
+            }
 
-				$objWriter = PHPExcel_IOFactory::createWriter($this->excel, 'Excel5');
-				return $objWriter->save('php://output');
-			}
+            $this->excel->getActiveSheet()->getStyle('A'.($Liability+2).':A'.($equity-1))->getAlignment()->setIndent(2);
 
-			redirect($_SERVER["HTTP_REFERER"]);	
-		}
+            $this->excel->getActiveSheet()->getStyle('B'.$equity.':E'.$equity)->applyFromArray($bold);
+            $this->excel->getActiveSheet()->SetCellValue('A' . $equity, lang('total_equities'));
+            $this->excel->getActiveSheet()->SetCellValue('B' . $equity, '');
+            $this->excel->getActiveSheet()->SetCellValue('C' . $equity, number_format(abs($total_equity-$total_returned),2));
+            $this->excel->getActiveSheet()->SetCellValue('D' . $equity,  '');
+            $this->excel->getActiveSheet()->SetCellValue('E' . $equity, number_format(abs($totalBeforeAyear_equity-$total_returned_beforeAyear),2));
+
+            $totalL = $equity + 1;
+            $this->excel->getActiveSheet()->getStyle('B'.$totalL.':E'.$totalL)->applyFromArray($bold);
+            $this->excel->getActiveSheet()->SetCellValue('A' . $totalL, lang('total_liabilities_equities'));
+            $this->excel->getActiveSheet()->SetCellValue('B' . $totalL, '');
+            $this->excel->getActiveSheet()->SetCellValue('C' . $totalL, number_format(abs($total_equity+$total_liability-$total_returned),2));
+            $this->excel->getActiveSheet()->SetCellValue('D' . $totalL,  '');
+            $this->excel->getActiveSheet()->SetCellValue('E' . $totalL, number_format(abs($totalBeforeAyear_equity+$totalBeforeAyear_liability-$total_returned_beforeAyear),2));
+
+            $totalA = $totalL + 1;
+            $this->excel->getActiveSheet()->getStyle('A'.$totalA.':E'.$totalA)->applyFromArray($bold);
+            $this->excel->getActiveSheet()->SetCellValue('A' . $totalA, lang('Total ASSET = LIABILITIES + EQUITY'));
+            $this->excel->getActiveSheet()->SetCellValue('B' . $totalA, '');
+            $this->excel->getActiveSheet()->SetCellValue('C' . $totalA, number_format(abs($total_equity+$total_liability-$total_returned)-abs($total_asset),2));
+            $this->excel->getActiveSheet()->SetCellValue('D' . $totalA,  '');
+            $this->excel->getActiveSheet()->SetCellValue('E' . $totalA, number_format(abs($totalBeforeAyear_equity+$totalBeforeAyear_liability+$total_returned_beforeAyear)-abs($totalBeforeAyear_asset),2));
+
+
+            $this->excel->getActiveSheet()->getColumnDimension('A')->setWidth(40);
+            $this->excel->getActiveSheet()->getColumnDimension('B')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('C')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('D')->setWidth(15);
+            $this->excel->getActiveSheet()->getColumnDimension('E')->setWidth(15);
+            $this->excel->getDefaultStyle()->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+            $filename = 'balance_sheet_details' . date('Y_m_d_H_i_s');
+            if ($xls) {
+                header('Content-Type: application/vnd.ms-excel');
+                header('Content-Disposition: attachment;filename="' . $filename . '.xls"');
+                header('Cache-Control: max-age=0');
+
+                $objWriter = PHPExcel_IOFactory::createWriter($this->excel, 'Excel5');
+                return $objWriter->save('php://output');
+            }
+
+            redirect($_SERVER["HTTP_REFERER"]);
+        }
         $this->page_construct('reports/balance_sheet_details', $meta, $this->data);
-	}
-	
-	function trial_balance($start_date = NULL, $end_date = NULL, $pdf= NULL, $xls = NULL, $biller_id = NULL)
+    }
+
+    function trial_balance($start_date = NULL, $end_date = NULL, $pdf= NULL, $xls = NULL, $biller_id = NULL)
     {
         $this->erp->checkPermissions('trail_balance',NULL,'account_report');
 		
@@ -17539,187 +17569,493 @@ class Reports extends MY_Controller
     function cash_books($pdf = NULL,$biller_id = NULL, $xls = NULL)
     {
         $this->erp->checkPermissions('cash_book',NULL,'account_report');
+
         $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
         $this->data['categories'] = $this->site->getAllCategories();
-		$this->data['users'] = $this->reports_model->getStaff();
-        if ($this->input->post('start_date')) {
-            $dt = "From " . $this->input->post('start_date') . " to " . $this->input->post('end_date');
-			$this->data['start_date2'] = $this->erp->fsd($this->input->post('start_date'));
-			
+        $user = $this->site->getUser();
+
+        $start_date = $this->input->get('sd');
+        $end_date = $this->input->get('ed');
+
+        $biller_id = $biller_id ? $biller_id : $this->input->get('biller');
+        $this->data['v_account'] = $this->input->post('account') ? $this->input->post('account') : $this->input->get('account');
+        $this->data['start_date'] = $this->input->post('start_date')? $this->input->post('start_date') : $this->input->get('start_date');
+        $this->data['end_date'] = $this->input->post('end_date') ? $this->input->post('end_date') : $this->input->get('end_date');
+        $this->data['v_form'] = $v_form = "0/0/".$biller_id;
+
+        if($biller_id != NULL){
+            $this->data['biller_id'] = $biller_id;
+        }else{
+            if($user->biller_id){
+                $this->data['biller_id'] = $user->biller_id;
+                $biller_id = $user->biller_id;
+            }else{
+                $this->data['biller_id'] = "";
+            }
+        }
+        if(!$this->Owner && !$this->Admin) {
+            if($user->biller_id){
+                $this->data['billers'] = $this->site->getCompanyByArray($user->biller_id);
+            }else{
+                $this->data['billers'] = $this->site->getAllCompanies('biller');
+            }
+        }else{
+            $this->data['billers'] = $this->site->getAllCompanies('biller');
+        }
+
+        if ($this->input->get('start_date')) {
+            $dt = "From " . $this->input->get('start_date') . " to " . $this->input->get('end_date');
         } else {
-            $dt = "Till " . $this->input->post('end_date');
-			$this->data['start_date2'] = date('Y-m-01');
-			
+            $dt = "Till " . $this->input->get('end_date');
         }
-		if($this->input->post('end_date')){
-			$this->data['end_date2'] = $this->erp->fsd($this->input->post('end_date'));
-		}else{
-			$this->data['end_date2'] =  date('Y-m-t');
-		}
-		if($this->input->post('user')){			
-			$this->data['cashier'] = $this->input->post('user');
-		}else{
-			$this->data['cashier'] = '';
-		}
-		$user = $this->site->getUser();
-		if($biller_id != NULL){
-			$this->data['biller_id'] = $biller_id;
-		}else{
-			if($user->biller_id){
-				$this->data['biller_id'] = $user->biller_id;
-				$biller_id = $user->biller_id;
-			}else{
-				$this->data['biller_id'] = $user->biller_id;
-			}
-		}
-		if(!$this->Owner && !$this->Admin) {
-			if($user->biller_id){
-				$this->data['billers'] = $this->site->getCompanyByArray($user->biller_id);
-			}else{
-				$this->data['billers'] = $this->site->getAllCompanies('biller');
-			}
-		}else{
-			$this->data['billers'] = $this->site->getAllCompanies('biller');
-		}
-		
-		if ($pdf != NULL && $biller_id == NULL) {
-            $html = $this->load->view($this->theme . 'reports/cash_books', $this->data, true);
-            $name = lang("cash_books") . "_" . date('Y_m_d_H_i_s') . ".pdf";
-            $html = str_replace('<p class="introtext">' . lang("reports_cash_books_text") . '</p>', '', $html);
-            $this->erp->generate_pdf($html, $name, null, null, null, null, null, 'L');
+
+        if ($pdf) {
+
+            $ac = $_GET['ac'];
+
+            $styleArray = array(
+                'font'  => array(
+                    'bold'  => true,
+                    'color' => array('rgb' => '#000000'),
+                    'size'  => 10,
+                    'name'  => 'Verdana'
+                )
+
+            );
+
+
+            if($pdf){
+                $styleArray1 = array(
+                    'font' => array(
+                        'bold' => true,
+                        'size' => 15),
+                );
+            }
+
+            $this->load->library('excel');
+            $this->excel->setActiveSheetIndex(0);
+
+            $styleArray10 = array(
+                'font'  => array(
+                    'bold'  => true,
+                    'color' => array('rgb' => '#000000'),
+                    'size'  => 10,
+                    'name'  => 'Verdana'
+                ),
+                'borders' => array(
+                    'allborders' => array('style' => PHPExcel_Style_Border::BORDER_THIN)
+                ),
+            );
+
+            $this->excel->getActiveSheet()->setTitle(lang('ledger'));
+            $this->excel->getActiveSheet()->getStyle('A1:J1')->applyFromArray($styleArray1);
+            $this->excel->getActiveSheet()->getStyle('A2:J2')->applyFromArray($styleArray1);
+            $this->excel->getActiveSheet()->getStyle('A4:J4')->applyFromArray($styleArray10);
+            $this->excel->getActiveSheet()->mergeCells('A1:J1')->setCellValue('A1', lang('general_ledger'));
+            $this->excel->getActiveSheet()->mergeCells('A2:J2')->setCellValue('A2', 'From '.$start_date . ' To '. $end_date);
+            $this->excel->getActiveSheet()->getStyle('A1')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getStyle('A2')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->mergeCells('A3:J3')->setCellValue('A3', '');
+            $this->excel->getActiveSheet()->SetCellValue('A4', lang('Project'));
+            $this->excel->getActiveSheet()->SetCellValue('B4', lang('Type'));
+            $this->excel->getActiveSheet()->SetCellValue('C4', lang('Date'));
+            $this->excel->getActiveSheet()->SetCellValue('D4', lang('Reference'));
+            $this->excel->getActiveSheet()->SetCellValue('E4', lang('Name'));
+            $this->excel->getActiveSheet()->SetCellValue('F4', lang('Description'));
+            $this->excel->getActiveSheet()->SetCellValue('G4', lang('created_by'));
+            $this->excel->getActiveSheet()->SetCellValue('H4', lang('Debit'));
+            $this->excel->getActiveSheet()->SetCellValue('I4', lang('Credit'));
+            $this->excel->getActiveSheet()->SetCellValue('J4', lang('Balacne'));
+            $BoStyle = array(
+                'borders' => array(
+                    'allborders' => array(
+                        'style' => PHPExcel_Style_Border::BORDER_THIN
+                    )
+                )
+            );
+
+            /* $row1=75;
+             $row2=76;
+             $row3=77;*/
+            $accounntCode = $this->db;
+            $accounntCode->select('*')->from('gl_charts');
+            if ($_GET['ac']) {
+                $accounntCode->where('gl_charts.accountcode', $ac);
+            }
+            if ($this->input->get('account') ) {
+                $accounntCode->where('accountcode', $this->input->get('account'));
+            }
+            $acc    = $accounntCode->get()->result();
+            $row    = 5;
+            $rows   = 6;
+            $row1   = 0;
+            $row2   = 0;
+            $row3   = 0;
+            foreach($acc as $val){
+                $gl_tranStart = $this->db->select('sum(amount) as startAmount')->from('gl_trans');
+                $gl_tranStart->where('account_code', $val->accountcode);
+                //if ($start_date) {
+                $gl_tranStart->where('erp_gl_trans.tran_date <', $this->erp->fld($start_date).'00:00:00');
+                //}
+                $startAmount = $gl_tranStart->get()->row();
+
+                $endAccountBalance = 0;
+                $endAccountBalanceMinus = 0;
+                $endAccountCreditBalance = 0;
+                $endAccountDebitBalance = 0;
+                $getListGLTran = $this->db->select("gl_trans.*, companies.company as project, companies.name as cname, users.username as created_by,
+                    (CASE WHEN erp_gl_trans.amount>0 THEN erp_gl_trans.amount END ) as am1,
+                    (CASE WHEN erp_gl_trans.amount<0 THEN erp_gl_trans.amount END ) as am2")
+                    ->from('gl_trans')
+                    ->join('companies', 'gl_trans.biller_id = companies.id', 'left')
+                    ->join('users', 'gl_trans.created_by = users.id', 'left')
+                    ->where('account_code =', $val->accountcode)
+                    ->order_by('gl_trans.tran_id', 'asc');
+
+                if ($start_date) {
+                    $getListGLTran->where('erp_gl_trans.tran_date >=', $this->erp->fld($start_date).'00:00:00');
+                }
+                if ($end_date) {
+                    $getListGLTran->where('erp_gl_trans.tran_date <=', $this->erp->fld($end_date).'23:59:00');
+                }
+
+                if ($this->data['start_date']) {
+                    $getListGLTran->where('date(tran_date) >=', $this->data['start_date']);
+                }
+                if ($this->data['end_date']) {
+                    $getListGLTran->where('date(tran_date) <=', $this->data['end_date']);
+                }
+
+                if($biller_id != ""){
+                    $getListGLTran->where_in('gl_trans.biller_id' ,JSON_decode($biller_id));
+                }
+                $gltran_list = $getListGLTran->get()->result();
+                if($gltran_list) {
+                    $this->excel->getActiveSheet()->mergeCells('A'.$row.':C'.$row)->setCellValue('A'. $row , 'Account: '.$val->accountcode . ' ' .$val->accountname);
+                    $this->excel->getActiveSheet()->mergeCells('D'.$row.':G'.$row);
+                    $this->excel->getActiveSheet()->setCellValue('D'. $row , 'Begining Account Balance: ')->getStyle('A'.$row.':J'.$row)->applyFromArray($BoStyle);
+                    if($startAmount->startAmount > 0) {
+                        $this->excel->getActiveSheet()->setCellValue('H'. $row , $this->erp->formatDecimal(abs($startAmount->startAmount)));
+                        $this->excel->getActiveSheet()->setCellValue('I'. $row , '');
+                    }else {
+                        $this->excel->getActiveSheet()->setCellValue('H'. $row , '');
+                        $this->excel->getActiveSheet()->setCellValue('I'. $row , $this->erp->formatDecimal(abs($startAmount->startAmount)));
+                    }
+                    $this->excel->getActiveSheet()->getStyle('A'.$row.':C'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('D'.$row.':E'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$row.':G'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('H'.$row.':I'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$row.':G'.$row)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+                    $endAmount = $startAmount->startAmount;
+                    foreach($gltran_list as $rw)
+                    {
+                        $this->excel->getActiveSheet()->getStyle('E'.$rows.':G'.$rows)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+                        $endAccountBalance += $rw->amount;
+                        $endAccountBalanceMinus = explode('-', $this->erp->formatMoney($endAccountBalance));
+                        $endAmount += $rw->amount;
+                        //$endAccountCreditBalance += $rw->am2;
+                        //$endAccountDebitBalance += $rw->am1;
+                        $this->excel->getActiveSheet()->SetCellValue('A' . $rows, $rw->project);
+                        $this->excel->getActiveSheet()->SetCellValue('D' . $rows, $rw->reference_no . ' ');
+                        $this->excel->getActiveSheet()->SetCellValue('E' . $rows, $rw->cname);
+                        $this->excel->getActiveSheet()->SetCellValue('F' . $rows, $this->erp->decode_html(strip_tags($rw->description)));
+                        $this->excel->getActiveSheet()->SetCellValue('G' . $rows, $rw->created_by);
+                        $this->excel->getActiveSheet()->SetCellValue('C' . $rows, date("d-m-Y", strtotime($rw->tran_date)));
+                        $this->excel->getActiveSheet()->SetCellValue('B' . $rows, $rw->tran_type);
+                        $this->excel->getActiveSheet()->SetCellValue('H' . $rows, ($rw->am1 > 0 ? $this->erp->formatDecimal($rw->am1) : '0.00'));
+                        $this->excel->getActiveSheet()->SetCellValue('I' . $rows, ($rw->am2 < 1 ? $this->erp->formatDecimal(abs($rw->am2)) : '0.00'));
+                        $this->excel->getActiveSheet()->SetCellValue('J' . $rows, $endAccountBalance < 0 ? '$ (' . $endAccountBalanceMinus[1] . ')' : $this->erp->formatMoney($endAccountBalance));
+                        $this->excel->getActiveSheet()->getStyle('A'.$rows.':J'.$rows)->applyFromArray($BoStyle);
+                        if($row>70){
+                            $row1++;
+                            $row2++;
+                            $row3++;
+                        }
+                        $rows++;
+                    }
+                    $test = $rows;
+                    $this->excel->getActiveSheet()->mergeCells('A'.$test.':C'.$test);
+                    $this->excel->getActiveSheet()->mergeCells('D'.$test.':G'.$test)->setCellValue('D'. $test , 'Ending Account Balance: ');
+                    if($endAmount > 0) {
+                        $this->excel->getActiveSheet()->setCellValue('H'. $test , $this->erp->formatMoney($endAmount));
+                        $this->excel->getActiveSheet()->setCellValue('I'. $test , '');
+                        $this->excel->getActiveSheet()->setCellValue('J'. $test , '');
+                    }else {
+                        $this->excel->getActiveSheet()->setCellValue('H'. $test , '');
+                        $this->excel->getActiveSheet()->setCellValue('I'. $test , $this->erp->formatMoney(abs($endAmount)));
+                        $this->excel->getActiveSheet()->setCellValue('J'. $test , '');
+                    }
+                    $this->excel->getActiveSheet()->getStyle('H'.$test.':J'.$test)->applyFromArray($styleArray10);
+
+                    $this->excel->getActiveSheet()->getStyle('D'.$test.':E'.$test)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$test.':G'.$test)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$test.':G'.$test)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+                    $row = $rows;
+                    $rows = $rows + 2 ;
+                    $this->excel->getActiveSheet()->getStyle('A'.$row.':J'.$row)->applyFromArray($BoStyle);
+                    $row++;
+                }
+
+            }
+            $BorStyle = array(
+                'borders' => array(
+                    'allborders' => array(
+                        'style' => PHPExcel_Style_Border::BORDER_THIN
+                    )
+                )
+            );
+
+            $this->excel->getActiveSheet()->getStyle("F".$row1)->getFont()->setSize(14);
+            $this->excel->getActiveSheet()->getStyle('F'.$row1)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getStyle('B'.$row2)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getStyle('F'.$row2.':G'.$row2)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getStyle('F'.$row3)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getColumnDimension('A')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('B')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('C')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('D')->setWidth(30);
+            $this->excel->getActiveSheet()->getColumnDimension('E')->setWidth(15);
+            $this->excel->getActiveSheet()->getColumnDimension('F')->setWidth(10);
+            $this->excel->getActiveSheet()->getColumnDimension('G')->setWidth(15);
+            $this->excel->getDefaultStyle()->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+            $filename = 'ledger_' . date('Y_m_d_H_i_s');
+            if ($pdf) {
+                $this->excel->getActiveSheet()->getPageSetup()->setOrientation(PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
+                require_once(APPPATH . "third_party" . DIRECTORY_SEPARATOR . "MPDF" . DIRECTORY_SEPARATOR . "mpdf.php");
+                $rendererName = PHPExcel_Settings::PDF_RENDERER_MPDF;
+                $rendererLibrary = 'MPDF';
+                $rendererLibraryPath = APPPATH . 'third_party' . DIRECTORY_SEPARATOR . $rendererLibrary;
+                if (!PHPExcel_Settings::setPdfRenderer($rendererName, $rendererLibraryPath)) {
+                    die('Please set the $rendererName: ' . $rendererName . ' and $rendererLibraryPath: ' . $rendererLibraryPath . ' values' .
+                        PHP_EOL . ' as appropriate for your directory structure');
+                }
+
+                header('Content-Type: application/pdf');
+                header('Content-Disposition: attachment;filename="' . $filename . '.pdf"');
+                header('Cache-Control: max-age=0');
+
+                $objWriter = PHPExcel_IOFactory::createWriter($this->excel, 'PDF');
+                return $objWriter->save('php://output');
+            }
+            redirect($_SERVER["HTTP_REFERER"]);
         }
-		
-        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('reports'), 'page' => lang('reports')), array('link' => '#', 'page' => lang('Cash_Books_Report')));
-        $meta = array('page_title' => lang('Cash_Books_Report'), 'bc' => $bc);
+
+        // ***********************************************
+        if ($xls) {
+            $ac = $_GET['ac'];
+
+            $styleArray = array(
+                'font'  => array(
+                    'bold'  => true,
+                    'color' => array('rgb' => '#000000'),
+                    'size'  => 10,
+                    'name'  => 'Verdana'
+                ),
+            );
+            $styleArray10 = array(
+                'font'  => array(
+                    'bold'  => true,
+                    'color' => array('rgb' => '#000000'),
+                    'size'  => 10,
+                    'name'  => 'Verdana'
+                ),
+            );
+            if($xls){
+                $styleArray1 = array(
+                    'font' => array(
+                        'bold' => true,
+                        'size' => 15),
+                );
+            }
+            $this->load->library('excel');
+            $this->excel->setActiveSheetIndex(0);
+            $this->excel->getActiveSheet()->setTitle(lang('ledger'));
+            $this->excel->getActiveSheet()->getStyle('A4:J4')->applyFromArray($styleArray);
+            $this->excel->getActiveSheet()->getStyle('F1')->applyFromArray($styleArray);
+            $this->excel->getActiveSheet()->getStyle('F2:H2')->applyFromArray($styleArray);
+            $this->excel->getActiveSheet()->getStyle('A3:D3')->applyFromArray($styleArray);
+            $this->excel->getActiveSheet()->getStyle('D1')->applyFromArray($styleArray1);
+            $this->excel->getActiveSheet()->getStyle('D2')->applyFromArray($styleArray1);
+            $this->excel->getActiveSheet()->SetCellValue('F1', lang('  '));
+            $this->excel->getActiveSheet()->SetCellValue('F2', lang(''));
+            $this->excel->getActiveSheet()->SetCellValue('A3', lang(''));
+            $this->excel->getActiveSheet()->SetCellValue('D1', lang('general_ledger'));
+            $this->excel->getActiveSheet()->getStyle('D1')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->SetCellValue('D2', 'From '.$start_date . ' To '. $end_date);
+            $this->excel->getActiveSheet()->getStyle('D2')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->SetCellValue('D4', lang('Description'));
+            $this->excel->getActiveSheet()->SetCellValue('A4', lang('Project'));
+            $this->excel->getActiveSheet()->SetCellValue('B4', lang('Type'));
+            $this->excel->getActiveSheet()->SetCellValue('C4', lang('Date'));
+            $this->excel->getActiveSheet()->SetCellValue('D4', lang('Reference'));
+            $this->excel->getActiveSheet()->SetCellValue('E4', lang('Name'));
+            $this->excel->getActiveSheet()->SetCellValue('F4', lang('Description'));
+            $this->excel->getActiveSheet()->SetCellValue('G4', lang('created_by'));
+            $this->excel->getActiveSheet()->SetCellValue('H4', lang('Debit'));
+            $this->excel->getActiveSheet()->SetCellValue('I4', lang('Credit'));
+            $this->excel->getActiveSheet()->SetCellValue('J4', lang('Balacne'));
+            $BoStyle = array(
+                'borders' => array(
+                    'allborders' => array(
+                        'style' => PHPExcel_Style_Border::BORDER_THIN
+                    )
+                )
+            );
+
+            $row1=75;
+            $row2=76;
+            $row3=77;
+            $accounntCode = $this->db;
+            $accounntCode->select('*')->from('gl_charts');
+            if ($_GET['ac']) {
+                $accounntCode->where('gl_charts.accountcode', $ac);
+            }
+            if ($this->input->get('account') ) {
+                $accounntCode->where('accountcode', $this->input->get('account'));
+            }
+            $acc = $accounntCode->get()->result();
+            $row = 5;
+            $rows = 6;
+            foreach($acc as $val){
+                $gl_tranStart = $this->db->select('sum(amount) as startAmount')->from('gl_trans');
+                $gl_tranStart->where('account_code', $val->accountcode);
+                $gl_tranStart->where('erp_gl_trans.tran_date <', $this->erp->fld($start_date) . '00:00:00');
+                $startAmount = $gl_tranStart->get()->row();
+
+                $endAccountBalance = 0;
+                $endAccountBalanceMinus = 0;
+                $endAccountCreditBalance = 0;
+                $endAccountDebitBalance = 0;
+                $getListGLTran = $this->db->select("gl_trans.*, companies.company as project, companies.name as cname, users.username as created_by,
+                    (CASE WHEN erp_gl_trans.amount>0 THEN erp_gl_trans.amount END ) as am1,
+                    (CASE WHEN erp_gl_trans.amount<0 THEN erp_gl_trans.amount END ) as am2")
+                    ->from('gl_trans')
+                    ->join('companies', 'gl_trans.biller_id = companies.id', 'left')
+                    ->join('users', 'gl_trans.created_by = users.id', 'left')
+                    ->where('account_code =', $val->accountcode)
+                    ->order_by('gl_trans.tran_id', 'asc');
+
+                if ($start_date) {
+                    $getListGLTran->where('erp_gl_trans.tran_date >=', $this->erp->fld($start_date).'00:00:00');
+                }
+                if ($end_date) {
+                    $getListGLTran->where('erp_gl_trans.tran_date <=', $this->erp->fld($end_date).'23:59:00');
+                }
+
+                if ($this->data['start_date']) {
+                    $getListGLTran->where('date(tran_date) >=', $this->data['start_date']);
+                }
+                if ($this->data['end_date']) {
+                    $getListGLTran->where('date(tran_date) <=', $this->data['end_date']);
+                }
+
+                if($biller_id != ""){
+                    $getListGLTran->where_in('gl_trans.biller_id' ,JSON_decode($biller_id));
+                }
+                $gltran_list = $getListGLTran->get()->result();
+                if($gltran_list) {
+                    $this->excel->getActiveSheet()->mergeCells('A'.$row.':C'.$row)->setCellValue('A'. $row , 'Account: '.$val->accountcode . ' ' .$val->accountname);
+                    $this->excel->getActiveSheet()->mergeCells('D'.$row.':G'.$row);
+                    $this->excel->getActiveSheet()->setCellValue('D'. $row , 'Begining Account Balance: ')->getStyle('A'.$row.':J'.$row)->applyFromArray($BoStyle);
+                    if($startAmount->startAmount > 0) {
+                        $this->excel->getActiveSheet()->setCellValue('H'. $row , $this->erp->formatMoney(abs($startAmount->startAmount)));
+                        $this->excel->getActiveSheet()->setCellValue('I'. $row , '');
+                    } else {
+                        $this->excel->getActiveSheet()->setCellValue('H'. $row , '');
+                        $this->excel->getActiveSheet()->setCellValue('I'. $row , $this->erp->formatMoney(abs($startAmount->startAmount)));
+                    }
+                    $this->excel->getActiveSheet()->getStyle('A'.$row.':C'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('D'.$row.':E'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$row.':G'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('H'.$row.':I'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$row.':G'.$row)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+                    $endAmount = $startAmount->startAmount;
+                    foreach($gltran_list as $rw)
+                    {
+                        $this->excel->getActiveSheet()->getStyle('E'.$rows.':G'.$rows)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+                        $endAccountBalance += $rw->amount;
+                        $endAccountBalanceMinus = explode('-', $this->erp->formatMoney($endAccountBalance));
+                        $endAmount += $rw->amount;
+                        $this->excel->getActiveSheet()->SetCellValue('A' . $rows, $rw->project);
+                        $this->excel->getActiveSheet()->SetCellValue('D' . $rows, $rw->reference_no);
+                        $this->excel->getActiveSheet()->SetCellValue('E' . $rows, $rw->cname);
+                        $this->excel->getActiveSheet()->SetCellValue('F' . $rows, $this->erp->decode_html(strip_tags($rw->description)));
+                        $this->excel->getActiveSheet()->SetCellValue('G' . $rows, $rw->created_by);
+                        $this->excel->getActiveSheet()->SetCellValue('C' . $rows, date("d-m-Y", strtotime($rw->tran_date)));
+                        $this->excel->getActiveSheet()->SetCellValue('B' . $rows, $rw->tran_type);
+                        $this->excel->getActiveSheet()->SetCellValue('H' . $rows, ($rw->am1 > 0 ? $this->erp->formatMoney($rw->am1) : '0.00'));
+                        $this->excel->getActiveSheet()->SetCellValue('I' . $rows, ($rw->am2 < 1 ? $this->erp->formatMoney(abs($rw->am2)) : '0.00'));
+                        $this->excel->getActiveSheet()->SetCellValue('J' . $rows, $endAccountBalance < 0 ? '$ (' . $endAccountBalanceMinus[1] . ')' : $this->erp->formatMoney($endAccountBalance));
+                        $this->excel->getActiveSheet()->getStyle('A'.$rows.':J'.$rows)->applyFromArray($BoStyle);
+                        if($row>70){
+                            $row1++;
+                            $row2++;
+                            $row3++;
+                        }
+                        $rows++;
+                    }
+                    $test = $rows;
+                    $this->excel->getActiveSheet()->mergeCells('A'.$test.':C'.$test);
+                    $this->excel->getActiveSheet()->mergeCells('D'.$test.':G'.$test)->setCellValue('D'. $test , 'Ending Account Balance: ');
+                    if($endAmount > 0) {
+                        $this->excel->getActiveSheet()->setCellValue('H'. $test , $this->erp->formatMoney(abs($endAmount)));
+                        $this->excel->getActiveSheet()->setCellValue('I'. $test , '');
+                        $this->excel->getActiveSheet()->setCellValue('J'. $test , '');
+                    } else {
+                        $this->excel->getActiveSheet()->setCellValue('H'. $test , '');
+                        $this->excel->getActiveSheet()->setCellValue('I'. $test , $this->erp->formatMoney(abs($endAmount)));
+                        $this->excel->getActiveSheet()->setCellValue('J'. $test , '');
+                    }
+                    $this->excel->getActiveSheet()->getStyle('H'.$test.':J'.$test)->applyFromArray($styleArray10);
+
+                    $this->excel->getActiveSheet()->getStyle('D'.$test.':E'.$test)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$test.':G'.$test)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$test.':G'.$test)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+                    $row = $rows;
+                    $rows = $rows + 2 ;
+                    $this->excel->getActiveSheet()->getStyle('A'.$row.':J'.$row)->applyFromArray($BoStyle);
+                    $row++;
+                }
+
+            }
+            $BorStyle = array(
+                'borders' => array(
+                    'allborders' => array(
+                        'style' => PHPExcel_Style_Border::BORDER_THIN
+                    )
+                )
+            );
+            $this->excel->getActiveSheet()->getStyle('A4:J71')->applyFromArray($BorStyle);
+            $this->excel->getActiveSheet()->mergeCells('F75:G75');
+            $this->excel->getActiveSheet()->mergeCells('F77:G77');
+            $this->excel->getActiveSheet()->getStyle("F".$row1)->getFont()->setSize(14);
+            $this->excel->getActiveSheet()->getStyle('F'.$row1)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getStyle('B'.$row2)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getStyle('F'.$row2.':G'.$row2)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getStyle('F'.$row3)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getColumnDimension('A')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('B')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('C')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('D')->setWidth(30);
+            $this->excel->getActiveSheet()->getColumnDimension('E')->setWidth(15);
+            $this->excel->getActiveSheet()->getColumnDimension('F')->setWidth(10);
+            $this->excel->getActiveSheet()->getColumnDimension('G')->setWidth(15);
+            $this->excel->getDefaultStyle()->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+            $filename = 'ledger_' . date('Y_m_d_H_i_s');
+            if ($xls) {
+                header('Content-Type: application/vnd.ms-excel');
+                header('Content-Disposition: attachment;filename="' . $filename . '.xls"');
+                header('Cache-Control: max-age=0');
+                $objWriter = PHPExcel_IOFactory::createWriter($this->excel, 'Excel5');
+                return $objWriter->save('php://output');
+            }
+            redirect($_SERVER["HTTP_REFERER"]);
+        }
+
+        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('reports'), 'page' => lang('reports')), array('link' => '#', 'page' => lang('cash_books')));
+        $meta = array('page_title' => lang('cash_books'), 'bc' => $bc);
         $this->page_construct('reports/cash_books', $meta, $this->data);
-    
-		if($xls){
-			
-			$styleArray = array(
-				'font'  => array(
-					'bold'  => true,
-					'color' => array('rgb' => '000000'),
-					'size'  => 10,
-					'name'  => 'Verdana'
-				)
-			);
-			$bold = array(
-				'font' => array(
-					'bold' => true
-				)
-			);
-			
-			$this->load->library('excel');
-			$this->excel->setActiveSheetIndex(0);
-			$this->excel->getActiveSheet()->getStyle('A1:E1')->applyFromArray($styleArray);
-			$this->excel->getActiveSheet()->setTitle(lang('Cash Book Statement'));
-			$this->excel->getActiveSheet()->SetCellValue('A1', lang('Batch'));
-			$this->excel->getActiveSheet()->SetCellValue('B1', lang('Reference'));
-			$this->excel->getActiveSheet()->SetCellValue('C1', lang('Seq'));
-			$this->excel->getActiveSheet()->SetCellValue('D1', lang('Description'));
-			$this->excel->getActiveSheet()->SetCellValue('E1', lang('Date'));
-			$this->excel->getActiveSheet()->SetCellValue('F1', lang('Type'));
-			$this->excel->getActiveSheet()->SetCellValue('G1', lang('Debit_Amount'));
-			$this->excel->getActiveSheet()->SetCellValue('H1', lang('Credit_Amount'));
-			
-			$this->excel->getActiveSheet()->getStyle('E2:F2')->applyFromArray($bold);
-			$this->excel->getActiveSheet()->getStyle('G2:H2')->applyFromArray($bold);
-			
-			if ($this->input->post('start_date') || $this->input->post('end_date') || (!$this->input->post('end_date') && !$this->input->post('end_date'))) {
-					
-				$accounntCode = $this->db;
-				$accounntCode->select('*')->from('gl_charts')->where('bank', 1);
-				if ($this->input->post('account') ) {
-					$accounntCode->where('accountcode', $this->input->post('account'));
-				}
-				
-				$acc = $accounntCode->get()->result();
-				
-				foreach($acc as $val){
-					
-					$gl_tranStart = $this->db->select('sum(amount) as startAmount')->from('gl_trans');
-					$gl_tranStart->where(array('tran_date < '=> $this->erp->fld($this->input->post('start_date')), 'account_code'=> $val->accountcode));
-					$startAmount = $gl_tranStart->get()->row();
-					
-					$endAccountBalance = 0;
-					$getListGLTran = $this->db->select("*")->from('gl_trans')->where('account_code =', $val->accountcode);
-					if ($this->input->post('start_date')) {
-						$getListGLTran->where('tran_date >=', $this->erp->fld($this->input->post('start_date')) );
-					}
-
-					if ($this->input->post('end_date')) {
-						$getListGLTran->where('tran_date <=', $this->erp->fld($this->input->post('end_date')) );
-					}
-					if (!$this->input->post('end_date') && !$this->input->post('end_date'))
-					{
-						$current_month = date('m');
-						$getListGLTran->where('MONTH(tran_date)', $current_month);
-					}
-					if($biller_id != "" && $biller_id != NULL && $biller_id != 0){
-						$getListGLTran->where('biller_id', $biller_id);
-					}
-					$gltran_list = $getListGLTran->get()->result();
-					
-					$acc_name = "";
-					$start_amount = 0;
-					
-					if($gltran_list) {
-						$acc_name = $val->accountcode . ' ' .$val->accountname;
-						$start_amount = $this->erp->formatMoney($startAmount->startAmount);
-						
-						$this->excel->getActiveSheet()->mergeCells('A2:B2:C2:D2')->setCellValue('A2' , "Account ".$acc_name);
-						$this->excel->getActiveSheet()->mergeCells('E2:F2')->setCellValue('E2' , lang('Begining Balance: '));
-						$this->excel->getActiveSheet()->mergeCells('G2:H2')->setCellValue('G2' , $start_amount);
-					}
-					
-					
-					$row = 3;
-					$endAccountBalance = 0;
-					foreach($gltran_list as $rw){
-						$endAccountBalance += $rw->amount; 
-						
-						$this->excel->getActiveSheet()->SetCellValue('A'.$row,$rw->tran_id);
-						$this->excel->getActiveSheet()->SetCellValue('B'.$row,$rw->reference_no);
-						$this->excel->getActiveSheet()->SetCellValue('C'.$row,$rw->tran_no);
-						$this->excel->getActiveSheet()->SetCellValue('D'.$row,$rw->narrative);
-						$this->excel->getActiveSheet()->SetCellValue('E'.$row,$rw->tran_date);
-						$this->excel->getActiveSheet()->SetCellValue('F'.$row, $rw->tran_type);
-						$this->excel->getActiveSheet()->SetCellValue('G'.$row,($rw->amount > 0 ? $this->erp->formatMoney($rw->amount) : '0.00'));
-						$this->excel->getActiveSheet()->SetCellValue('H'.$row,($rw->amount < 1 ? $this->erp->formatMoney(abs($rw->amount)) : '0.00'));
-						$row++;
-					}
-					$this->excel->getActiveSheet()->mergeCells('A'.($row+1).':B'.($row+1).':C'.($row+1).':D'.($row+1));
-					$this->excel->getActiveSheet()->mergeCells('E'.($row+1).':F'.($row+1))->setCellValue('E'.($row+1) , lang('Ending Balance: '));
-					$this->excel->getActiveSheet()->mergeCells('G'.($row+1).':H'.($row+1))->setCellValue('G'.($row+1) , $endAccountBalance);
-						
-				}
-				
-				$this->excel->getActiveSheet()->getColumnDimension('A')->setWidth(10);
-				$this->excel->getActiveSheet()->getColumnDimension('B')->setWidth(10);
-				$this->excel->getActiveSheet()->getColumnDimension('C')->setWidth(10);
-				$this->excel->getActiveSheet()->getColumnDimension('D')->setWidth(10);
-				$this->excel->getActiveSheet()->getColumnDimension('E')->setWidth(10);
-				$this->excel->getActiveSheet()->getColumnDimension('F')->setWidth(10);
-				$this->excel->getActiveSheet()->getColumnDimension('G')->setWidth(10);
-				$this->excel->getActiveSheet()->getColumnDimension('H')->setWidth(30);
-				
-				$this->excel->getDefaultStyle()->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
-				$filename = 'Cash_Books_Report' . date('Y_m_d_H_i_s');
-				if ($xls) {
-					header('Content-Type: application/vnd.ms-excel');
-					header('Content-Disposition: attachment;filename="' . $filename . '.xls"');
-					header('Cache-Control: max-age=0');
-
-					$objWriter = PHPExcel_IOFactory::createWriter($this->excel, 'Excel5');
-					return $objWriter->save('php://output');
-				}
-
-				redirect($_SERVER["HTTP_REFERER"]);
-				
-			}
-			
-		}
-	}
+    }
     
     function suspends($warehouse_id = NULL){ 
         $this->load->model('reports_model');
@@ -23400,16 +23736,16 @@ class Reports extends MY_Controller
                 }
         }
     }
-	
+
     function inventory_valuation_detail()
     {
         $this->erp->checkPermissions('inventory_valuation_detail', NULL, 'product_report');
         $wid = $this->reports_model->getWareByUserID();
-		$datt =$this->reports_model->getLastDate("inventory_valuation_details","date");
+        $datt =$this->reports_model->getLastDate("inventory_valuation_details","date");
         if ($this->input->post('swarehouse')) {
             $wahouse_id =  $this->input->post('swarehouse');
         }else{
-			$wahouse_id = 0;	
+            $wahouse_id = 0;
         }
         if ($this->input->post('reference_no')) {
             $reference = $this->input->post('reference_no');
@@ -23431,8 +23767,8 @@ class Reports extends MY_Controller
         }else{
             $stockType = 0;
         }
-		
-		if ($this->input->post('biller')) {
+
+        if ($this->input->post('biller')) {
             $biller = $this->input->post('biller');
         }else{
             $biller = 0;
@@ -23447,16 +23783,16 @@ class Reports extends MY_Controller
         }else{
             $to_date= $datt;
         }
-       
+
         $this->data['error']        = (validation_errors()) ? validation_errors() : $this->session->flashdata('error');
-		$this->data['swarehouses'] 	= $this->reports_model->getWareFullByUSER($wid);
-		$this->data['warehouses'] 	= $this->reports_model->getWarehousesInventoryValuation($wid, $wahouse_id,$category_id, $product_id, $stockType, trim($from_date), trim($to_date), $reference, $biller);
-		$this->data['categories']   = $this->reports_model->getAllCategories();
-		$this->data['products']     = $this->reports_model->getAllProducts();
-		$this->data['billers']     	= $this->reports_model->getAllBillers();
+        $this->data['swarehouses'] 	= $this->reports_model->getWareFullByUSER($wid);
+        $this->data['warehouses'] 	= $this->reports_model->getWarehousesInventoryValuation($wid, $wahouse_id,$category_id, $product_id, $stockType, trim($from_date), trim($to_date), $reference, $biller);
+        $this->data['categories']   = $this->reports_model->getAllCategories();
+        $this->data['products']     = $this->reports_model->getAllProducts();
+        $this->data['billers']     	= $this->reports_model->getAllBillers();
         $this->data['plans']		= $this->products_model->getPlan();
-		$this->data['reference1'] 	= $reference;
-		$this->data['wahouse_id1'] 	= $wahouse_id;
+        $this->data['reference1'] 	= $reference;
+        $this->data['wahouse_id1'] 	= $wahouse_id;
         $this->data['product_id1'] 	= $product_id;
         if($from_date){
             $this->data['from_date1'] = trim($from_date);
@@ -23464,9 +23800,9 @@ class Reports extends MY_Controller
         if($to_date){
             $this->data['to_date1'] = trim($to_date);
         }
-         $this->data['cate_id1'] 	= $category_id;
-         $this->data['stockType1'] 	= $stockType;
-         $this->data['biller1'] 	= $biller;
+        $this->data['cate_id1'] 	= $category_id;
+        $this->data['stockType1'] 	= $stockType;
+        $this->data['biller1'] 	= $biller;
 
         $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('reports')));
         $meta = array('page_title' => lang('inventory_valuation_detail'), 'bc' => $bc);
@@ -23631,6 +23967,8 @@ class Reports extends MY_Controller
             $user = $this->input->get('user');
         } else {
             $user = NULL;
+
+
         }
         if ($this->input->get('biller')){
             $biller = $this->input->get('biller');
@@ -27056,7 +27394,7 @@ class Reports extends MY_Controller
         } 
 		
 		//$this->erp->print_arrays($wid);
-		$this->data['ware'] 		= $this->reports_model->getWarePur($wid,$warehouse,$product,$category,$biller);
+		$this->data['ware'] 		= $this->reports_model->getWarePur($wid,$warehouse,$product,$category,$biller,$from_date, $to_date);
 		$this->data['warefull'] 	= $this->reports_model->getWareFullByUSER($wid);
 		$this->data['biller2']    	= $biller;
 		$this->data['category2']    = $category;
@@ -27077,6 +27415,255 @@ class Reports extends MY_Controller
         $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('reports')));
         $meta = array('page_title' => lang('inventory_inout'), 'bc' => $bc);
         $this->page_construct('reports/inventory_inout', $meta, $this->data);
+    }
+
+	function product_movement_summary()
+    {
+		$datt =$this->reports_model->getLastDate("stock_trans","tran_date");
+        if ($this->input->post('product')) {
+            $product = $this->input->post('product');
+        }else{
+			$product = 0;
+        }
+		if ($this->input->post('category')) {
+            $category = $this->input->post('category');
+        }else{
+			$category = 0;
+        }
+		if ($this->input->post('biller')) {
+            $biller = $this->input->post('biller');
+        }else{
+			$biller = 0;
+        }
+		if ($this->input->post('from_date')) {
+            $from_date = $this->erp->fsd($this->input->post('from_date'));
+        }else{
+			$from_date = $datt;
+        }
+		if($this->input->post('to_date')) {
+            $to_date = $this->erp->fsd($this->input->post('to_date'));
+        }else{
+			$to_date = $datt;
+        }
+		$wid = $this->reports_model->getWareByUserID();
+		if ($this->input->post('warehouse')) {
+            $warehouse = $this->input->post('warehouse');
+        }else{
+				$warehouse = 0;
+        }
+
+		//$this->erp->print_arrays($wid);
+		$this->data['ware'] 		= $this->reports_model->getWarePur($wid,$warehouse,$product,$category,$biller,$from_date, $to_date);
+		$this->data['warefull'] 	= $this->reports_model->getWareFullByUSER($wid);
+		$this->data['biller2']    	= $biller;
+		$this->data['category2']    = $category;
+		$this->data['product2'] 	= $product;
+		$this->data['from_date2']   = trim($from_date);
+		$this->data['to_date2'] 	= trim($to_date);
+		$this->data['warehouse2'] 	= $warehouse;
+		$this->data['categories'] 	= $this->site->getAllCategories();
+		$this->data['products']     = $this->reports_model->getAllProducts();
+		$this->data['billers']     	= $this->reports_model->getAllBillers();
+        //Store value in filter pass to export excel & pdf
+        $this->data['product1'] 	= $product;
+		$this->data['category1'] 	= $category;
+        $this->data['biller1'] 		= $biller;
+        $this->data['warehouse1'] 	= $warehouse;
+		$this->data['biller_idd'] 	= $this->reports_model->getBiilerByUserID();
+
+        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('reports')));
+        $meta = array('page_title' => lang('inventory_inout'), 'bc' => $bc);
+        $this->page_construct('reports/product_movement_summary', $meta, $this->data);
+    }
+
+	function product_movement_detail()
+    {
+        $datt =$this->reports_model->getLastDate("stock_trans","tran_date");
+        if ($this->input->post('product')) {
+            $product = $this->input->post('product');
+        }else{
+            $product = 0;
+        }
+        if ($this->input->post('category')) {
+            $category = $this->input->post('category');
+        }else{
+            $category = 0;
+        }
+        if ($this->input->post('biller')) {
+            $biller = $this->input->post('biller');
+        }else{
+            $biller = 0;
+        }
+        if ($this->input->post('from_date')) {
+            $from_date = $this->erp->fsd($this->input->post('from_date'));
+        }else{
+            $from_date = $datt;
+        }
+        if($this->input->post('to_date')) {
+            $to_date = $this->erp->fsd($this->input->post('to_date'));
+        }else{
+            $to_date = $datt;
+        }
+        $wid = $this->reports_model->getWareByUserID();
+        if ($this->input->post('warehouse')) {
+            $warehouse = $this->input->post('warehouse');
+        }else{
+            $warehouse = 0;
+        }
+
+        //$this->erp->print_arrays($wid);
+        $this->data['ware'] 		= $this->reports_model->getWarePur($wid,$warehouse,$product,$category,$biller,$from_date, $to_date);
+        $this->data['warefull'] 	= $this->reports_model->getWareFullByUSER($wid);
+        $this->data['biller2']    	= $biller;
+        $this->data['category2']    = $category;
+        $this->data['product2'] 	= $product;
+        $this->data['from_date2']   = trim($from_date);
+        $this->data['to_date2'] 	= trim($to_date);
+        $this->data['warehouse2'] 	= $warehouse;
+        $this->data['categories'] 	= $this->site->getAllCategories();
+        $this->data['products']     = $this->reports_model->getAllProducts();
+        $this->data['billers']     	= $this->reports_model->getAllBillers();
+        //Store value in filter pass to export excel & pdf
+        $this->data['product1'] 	= $product;
+        $this->data['category1'] 	= $category;
+        $this->data['biller1'] 		= $biller;
+        $this->data['warehouse1'] 	= $warehouse;
+        $this->data['biller_idd'] 	= $this->reports_model->getBiilerByUserID();
+
+        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('reports')));
+        $meta = array('page_title' => lang('inventory_inout'), 'bc' => $bc);
+        $this->page_construct('reports/product_movement_detail', $meta, $this->data);
+    }
+    function getMovementAll($pdf = NULL, $xls = NULL)
+    {
+        if (!$this->Owner && !$this->Admin && !$this->session->userdata('view_right')) {
+            $user = $this->session->userdata('user_id');
+        }
+        $datt =$this->reports_model->getLastDate("stock_trans","tran_date");
+
+        if ($this->input->get('from_date')) {
+            $from_date         = $this->erp->fld($this->input->get('from_date'));
+
+        } else {
+            $from_date         = $datt;
+        }
+
+        if ($pdf || $xls) {
+
+            $this->db
+                ->select($this->db->dbprefix('companies') . ".id as id, company, name, phone, email, count(erp_purchases.id) as total, COALESCE(sum(grand_total), 0) as total_amount, COALESCE(sum(paid), 0) as paid, ( COALESCE(sum(grand_total), 0) - COALESCE(sum(paid), 0)) as balance", FALSE)
+                ->from("companies")
+                ->join('purchases', 'purchases.supplier_id=companies.id')
+                ->where('companies.group_name', 'supplier')
+                ->order_by('companies.company asc')
+                ->group_by('companies.id');
+            if(!$this->Owner && !$this->Admin && $this->session->userdata('view_right') == 0){
+                if ($user) {
+                    $this->datatables->where('purchases.created_by', $user);
+                }
+            }
+            $q = $this->db->get();
+            if ($q->num_rows() > 0) {
+                foreach (($q->result()) as $row) {
+                    $data[] = $row;
+                }
+            } else {
+                $data = NULL;
+            }
+
+            if (!empty($data)) {
+
+                $this->load->library('excel');
+                $this->excel->setActiveSheetIndex(0);
+                $this->excel->getActiveSheet()->setTitle(lang('suppliers_report'));
+                $this->excel->getActiveSheet()->SetCellValue('A1', lang('company'));
+                $this->excel->getActiveSheet()->SetCellValue('B1', lang('name'));
+                $this->excel->getActiveSheet()->SetCellValue('C1', lang('phone'));
+                $this->excel->getActiveSheet()->SetCellValue('D1', lang('email'));
+                $this->excel->getActiveSheet()->SetCellValue('E1', lang('total_purchases'));
+                $this->excel->getActiveSheet()->SetCellValue('F1', lang('total_amount'));
+                $this->excel->getActiveSheet()->SetCellValue('G1', lang('paid'));
+                $this->excel->getActiveSheet()->SetCellValue('H1', lang('balance'));
+
+                $row = 2;
+                foreach ($data as $data_row) {
+                    $this->excel->getActiveSheet()->SetCellValue('A' . $row, $data_row->company);
+                    $this->excel->getActiveSheet()->SetCellValue('B' . $row, $data_row->name);
+                    $this->excel->getActiveSheet()->SetCellValue('C' . $row, $data_row->phone);
+                    $this->excel->getActiveSheet()->SetCellValue('D' . $row, $data_row->email);
+                    $this->excel->getActiveSheet()->SetCellValue('E' . $row, $this->erp->formatNumber($data_row->total));
+                    $this->excel->getActiveSheet()->SetCellValue('F' . $row, $this->erp->formatMoney($data_row->total_amount));
+                    $this->excel->getActiveSheet()->SetCellValue('G' . $row, $this->erp->formatMoney($data_row->paid));
+                    $this->excel->getActiveSheet()->SetCellValue('H' . $row, $this->erp->formatMoney($data_row->balance));
+                    $row++;
+                }
+
+                $this->excel->getActiveSheet()->getColumnDimension('A')->setWidth(20);
+                $this->excel->getActiveSheet()->getColumnDimension('B')->setWidth(25);
+                $this->excel->getActiveSheet()->getColumnDimension('C')->setWidth(25);
+                $this->excel->getActiveSheet()->getColumnDimension('D')->setWidth(25);
+                $this->excel->getActiveSheet()->getColumnDimension('E')->setWidth(15);
+                $this->excel->getActiveSheet()->getColumnDimension('F')->setWidth(15);
+                $this->excel->getActiveSheet()->getColumnDimension('G')->setWidth(15);
+                $filename = 'suppliers_report';
+                $this->excel->getDefaultStyle()->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+                if ($pdf) {
+                    $styleArray = array(
+                        'borders' => array(
+                            'allborders' => array(
+                                'style' => PHPExcel_Style_Border::BORDER_THIN
+                            )
+                        )
+                    );
+                    $this->excel->getDefaultStyle()->applyFromArray($styleArray);
+                    $this->excel->getActiveSheet()->getPageSetup()->setOrientation(PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
+                    require_once(APPPATH . "third_party" . DIRECTORY_SEPARATOR . "MPDF" . DIRECTORY_SEPARATOR . "mpdf.php");
+                    $rendererName = PHPExcel_Settings::PDF_RENDERER_MPDF;
+                    $rendererLibrary = 'MPDF';
+                    $rendererLibraryPath = APPPATH . 'third_party' . DIRECTORY_SEPARATOR . $rendererLibrary;
+                    if (!PHPExcel_Settings::setPdfRenderer($rendererName, $rendererLibraryPath)) {
+                        die('Please set the $rendererName: ' . $rendererName . ' and $rendererLibraryPath: ' . $rendererLibraryPath . ' values' .
+                            PHP_EOL . ' as appropriate for your directory structure');
+                    }
+
+                    header('Content-Type: application/pdf');
+                    header('Content-Disposition: attachment;filename="' . $filename . '.pdf"');
+                    header('Cache-Control: max-age=0');
+
+                    $objWriter = PHPExcel_IOFactory::createWriter($this->excel, 'PDF');
+                    $objWriter->save('php://output');
+                    exit();
+                }
+                if ($xls) {
+                    ob_clean();
+                    header('Content-Type: application/vnd.ms-excel');
+                    header('Content-Disposition: attachment;filename="' . $filename . '.xls"');
+                    header('Cache-Control: max-age=0');
+                    ob_clean();
+                    $objWriter = PHPExcel_IOFactory::createWriter($this->excel, 'Excel5');
+                    $objWriter->save('php://output');
+                    exit();
+                }
+            }
+            $this->session->set_flashdata('error', lang('nothing_found'));
+            redirect($_SERVER["HTTP_REFERER"]);
+        } else {
+
+            $user_biller_id = JSON_decode($this->session->userdata('biller_id'));
+            $this->load->library('datatables');
+            $this->datatables
+                ->select("stock_trans.tran_date,stock_trans.tran_type, stock_trans.reference,products.name,stock_trans.quantity_balance_unit as qty", FALSE)
+                ->from("stock_trans")
+                ->join("products","products.id = stock_trans.product_id","LEFT")
+                ->where('products.type !=', 'service')
+                ->where('stock_trans.quantity_balance_unit !=', 0);
+            if($from_date){
+                $this->db->where('stock_trans.tran_date <="'.$from_date.'" ');
+            }
+            echo $this->datatables->generate();
+
+        }
+
     }
 
     function product_grossmargin($warehouse_id = NULL)
@@ -27792,7 +28379,6 @@ class Reports extends MY_Controller
             }
             $ttype1 = 0;
             //Get In tanstion type
-            if ($num) {
                 foreach ($num as $tr) {
                     if ($tr->tran_type) {
                         $this->excel->getActiveSheet()->SetCellValue($alphabet2[$ttype1], strtolower($tr->tran_type));
@@ -27800,7 +28386,6 @@ class Reports extends MY_Controller
                     $ttype1++;
 
                 }
-            }
 
             //$this->erp->print_arrays($tr->tran_type);
             $tin = $ttype1 + 2;
@@ -28312,8 +28897,9 @@ class Reports extends MY_Controller
 		$config['num_tag_close'] 			= '</li>';
 		$this->pagination->initialize($config);
 		$this->data["pagination"] 			= $this->pagination->create_links();
-        // $this->erp->print_arrays($start_date.' ########## '.$end_date);
-		$this->data['products_details']   	= $this->reports_model->getAllProductsDetails($product,$category,$config['per_page'],$config["ob_set"], $start_date, $end_date);
+        
+        $this->data['products_details']     = $this->reports_model->getAllProductsDetails($product,$category,$config['per_page'],$config["ob_set"], $start_date, $end_date);
+
 		$wid 								= $this->reports_model->getWareByUserID();
         $this->data['warefull']             = $this->reports_model->getWareFullByUSER($wid);
         $this->data['category2']            = $category;
@@ -29915,6 +30501,1630 @@ class Reports extends MY_Controller
         } 
 	
 	}
-	
+
+    function sale_by_item_detail($pdf = NULL,$biller_id = NULL, $xls = NULL)
+    {
+
+        $this->erp->checkPermissions('cash_book',NULL,'account_report');
+        $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
+        $this->data['categories'] = $this->site->getAllCategories();
+        $this->data['users'] = $this->reports_model->getStaff();
+        $this->data['products'] = $this->site->getProducts();
+        $this->data['customers'] = $this->site->getCustomerSale();
+        $this->data['billers']  = $this->site->getAllCompanies('biller');
+        //$this->erp->print_arrays($products);
+
+
+
+        if (!$this->Owner && !$this->Admin) {
+            $gp = $this->site->checkPermissions();
+            $this->permission = $gp[0];
+            $this->permission[] = $gp[0];
+        } else {
+            $this->permission[] = NULL;
+        }
+
+        $this->erp->checkPermissions('index',null,'products');
+
+        if ($this->input->post('customers')) {
+            $customer_id = $this->input->post('customers');
+        }
+        else {
+            $customer_id = NULL;
+        }
+
+        $this->data['customer_id']= $customer_id;
+
+
+        if ($this->input->post('products')) {
+            $product_id = $this->input->post('products');
+        }
+        else {
+            $product_id = NULL;
+        }
+
+        if ($this->input->post('reference_no')) {
+            $reference_no = $this->input->post('reference_no');
+        } else {
+            $reference_no = NULL;
+        }
+        $this->data['reference_no']= $reference_no;
+        if ($this->input->post('biller')) {
+            $biller_id = $this->input->post('biller');
+        } else {
+            $biller_id = NULL;
+        }
+        $this->data['biller_id']= $biller_id;
+
+        if ($this->input->post('start_date')) {
+
+            $start_date =$this->input->post('start_date');
+            $start = $this->erp->fld($start_date);
+        } else {
+            $start_date = NULL;
+        }
+        $this->data['start']= $start;
+
+
+        if ($this->input->post('end_date')) {
+            $end_date = $this->input->post('end_date');
+            $end = $this->erp->fld($end_date);
+
+        } else {
+            $end_date = NULL;
+
+        }
+
+        if ($this->input->post('pro_code1')) {
+
+    } else {
+        $reference_no = NULL;
+    }
+
+
+        $pro_code1 = $this->input->get('p_c');
+        $this->data['end']= $end;
+        $this->data['products_code']= $this->reports_model->getProductCodeById($customer_id,$product_id,$reference_no,$biller_id,$start,$end,$pro_code1);
+       // $this->data['products_code'] = $product_code;
+
+
+        if ($pdf != NULL && $biller_id == NULL) {
+            $html = $this->load->view($this->theme . 'reports/cash_books', $this->data, true);
+            $name = lang("cash_books") . "_" . date('Y_m_d_H_i_s') . ".pdf";
+            $html = str_replace('<p class="introtext">' . lang("reports_cash_books_text") . '</p>', '', $html);
+            $this->erp->generate_pdf($html, $name, null, null, null, null, null, 'L');
+        }
+
+
+        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('reports'), 'page' => lang('reports')), array('link' => '#', 'page' => lang('sale_by_item_detail')));
+        $meta = array('page_title' => lang('sale_by_item_detail'), 'bc' => $bc);
+        $this->page_construct('reports/sale_by_item_detail', $meta, $this->data);
+    }
+
+    function sale_by_item_summary($pdf = NULL,$biller_id = NULL, $xls = NULL)
+    {
+        $this->erp->checkPermissions('cash_book',NULL,'account_report');
+        $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
+        $this->data['categories'] = $this->site->getAllCategories();
+        $this->data['users'] = $this->reports_model->getStaff();
+        $this->data['products'] = $this->site->getProducts();
+        $this->data['customers'] = $this->site->getCustomerSale();
+        $this->data['billers']  = $this->site->getAllCompanies('biller');
+
+
+        if (!$this->Owner && !$this->Admin) {
+            $gp = $this->site->checkPermissions();
+            $this->permission = $gp[0];
+            $this->permission[] = $gp[0];
+        } else {
+            $this->permission[] = NULL;
+        }
+        $pr_code='';
+        if ($this->input->post('products')) {
+            $pr_code = $this->input->post('products');
+        }
+        else {
+            $pr_code = NULL;
+        }
+        if ($this->input->post('customers')) {
+            $cus = $this->input->post('customers');
+        }
+        else {
+            $cus = NULL;
+        }
+        if ($this->input->post('reference_no')) {
+            $reference_no = $this->input->post('reference_no');
+        }
+        else {
+            $reference_no = NULL;
+        }
+        if ($this->input->post('biller')) {
+            $biller = $this->input->post('biller');
+        }
+        else {
+            $biller = NULL;
+        }
+
+        if ($this->input->post('start_date')) {
+
+            $start_date =$this->input->post('start_date');
+            $start1 = $this->erp->fld($start_date);
+        } else {
+            $start_dat1e = NULL;
+        }
+        //$this->data['start']= $start1;
+
+
+
+        if ($this->input->post('end_date')) {
+            $end_date = $this->input->post('end_date');
+            $end1 = $this->erp->fld($end_date);
+
+        } else {
+            $end_date1 = NULL;
+
+        }
+
+        $this->data['p_code']= $this->reports_model->getProductCodeSummary($pr_code,$cus,$reference_no,$biller,$start1,$end1);
+        $this->erp->checkPermissions('index',null,'products');
+
+
+
+
+
+        if ($pdf != NULL && $biller_id == NULL) {
+            $html = $this->load->view($this->theme . 'reports/cash_books', $this->data, true);
+            $name = lang("cash_books") . "_" . date('Y_m_d_H_i_s') . ".pdf";
+            $html = str_replace('<p class="introtext">' . lang("reports_cash_books_text") . '</p>', '', $html);
+            $this->erp->generate_pdf($html, $name, null, null, null, null, null, 'L');
+        }
+
+        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('reports'), 'page' => lang('reports')), array('link' => '#', 'page' => lang('sale_item_summary')));
+        $meta = array('page_title' => lang('Sale_By_Item_Summary'), 'bc' => $bc);
+        $this->page_construct('reports/sale_by_item_summary', $meta, $this->data);
+    }
+
+    function purchases_by_item_detail($pdf = NULL,$biller_id = NULL, $xls = NULL)
+    {
+
+        $this->erp->checkPermissions('cash_book',NULL,'account_report');
+        $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
+        $this->data['categories'] = $this->site->getAllCategories();
+        $this->data['users'] = $this->reports_model->getStaff();
+        $this->data['products'] = $this->site->getProducts();
+        $this->data['customers'] = $this->site->getCustomerSale();
+        $this->data['billers']  = $this->site->getAllCompanies('biller');
+        //$this->erp->print_arrays($supplier);
+
+
+
+        if (!$this->Owner && !$this->Admin) {
+            $gp = $this->site->checkPermissions();
+            $this->permission = $gp[0];
+            $this->permission[] = $gp[0];
+        } else {
+            $this->permission[] = NULL;
+        }
+
+        $this->erp->checkPermissions('index',null,'products');
+
+        if ($this->input->post('customers')) {
+            $customer_id = $this->input->post('customers');
+        }
+        else {
+            $customer_id = NULL;
+        }
+
+        $this->data['customer_id']= $customer_id;
+
+
+        if ($this->input->post('products')) {
+            $product_id = $this->input->post('products');
+        }
+        else {
+            $product_id = NULL;
+        }
+        $this->data['product_id']= $product_id;
+        if ($this->input->get('supplier')) {
+            $supplier = $this->input->get('supplier');
+        } else {
+            $supplier = NULL;
+        }
+
+        if ($this->input->post('reference_no')) {
+            $reference_no = $this->input->post('reference_no');
+        } else {
+            $reference_no = NULL;
+        }
+        $this->data['reference_no']= $reference_no;
+        if ($this->input->post('biller')) {
+            $biller_id = $this->input->post('biller');
+        } else {
+            $biller_id = NULL;
+        }
+        $this->data['biller_id']= $biller_id;
+        //$this->erp->print_arrays($product_id);
+        if ($this->input->post('start_date')) {
+
+            $start_date =$this->input->post('start_date');
+            $start = $this->erp->fld($start_date);
+        } else {
+            $start_date = NULL;
+        }
+        $this->data['start']= $start;
+
+
+        if ($this->input->post('end_date')) {
+            $end_date = $this->input->post('end_date');
+            $end = $this->erp->fld($end_date);
+
+        } else {
+            $end_date = NULL;
+
+        }
+        $this->data['end']= $end;
+
+//        if ($this->input->post('pro_code1')) {
+//
+//        } else {
+//            $reference_no = NULL;
+//        }
+
+
+        $pro_code1 = $this->input->get('p_c');
+
+
+        $this->data['products_code']= $this->reports_model->getPurchaseCodeById($product_id,$reference_no,$biller_id,$start,$end,$pro_code1);
+        // $this->data['products_code'] = $product_code;
+
+
+        if ($pdf != NULL && $biller_id == NULL) {
+            $html = $this->load->view($this->theme . 'reports/cash_books', $this->data, true);
+            $name = lang("cash_books") . "_" . date('Y_m_d_H_i_s') . ".pdf";
+            $html = str_replace('<p class="introtext">' . lang("reports_cash_books_text") . '</p>', '', $html);
+            $this->erp->generate_pdf($html, $name, null, null, null, null, null, 'L');
+        }
+
+
+        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('reports'), 'page' => lang('reports')), array('link' => '#', 'page' => lang('Purchases_By_Item_etail')));
+        $meta = array('page_title' => lang('purchases_by_item_detail'), 'bc' => $bc);
+        $this->page_construct('reports/purchases_by_item_detail', $meta, $this->data);
+    }
+    function purchases_by_item_summary($pdf = NULL,$biller_id = NULL, $xls = NULL)
+    {
+
+        $this->erp->checkPermissions('cash_book',NULL,'account_report');
+        $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
+        $this->data['categories'] = $this->site->getAllCategories();
+        $this->data['users'] = $this->reports_model->getStaff();
+        $this->data['products'] = $this->site->getProducts();
+        $this->data['customers'] = $this->site->getCustomerSale();
+        $this->data['billers']  = $this->site->getAllCompanies('biller');
+        // $this->erp->print_arrays($products);
+        if (!$this->Owner && !$this->Admin) {
+            $gp = $this->site->checkPermissions();
+            $this->permission = $gp[0];
+            $this->permission[] = $gp[0];
+        } else {
+            $this->permission[] = NULL;
+        }
+
+        $this->erp->checkPermissions('index',null,'products');
+
+        if ($this->input->post('customers')) {
+            $customer_id = $this->input->post('customers');
+        }
+        else {
+            $customer_id = NULL;
+        }
+
+        $this->data['customer_id']= $customer_id;
+
+
+        if ($this->input->post('products')) {
+            $product_id = $this->input->post('products');
+        }
+        else {
+            $product_id = NULL;
+        }
+
+       // $this->erp->print_arrays($product_id);
+        if ($this->input->get('supplier')) {
+            $supplier = $this->input->get('supplier');
+        } else {
+            $supplier = NULL;
+        }
+
+        if ($this->input->post('reference_no')) {
+            $reference_no = $this->input->post('reference_no');
+        } else {
+            $reference_no = NULL;
+        }
+        $this->data['reference_no']= $reference_no;
+        if ($this->input->post('biller')) {
+            $biller_id = $this->input->post('biller');
+        } else {
+            $biller_id = NULL;
+        }
+        $this->data['biller_id']= $biller_id;
+        //$this->erp->print_arrays($reference_no);
+        if ($this->input->post('start_date')) {
+
+            $start_date =$this->input->post('start_date');
+            $start = $this->erp->fld($start_date);
+        } else {
+            $start_date = NULL;
+        }
+        $this->data['start']= $start;
+
+
+        if ($this->input->post('end_date')) {
+            $end_date = $this->input->post('end_date');
+            $end = $this->erp->fld($end_date);
+
+        } else {
+            $end_date = NULL;
+
+        }
+        $this->data['end']= $end;
+//        if ($this->input->post('pro_code1')) {
+//
+//        } else {
+//            $reference_no = NULL;
+//        }
+        $pro_code1 = $this->input->get('p_c');
+
+        $this->data['products_code']= $this->reports_model->getPurchaseSummaryCodeById($product_id,$biller_id,$start,$end,$pro_code1);
+        // $this->data['products_code'] = $product_code;
+
+
+        if ($pdf != NULL && $biller_id == NULL) {
+            $html = $this->load->view($this->theme . 'reports/cash_books', $this->data, true);
+            $name = lang("cash_books") . "_" . date('Y_m_d_H_i_s') . ".pdf";
+            $html = str_replace('<p class="introtext">' . lang("reports_cash_books_text") . '</p>', '', $html);
+            $this->erp->generate_pdf($html, $name, null, null, null, null, null, 'L');
+        }
+        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('reports'), 'page' => lang('reports')), array('link' => '#', 'page' => lang('Purchases_By_Item_Summary')));
+        $meta = array('page_title' => lang('purchases_by_item_summary'), 'bc' => $bc);
+        $this->page_construct('reports/purchases_by_item_summary', $meta, $this->data);
+    }
+    function ar_aging_detail()
+    {
+        $start_date = $this->input->post('start_date');
+        $end_date 	= $this->input->post('end_date');
+        if ($start_date) {
+            $s_date = $this->erp->fld($start_date);
+            $e_date	= $this->erp->fld($end_date);
+        } else {
+            $s_date = null;
+            $e_date	= null;
+        }
+        $this->data['sale_invoice'] = $this->reports_model->getSalePaidInvoice($s_date, $e_date);
+
+        $bc 	= array(array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('reports')));
+        $meta 	= array('page_title' => lang('sale_payment_report'), 'bc' => $bc);
+        $this->page_construct('reports/ar_aging_detail', $meta, $this->data);
+    }
+
+    function r_modal($id = NULL)
+    {
+
+        $this->erp->checkPermissions('index', null, 'sales');
+        if ($this->input->get('id')) {
+            $id = $this->input->get('id');
+        }
+        $this->load->model('pos_model');
+        $this->data['pos'] = $this->pos_model->getSetting();
+        $this->data['setting'] = $this->site->get_setting();
+        $this->data['error'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('error');
+        $inv = $this->sales_model->getInvoiceByID($id);
+        if (!$this->session->userdata('view_right')){
+            $this->erp->view_rights($inv->created_by, true);
+        }
+        $this->data['customer'] = $this->site->getCompanyByID($inv->customer_id);
+        $this->data['biller'] = $this->site->getCompanyByID($inv->biller_id);
+        $this->data['created_by'] = $this->site->getUser($inv->created_by);
+        $this->data['updated_by'] = $inv->updated_by ? $this->site->getUser($inv->updated_by) : NULL;
+        $this->data['warehouse'] = $this->site->getWarehouseByID($inv->warehouse_id);
+        $this->data['inv'] = $inv;
+        $return = $this->sales_model->getReturnBySID($id);
+        $this->data['return_sale'] = $return;
+        $this->data['rows'] = $this->sales_model->getAllInvoiceItems($id);
+
+        $this->load->view($this->theme.'reports/sale_item_modal.php', $this->data);
+    }
+
+    function transaction_detail($pdf = NULL, $xls = null, $biller_id = NULL, $start_date = null, $end_date = null){
+
+        $this->erp->checkPermissions('ledger',NULL,'account_report');
+        $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
+        $this->data['categories'] = $this->site->getAllCategories();
+        $user = $this->site->getUser();
+
+        $start_date = $this->input->get('sd');
+        $end_date = $this->input->get('ed');
+
+        $biller_id = $biller_id ? $biller_id : $this->input->get('biller');
+        $this->data['v_account'] = $this->input->post('account') ? $this->input->post('account') : $this->input->get('account');
+        $this->data['start_date'] = $this->input->post('start_date')? $this->input->post('start_date') : $this->input->get('start_date');
+        $this->data['end_date'] = $this->input->post('end_date') ? $this->input->post('end_date') : $this->input->get('end_date');
+        $this->data['v_form'] = $v_form = "0/0/".$biller_id;
+
+        if($biller_id != NULL){
+            $this->data['biller_id'] = $biller_id;
+        }else{
+            if($user->biller_id){
+                $this->data['biller_id'] = $user->biller_id;
+                $biller_id = $user->biller_id;
+            }else{
+                $this->data['biller_id'] = "";
+            }
+        }
+        if(!$this->Owner && !$this->Admin) {
+            if($user->biller_id){
+                $this->data['billers'] = $this->site->getCompanyByArray($user->biller_id);
+            }else{
+                $this->data['billers'] = $this->site->getAllCompanies('biller');
+            }
+        }else{
+            $this->data['billers'] = $this->site->getAllCompanies('biller');
+        }
+
+        if ($this->input->get('start_date')) {
+            $dt = "From " . $this->input->get('start_date') . " to " . $this->input->get('end_date');
+        } else {
+            $dt = "Till " . $this->input->get('end_date');
+        }
+
+        if ($pdf) {
+
+            $ac = $_GET['ac'];
+
+            $styleArray = array(
+                'font'  => array(
+                    'bold'  => true,
+                    'color' => array('rgb' => '#000000'),
+                    'size'  => 10,
+                    'name'  => 'Verdana'
+                )
+
+            );
+
+
+            if($pdf){
+                $styleArray1 = array(
+                    'font' => array(
+                        'bold' => true,
+                        'size' => 15),
+                );
+            }
+
+            $this->load->library('excel');
+            $this->excel->setActiveSheetIndex(0);
+
+            $styleArray10 = array(
+                'font'  => array(
+                    'bold'  => true,
+                    'color' => array('rgb' => '#000000'),
+                    'size'  => 10,
+                    'name'  => 'Verdana'
+                ),
+                'borders' => array(
+                    'allborders' => array('style' => PHPExcel_Style_Border::BORDER_THIN)
+                ),
+            );
+
+            $this->excel->getActiveSheet()->setTitle(lang('Transaction'));
+            $this->excel->getActiveSheet()->getStyle('A1:J1')->applyFromArray($styleArray1);
+            $this->excel->getActiveSheet()->getStyle('A2:J2')->applyFromArray($styleArray1);
+            $this->excel->getActiveSheet()->getStyle('A4:J4')->applyFromArray($styleArray10);
+            $this->excel->getActiveSheet()->mergeCells('A1:J1')->setCellValue('A1', lang('Transaction detail'));
+            $this->excel->getActiveSheet()->mergeCells('A2:J2')->setCellValue('D2', 'From '.$start_date . ' To '. $end_date);
+            $this->excel->getActiveSheet()->getStyle('A1')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getStyle('A2')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->mergeCells('A3:J3')->setCellValue('A3', '');
+            $this->excel->getActiveSheet()->SetCellValue('A4', lang('Type'));
+            $this->excel->getActiveSheet()->SetCellValue('B4', lang('Num'));
+            $this->excel->getActiveSheet()->SetCellValue('C4', lang('Class'));
+            $this->excel->getActiveSheet()->SetCellValue('D4', lang('Name'));
+            $this->excel->getActiveSheet()->SetCellValue('E4', lang('Item'));
+            $this->excel->getActiveSheet()->SetCellValue('F4', lang('Inventory'));
+            $this->excel->getActiveSheet()->SetCellValue('G4', lang('Quantity'));
+            $this->excel->getActiveSheet()->SetCellValue('H4', lang('Sales Person'));
+            $this->excel->getActiveSheet()->SetCellValue('I4', lang('Debit'));
+            $this->excel->getActiveSheet()->SetCellValue('J4', lang('Credit'));
+            $this->excel->getActiveSheet()->SetCellValue('K4', lang('Balance'));
+            $BoStyle = array(
+                'borders' => array(
+                    'allborders' => array(
+                        'style' => PHPExcel_Style_Border::BORDER_THIN
+                    )
+                )
+            );
+
+            /* $row1=75;
+             $row2=76;
+             $row3=77;*/
+            $accounntCode = $this->db;
+            $accounntCode->select('*')->from('gl_charts');
+            if ($_GET['ac']) {
+                $accounntCode->where('gl_charts.accountcode', $ac);
+            }
+            if ($this->input->get('account') ) {
+                $accounntCode->where('accountcode', $this->input->get('account'));
+            }
+            $acc    = $accounntCode->get()->result();
+            $row    = 5;
+            $rows   = 6;
+            $row1   = 0;
+            $row2   = 0;
+            $row3   = 0;
+            foreach($acc as $val){
+                $gl_tranStart = $this->db->select('sum(amount) as startAmount')->from('gl_trans');
+                $gl_tranStart->where('account_code', $val->accountcode);
+                //if ($start_date) {
+                $gl_tranStart ->where('date(erp_gl_trans.tran_date) >=', $this->erp->fld($start_date));
+                $gl_tranStart ->where('date(erp_gl_trans.tran_date) <=', $this->erp->fld($end_date));
+                //}
+                $startAmount = $gl_tranStart->get()->row();
+
+                $endAccountBalance = 0;
+                $endAccountBalanceMinus = 0;
+
+                $getListGLTran = $this->db->select("
+                                    gl_trans.*,
+                                    (CASE WHEN erp_gl_trans.amount>0 THEN erp_gl_trans.amount END ) as am1,
+                                    (CASE WHEN erp_gl_trans.amount<0 THEN erp_gl_trans.amount END ) as am2,
+                                    companies.company,
+                                    (
+                                        CASE
+                                        WHEN erp_gl_trans.tran_type = 'SALES' THEN
+                                            IF(erp_gl_trans.bank = '1', (
+                                                SELECT
+                                                    erp_companies.company
+                                                FROM
+                                                    erp_payments
+                                                INNER JOIN erp_sales ON erp_sales.id = erp_payments.sale_id
+                                                INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id
+                                                WHERE
+                                                    erp_payments.reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            ), (
+                                                SELECT
+                                                    erp_companies.company
+                                                FROM
+                                                    erp_sales
+                                                INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id
+                                                WHERE
+                                                    erp_sales.reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            ))
+                                        WHEN erp_gl_trans.tran_type = 'PURCHASES' OR erp_gl_trans.tran_type = 'PURCHASE EXPENSE' THEN
+                                            IF(erp_gl_trans.bank = 1, (
+                                                SELECT
+                                                    erp_companies.company
+                                                FROM
+                                                    erp_payments
+                                                INNER JOIN erp_purchases ON erp_purchases.id = erp_payments.purchase_id
+                                                INNER JOIN erp_companies ON erp_companies.id = erp_purchases.supplier_id
+                                                WHERE
+                                                    erp_payments.reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            ), (
+                                                SELECT
+                                                    erp_companies.company
+                                                FROM
+                                                    erp_purchases
+                                                INNER JOIN erp_companies ON erp_companies.id = erp_purchases.supplier_id
+                                                WHERE
+                                                    erp_purchases.reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            ))
+                                        WHEN erp_gl_trans.tran_type = 'SALES-RETURN' THEN
+                                            (
+                                                SELECT
+                                                    erp_return_sales.customer
+                                                FROM
+                                                    erp_return_sales
+                                                WHERE
+                                                    erp_return_sales.reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            )
+                                        WHEN erp_gl_trans.tran_type = 'PURCHASES-RETURN' THEN
+                                            (
+                                                SELECT
+                                                    erp_return_purchases.supplier
+                                                FROM
+                                                    erp_return_purchases
+                                                WHERE
+                                                    erp_return_purchases.reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            )
+                                        WHEN erp_gl_trans.tran_type = 'DELIVERY' THEN
+                                            (
+                                                SELECT
+                                                    erp_companies.company as customer
+                                                FROM
+                                                    erp_deliveries
+                                                INNER JOIN erp_companies ON erp_companies.id = erp_deliveries.customer_id
+                                                WHERE
+                                                    erp_deliveries.do_reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            )
+                                        WHEN erp_gl_trans.tran_type = 'PRINCIPLE' THEN
+                                            (
+                                                SELECT
+                                                    erp_companies.company
+                                                FROM
+                                                    erp_payments
+                                                LEFT JOIN erp_loans ON erp_loans.id = erp_payments.loan_id
+                                                INNER JOIN erp_sales ON erp_loans.sale_id = erp_sales.id
+                                                INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id
+                                                WHERE
+                                                    erp_payments.reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            )
+                                        ELSE
+                                            created_name
+                                        END
+                                    ) AS name,                                                                  
+                                    users.username,
+                                    (SELECT
+                                        erp_products.product_details
+                                    FROM
+                                        erp_products
+                                        LEFT JOIN erp_stock_trans ON erp_stock_trans.product_id = erp_products.id 
+                                        LIMIT 0,
+                                        1 
+                                    ) as product_inventory,
+                                    (SELECT
+                                    erp_products.name as aa
+                                FROM
+                                    erp_products
+                                    INNER JOIN erp_stock_trans ON erp_stock_trans.product_id = erp_products.id 
+                                    LIMIT 0,
+                                    1 
+                                ) as pro_name,
+                                (erp_companies.name) as product_name,
+                                    erp_gl_charts.inventory,
+                                     ( SELECT erp_products.`code` FROM erp_products INNER JOIN erp_stock_trans ON erp_stock_trans.product_id = erp_products.id LIMIT 0, 1 ) AS pro_code,
+                                    erp_stock_trans.quantity_balance_unit,
+                                    (erp_companies.name) as biller_name")
+                    ->from('gl_trans')
+                    ->join('companies','companies.id=gl_trans.biller_id')
+                    ->join('users', 'users.id = gl_trans.created_by', 'left')
+                    ->join('erp_gl_charts','erp_gl_charts.accountcode = erp_gl_trans.account_code','left')
+                    ->join('erp_stock_trans', 'erp_stock_trans.reference = erp_gl_trans.reference_no', 'left')
+                    ->order_by('tran_date', 'asc')
+                    ->where('account_code', $val->accountcode)
+                ;
+
+                if ($start_date) {
+                    $getListGLTran->where('erp_gl_trans.tran_date >=', $this->erp->fld($start_date).'00:00:00');
+                }
+                if ($end_date) {
+                    $getListGLTran->where('erp_gl_trans.tran_date <=', $this->erp->fld($end_date).'23:59:00');
+                }
+
+                if ($this->data['start_date']) {
+                    $getListGLTran->where('date(tran_date) >=', $this->data['start_date']);
+                }
+                if ($this->data['end_date']) {
+                    $getListGLTran->where('date(tran_date) <=', $this->data['end_date']);
+                }
+
+                if($biller_id != ""){
+                    $getListGLTran->where_in('gl_trans.biller_id' ,JSON_decode($biller_id));
+                }
+                $gltran_list = $getListGLTran->get()->result();
+                if($gltran_list) {
+                    $endAmount = $startAmount->startAmount;
+
+                    if($endAmount>0){
+                        $endDebitAmount = $endAmount;
+                        $endCreditAmount = 0;
+                    }else{
+                        $endDebitAmount = 0;
+                        $endCreditAmount = $endAmount;
+                    }
+                    $this->excel->getActiveSheet()->mergeCells('A'.$row.':C'.$row)->setCellValue('A'. $row , 'Account: '.$val->accountcode . ' ' .$val->accountname);
+                    $this->excel->getActiveSheet()->mergeCells('D'.$row.':G'.$row);
+                    //$this->excel->getActiveSheet()->setCellValue('D'. $row , 'Begining Account Balance: ')->getStyle('A'.$row.':J'.$row)->applyFromArray($BoStyle);
+//                        if($startAmount->startAmount > 0) {
+//                            $this->excel->getActiveSheet()->setCellValue('H'. $row , $this->erp->formatDecimal(abs($startAmount->startAmount)));
+//                            $this->excel->getActiveSheet()->setCellValue('I'. $row , '');
+//                        }else {
+//                            $this->excel->getActiveSheet()->setCellValue('H'. $row , '');
+//                            $this->excel->getActiveSheet()->setCellValue('I'. $row , $this->erp->formatDecimal(abs($startAmount->startAmount)));
+//                        }
+                    $this->excel->getActiveSheet()->getStyle('A'.$row.':C'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('D'.$row.':E'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$row.':G'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('H'.$row.':I'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$row.':G'.$row)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+                    $endAmount = $startAmount->startAmount;
+                    foreach($gltran_list as $rw)
+                    {
+                        $endDebitAmount+=$rw->am1;
+                        $endCreditAmount+=$rw->am2;
+                        $this->excel->getActiveSheet()->getStyle('E'.$rows.':G'.$rows)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+                        $endAccountBalance += $rw->amount;
+                        // $endAccountBalanceMinus = explode('-', $this->erp->formatMoney($endAccountBalance));
+                        $endAmount += $rw->amount;
+                        //$endAccountCreditBalance += $rw->am2;
+                        //$endAccountDebitBalance += $rw->am1;
+                        $this->excel->getActiveSheet()->SetCellValue('A' . $rows, $rw->tran_type);
+                        $this->excel->getActiveSheet()->SetCellValue('B' . $rows, $rw->reference_no);
+                        $this->excel->getActiveSheet()->SetCellValue('C' . $rows, ($rw->biller_name!=''?$rw->biller_name:$rw->company));
+                        $this->excel->getActiveSheet()->SetCellValue('D' . $rows,($rw->name!=''?$rw->name:$rw->company));
+                        $this->excel->getActiveSheet()->SetCellValue('E' . ($rw->inventory==1?$rw->pro_code:''));
+                        $this->excel->getActiveSheet()->SetCellValue('F' . $rows, $rw->product_inventory);
+                        $this->excel->getActiveSheet()->SetCellValue('G' . $rows, $rw->quantity_balance_unit);
+                        $this->excel->getActiveSheet()->SetCellValue('H' .$rows,$rw->username );
+                        $this->excel->getActiveSheet()->SetCellValue('I' . $rows, ($rw->am1 > 0 ? $this->erp->formatMoney($rw->am1) : '0.00'));
+                        $this->excel->getActiveSheet()->SetCellValue('J' . $rows, ($rw->am2 < 1 ? $this->erp->formatMoney(abs($rw->am2)) : '0.00'));
+                        $this->excel->getActiveSheet()->SetCellValue('k' . $rows, $endAccountBalance < 0 ? '$ (' . $endAccountBalanceMinus[1] . ')' : $this->erp->formatMoney($endAccountBalance));
+
+                        if($row>70){
+                            $row1++;
+                            $row2++;
+                            $row3++;
+                        }
+                        $rows++;
+                    }
+                    $test = $rows;
+                    $this->excel->getActiveSheet()->mergeCells('A'.$test.':C'.$test);
+                    $this->excel->getActiveSheet()->mergeCells('D'.$test.':G'.$test)->setCellValue('D'. $test , 'Ending Account Balance: ');
+                    if($endAmount > 0) {
+                        $this->excel->getActiveSheet()->setCellValue('K'. $test , $this->erp->formatMoney($endAmount));
+                        $this->excel->getActiveSheet()->setCellValue('I'. $test , $this->erp->formatMoney(abs($endDebitAmount)));
+                        $this->excel->getActiveSheet()->setCellValue('J'. $test , $this->erp->formatMoney(abs($endCreditAmount)));
+                    }else {
+                        $this->excel->getActiveSheet()->setCellValue('I'. $test , $this->erp->formatMoney(abs($endDebitAmount)));
+                        $this->excel->getActiveSheet()->setCellValue('K'. $test , $this->erp->formatMoney(abs($endAmount)));
+                        $this->excel->getActiveSheet()->setCellValue('J'. $test , $this->erp->formatMoney(abs($endCreditAmount)));
+                    }
+                    $this->excel->getActiveSheet()->getStyle('H'.$test.':J'.$test)->applyFromArray($styleArray10);
+
+                    $this->excel->getActiveSheet()->getStyle('D'.$test.':E'.$test)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$test.':G'.$test)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$test.':G'.$test)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+                    $row = $rows;
+                    $rows = $rows + 2 ;
+                    $this->excel->getActiveSheet()->getStyle('A'.$row.':J'.$row)->applyFromArray($BoStyle);
+                    $row++;
+                }
+
+            }
+            $BorStyle = array(
+                'borders' => array(
+                    'allborders' => array(
+                        'style' => PHPExcel_Style_Border::BORDER_THIN
+                    )
+                )
+            );
+
+            $this->excel->getActiveSheet()->getStyle("F".$row1)->getFont()->setSize(14);
+            $this->excel->getActiveSheet()->getStyle('F'.$row1)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getStyle('B'.$row2)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getStyle('F'.$row2.':G'.$row2)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getStyle('F'.$row3)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getColumnDimension('A')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('B')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('C')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('D')->setWidth(30);
+            $this->excel->getActiveSheet()->getColumnDimension('E')->setWidth(15);
+            $this->excel->getActiveSheet()->getColumnDimension('F')->setWidth(10);
+            $this->excel->getActiveSheet()->getColumnDimension('G')->setWidth(15);
+            $this->excel->getDefaultStyle()->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+            $filename = 'ledger_' . date('Y_m_d_H_i_s');
+            if ($pdf) {
+                $this->excel->getActiveSheet()->getPageSetup()->setOrientation(PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
+                require_once(APPPATH . "third_party" . DIRECTORY_SEPARATOR . "MPDF" . DIRECTORY_SEPARATOR . "mpdf.php");
+                $rendererName = PHPExcel_Settings::PDF_RENDERER_MPDF;
+                $rendererLibrary = 'MPDF';
+                $rendererLibraryPath = APPPATH . 'third_party' . DIRECTORY_SEPARATOR . $rendererLibrary;
+                if (!PHPExcel_Settings::setPdfRenderer($rendererName, $rendererLibraryPath)) {
+                    die('Please set the $rendererName: ' . $rendererName . ' and $rendererLibraryPath: ' . $rendererLibraryPath . ' values' .
+                        PHP_EOL . ' as appropriate for your directory structure');
+                }
+
+                header('Content-Type: application/pdf');
+                header('Content-Disposition: attachment;filename="' . $filename . '.pdf"');
+                header('Cache-Control: max-age=0');
+
+                $objWriter = PHPExcel_IOFactory::createWriter($this->excel, 'PDF');
+                return $objWriter->save('php://output');
+            }
+            redirect($_SERVER["HTTP_REFERER"]);
+        }
+
+        // ***********************************************
+        if ($xls) {
+            $ac = $_GET['ac'];
+
+            $styleArray = array(
+                'font'  => array(
+                    'bold'  => true,
+                    'color' => array('rgb' => '#000000'),
+                    'size'  => 10,
+                    'name'  => 'Verdana'
+                ),
+            );
+            $styleArray10 = array(
+                'font'  => array(
+                    'bold'  => true,
+                    'color' => array('rgb' => '#000000'),
+                    'size'  => 10,
+                    'name'  => 'Verdana'
+                ),
+            );
+            if($xls){
+                $styleArray1 = array(
+                    'font' => array(
+                        'bold' => true,
+                        'size' => 15),
+                );
+            }
+            $this->load->library('excel');
+            $this->excel->setActiveSheetIndex(0);
+            $this->excel->getActiveSheet()->setTitle(lang('Transaction'));
+            $this->excel->getActiveSheet()->getStyle('A4:k4')->applyFromArray($styleArray);
+            $this->excel->getActiveSheet()->getStyle('F1')->applyFromArray($styleArray);
+            $this->excel->getActiveSheet()->getStyle('F2:H2')->applyFromArray($styleArray);
+            $this->excel->getActiveSheet()->getStyle('A3:D3')->applyFromArray($styleArray);
+            $this->excel->getActiveSheet()->getStyle('D1')->applyFromArray($styleArray1);
+            $this->excel->getActiveSheet()->getStyle('D2')->applyFromArray($styleArray1);
+            $this->excel->getActiveSheet()->SetCellValue('F1', lang('  '));
+            $this->excel->getActiveSheet()->SetCellValue('F2', lang(''));
+            $this->excel->getActiveSheet()->SetCellValue('A3', lang(''));
+            $this->excel->getActiveSheet()->SetCellValue('D1', lang('Transaction detail'));
+            $this->excel->getActiveSheet()->getStyle('D1')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->SetCellValue('D2', 'From '.$start_date . ' To '. $end_date);
+            $this->excel->getActiveSheet()->getStyle('D2')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->SetCellValue('A4', lang('Type'));
+            $this->excel->getActiveSheet()->SetCellValue('B4', lang('Num'));
+            $this->excel->getActiveSheet()->SetCellValue('C4', lang('Class'));
+            $this->excel->getActiveSheet()->SetCellValue('D4', lang('Name'));
+            $this->excel->getActiveSheet()->SetCellValue('E4', lang('Item'));
+            $this->excel->getActiveSheet()->SetCellValue('F4', lang('Inventory'));
+            $this->excel->getActiveSheet()->SetCellValue('G4', lang('Quantity'));
+            $this->excel->getActiveSheet()->SetCellValue('H4', lang('Sales Person'));
+            $this->excel->getActiveSheet()->SetCellValue('I4', lang('Debit'));
+            $this->excel->getActiveSheet()->SetCellValue('J4', lang('Credit'));
+            $this->excel->getActiveSheet()->SetCellValue('K4', lang('Balance'));
+
+            $BoStyle = array(
+                'borders' => array(
+                    'allborders' => array(
+                        'style' => PHPExcel_Style_Border::BORDER_THIN
+                    )
+                )
+            );
+
+            $row1=75;
+            $row2=76;
+            $row3=77;
+            $accounntCode = $this->db;
+            $accounntCode->select('*')->from('gl_charts');
+            if ($_GET['ac']) {
+                $accounntCode->where('gl_charts.accountcode', $ac);
+            }
+            if ($this->input->get('account') ) {
+                $accounntCode->where('accountcode', $this->input->get('account'));
+            }
+            $acc = $accounntCode->get()->result();
+            $row = 5;
+            $rows = 6;
+            foreach($acc as $val){
+                $gl_tranStart = $this->db->select('sum(amount) as startAmount')->from('gl_trans');
+                $gl_tranStart->where('account_code', $val->accountcode);
+                $gl_tranStart ->where('date(erp_gl_trans.tran_date) >=', $this->erp->fld($start_date));
+                $gl_tranStart ->where('date(erp_gl_trans.tran_date) <=', $this->erp->fld($end_date));
+                $startAmount = $gl_tranStart->get()->row();
+
+                $endAccountBalance = 0;
+
+                $getListGLTran = $this->db->select("
+                                    gl_trans.*,
+                                    (CASE WHEN erp_gl_trans.amount>0 THEN erp_gl_trans.amount END ) as am1,
+                                    (CASE WHEN erp_gl_trans.amount<0 THEN erp_gl_trans.amount END ) as am2,
+                                    companies.company,
+                                    (
+                                        CASE
+                                        WHEN erp_gl_trans.tran_type = 'SALES' THEN
+                                            IF(erp_gl_trans.bank = '1', (
+                                                SELECT
+                                                    erp_companies.company
+                                                FROM
+                                                    erp_payments
+                                                INNER JOIN erp_sales ON erp_sales.id = erp_payments.sale_id
+                                                INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id
+                                                WHERE
+                                                    erp_payments.reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            ), (
+                                                SELECT
+                                                    erp_companies.company
+                                                FROM
+                                                    erp_sales
+                                                INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id
+                                                WHERE
+                                                    erp_sales.reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            ))
+                                        WHEN erp_gl_trans.tran_type = 'PURCHASES' OR erp_gl_trans.tran_type = 'PURCHASE EXPENSE' THEN
+                                            IF(erp_gl_trans.bank = 1, (
+                                                SELECT
+                                                    erp_companies.company
+                                                FROM
+                                                    erp_payments
+                                                INNER JOIN erp_purchases ON erp_purchases.id = erp_payments.purchase_id
+                                                INNER JOIN erp_companies ON erp_companies.id = erp_purchases.supplier_id
+                                                WHERE
+                                                    erp_payments.reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            ), (
+                                                SELECT
+                                                    erp_companies.company
+                                                FROM
+                                                    erp_purchases
+                                                INNER JOIN erp_companies ON erp_companies.id = erp_purchases.supplier_id
+                                                WHERE
+                                                    erp_purchases.reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            ))
+                                        WHEN erp_gl_trans.tran_type = 'SALES-RETURN' THEN
+                                            (
+                                                SELECT
+                                                    erp_return_sales.customer
+                                                FROM
+                                                    erp_return_sales
+                                                WHERE
+                                                    erp_return_sales.reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            )
+                                        WHEN erp_gl_trans.tran_type = 'PURCHASES-RETURN' THEN
+                                            (
+                                                SELECT
+                                                    erp_return_purchases.supplier
+                                                FROM
+                                                    erp_return_purchases
+                                                WHERE
+                                                    erp_return_purchases.reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            )
+                                        WHEN erp_gl_trans.tran_type = 'DELIVERY' THEN
+                                            (
+                                                SELECT
+                                                    erp_companies.company as customer
+                                                FROM
+                                                    erp_deliveries
+                                                INNER JOIN erp_companies ON erp_companies.id = erp_deliveries.customer_id
+                                                WHERE
+                                                    erp_deliveries.do_reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            )
+                                        WHEN erp_gl_trans.tran_type = 'PRINCIPLE' THEN
+                                            (
+                                                SELECT
+                                                    erp_companies.company
+                                                FROM
+                                                    erp_payments
+                                                LEFT JOIN erp_loans ON erp_loans.id = erp_payments.loan_id
+                                                INNER JOIN erp_sales ON erp_loans.sale_id = erp_sales.id
+                                                INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id
+                                                WHERE
+                                                    erp_payments.reference_no = erp_gl_trans.reference_no
+                                                LIMIT 0,1
+                                            )
+                                        ELSE
+                                            created_name
+                                        END
+                                    ) AS name,                                                                  
+                                    users.username,
+                                    (SELECT
+                                        erp_products.product_details
+                                    FROM
+                                        erp_products
+                                        LEFT JOIN erp_stock_trans ON erp_stock_trans.product_id = erp_products.id 
+                                        LIMIT 0,
+                                        1 
+                                    ) as product_inventory,
+                                    ( SELECT erp_products.`code` FROM erp_products INNER JOIN erp_stock_trans ON erp_stock_trans.product_id = erp_products.id LIMIT 0, 1 ) AS pro_code,
+                                    (SELECT
+                                    erp_products.name as aa
+                                FROM
+                                    erp_products
+                                    INNER JOIN erp_stock_trans ON erp_stock_trans.product_id = erp_products.id 
+                                    LIMIT 0,
+                                    1 
+                                ) as pro_name,
+                                (erp_companies.name) as product_name,
+                                    erp_gl_charts.inventory,
+                                    erp_stock_trans.quantity_balance_unit,
+                                    (erp_companies.name) as biller_name")
+                    ->from('gl_trans')
+                    ->join('companies','companies.id=gl_trans.biller_id')
+                    ->join('users', 'users.id = gl_trans.created_by', 'left')
+                    ->join('erp_gl_charts','erp_gl_charts.accountcode = erp_gl_trans.account_code','left')
+                    ->join('erp_stock_trans', 'erp_stock_trans.reference = erp_gl_trans.reference_no', 'left')
+                    ->order_by('tran_date', 'asc')
+                    ->where('account_code', $val->accountcode)
+                ;
+
+
+                if ($start_date) {
+                    $getListGLTran->where('erp_gl_trans.tran_date >=', $this->erp->fld($start_date).'00:00:00');
+                }
+                if ($end_date) {
+                    $getListGLTran->where('erp_gl_trans.tran_date <=', $this->erp->fld($end_date).'23:59:00');
+                }
+
+                if ($this->data['start_date']) {
+                    $getListGLTran->where('date(tran_date) >=', $this->data['start_date']);
+                }
+                if ($this->data['end_date']) {
+                    $getListGLTran->where('date(tran_date) <=', $this->data['end_date']);
+                }
+
+                if($biller_id != ""){
+                    $getListGLTran->where_in('gl_trans.biller_id' ,JSON_decode($biller_id));
+                }
+                $gltran_list = $getListGLTran->get()->result();
+                if($gltran_list) {
+                    $endAmount = $startAmount->startAmount;
+
+                    if($endAmount>0){
+                        $endDebitAmount = $endAmount;
+                        $endCreditAmount = 0;
+                    }else{
+                        $endDebitAmount = 0;
+                        $endCreditAmount = $endAmount;
+                    }
+                    //echo  $endCreditAmount; exit();
+                    $this->excel->getActiveSheet()->mergeCells('A'.$row.':C'.$row)->setCellValue('A'. $row , 'Account: '.$val->accountcode . ' ' .$val->accountname);
+                    //  $this->excel->getActiveSheet()->mergeCells('D'.$row.':G'.$row);
+                    // $this->excel->getActiveSheet()->setCellValue('D'. $row , 'Begining Account Balance: ')->getStyle('A'.$row.':J'.$row)->applyFromArray($BoStyle);
+//                        if($startAmount->startAmount > 0) {
+//                            $this->excel->getActiveSheet()->setCellValue('H'. $row , $this->erp->formatMoney(abs($startAmount->startAmount)));->excel->getActiveSheet()->setCellValue('I'. $row , '');
+//                        } else {
+//                            $this->excel->getActiveSheet()->setCellValue('H'. $row , '');
+//                            $this->excel->getActiveSheet()->setCellValue('I'. $row , $this->erp->formatMoney(abs($startAmount->startAmount)));
+//                        }
+                    $this->excel->getActiveSheet()->getStyle('A'.$row.':C'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('D'.$row.':E'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$row.':G'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('H'.$row.':I'.$row)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$row.':G'.$row)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+                    //$endAmount = $startAmount->startAmount;
+                    foreach($gltran_list as $rw)
+                    {
+                        // $endAccountBalance += $gltran->amount;
+                        $endAccountBalanceMinus = explode('-', $endAccountBalance);
+                        $endAmount += $rw->amount;
+                        $endDebitAmount+=$rw->am1;
+                        $endCreditAmount+=$rw->am2;
+                        //$endDebitAmount+=$rw->am1;
+                        //$endCreditAmount+=$rw->am2;
+                        $this->excel->getActiveSheet()->getStyle('E'.$rows.':G'.$rows)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+                        $endAccountBalance += $rw->amount;
+                        $endAccountBalanceMinus = explode('-', $this->erp->formatMoney($endAccountBalance));
+                        $endAmount += $rw->amount;
+                        $this->excel->getActiveSheet()->SetCellValue('A' . $rows, $rw->tran_type);
+                        $this->excel->getActiveSheet()->SetCellValue('B' . $rows, $rw->reference_no);
+                        $this->excel->getActiveSheet()->SetCellValue('C' . $rows, ($rw->biller_name!=''?$rw->biller_name:$rw->company));
+                        $this->excel->getActiveSheet()->SetCellValue('D' . $rows,($rw->name!=''?$rw->name:$rw->company));
+                        $this->excel->getActiveSheet()->SetCellValue('E' . $rows, ($rw->inventory==1?$rw->pro_code:''));
+                        $this->excel->getActiveSheet()->SetCellValue('F' . $rows,($rw->inventory==1?$rw->pro_name:''));
+                        $this->excel->getActiveSheet()->SetCellValue('G' . $rows, ($rw->inventory==1?$rw->quantity_balance_unit:''));
+                        $this->excel->getActiveSheet()->SetCellValue('H' .$rows,($rw->inventory==1 || $rw->tran_type =='SALES'||$rw->tran_type =='SALES-RETURN'  ?$rw->username:'') );
+                        $this->excel->getActiveSheet()->SetCellValue('I' . $rows, ($rw->am1 > 0 ? $this->erp->formatMoney($rw->am1) : '0.00'));
+                        $this->excel->getActiveSheet()->SetCellValue('J' . $rows, ($rw->am2 < 1 ? $this->erp->formatMoney(abs($rw->am2)) : '0.00'));
+                        $this->excel->getActiveSheet()->SetCellValue('K' . $rows, $endAccountBalance < 0 ? '$ (' . $endAccountBalanceMinus[1] . ')' : $this->erp->formatMoney($endAccountBalance));
+
+                        $this->excel->getActiveSheet()->getStyle('A'.$rows.':J'.$rows)->applyFromArray($BoStyle);
+                        if($row>70){
+                            $row1++;
+                            $row2++;
+                            $row3++;
+                        }
+                        $rows++;
+                    }
+                    $test = $rows;
+                    $this->excel->getActiveSheet()->mergeCells('A'.$test.':C'.$test);
+                    $this->excel->getActiveSheet()->mergeCells('D'.$test.':G'.$test)->setCellValue('D'. $test , 'Ending Account Balance: ');
+
+                    if($endAmount > 0) {
+                        $this->excel->getActiveSheet()->setCellValue('k'. $test , $this->erp->formatMoney(abs($endAmount)));
+                        $this->excel->getActiveSheet()->setCellValue('I'. $test , $this->erp->formatMoney(abs($endDebitAmount)));
+                        $this->excel->getActiveSheet()->setCellValue('J'. $test , $this->erp->formatMoney(abs($endCreditAmount)));
+                    } else {
+                        $this->excel->getActiveSheet()->setCellValue('I'. $test , $this->erp->formatMoney(abs($endDebitAmount)));
+                        $this->excel->getActiveSheet()->setCellValue('K'. $test , $this->erp->formatMoney(abs($endAmount)));
+                        $this->excel->getActiveSheet()->setCellValue('J'. $test , $this->erp->formatMoney(abs($endCreditAmount)));
+                    }
+                    $this->excel->getActiveSheet()->getStyle('H'.$test.':K'.$test)->applyFromArray($styleArray10);
+
+                    $this->excel->getActiveSheet()->getStyle('D'.$test.':E'.$test)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$test.':G'.$test)->applyFromArray($styleArray10);
+                    $this->excel->getActiveSheet()->getStyle('F'.$test.':G'.$test)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+                    $row = $rows;
+                    $rows = $rows + 2 ;
+                    $this->excel->getActiveSheet()->getStyle('A'.$row.':J'.$row)->applyFromArray($BoStyle);
+                    $row++;
+                }
+
+            }
+            $BorStyle = array(
+                'borders' => array(
+                    'allborders' => array(
+                        'style' => PHPExcel_Style_Border::BORDER_THIN
+                    )
+                )
+            );
+            $this->excel->getActiveSheet()->getStyle('A4:k71')->applyFromArray($BorStyle);
+            $this->excel->getActiveSheet()->mergeCells('F75:G75');
+            $this->excel->getActiveSheet()->mergeCells('F77:G77');
+            $this->excel->getActiveSheet()->getStyle("F".$row1)->getFont()->setSize(14);
+            $this->excel->getActiveSheet()->getStyle('F'.$row1)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getStyle('B'.$row2)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getStyle('F'.$row2.':G'.$row2)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getStyle('F'.$row3)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $this->excel->getActiveSheet()->getColumnDimension('A')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('B')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('C')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('D')->setWidth(30);
+            $this->excel->getActiveSheet()->getColumnDimension('E')->setWidth(15);
+            $this->excel->getActiveSheet()->getColumnDimension('F')->setWidth(10);
+            $this->excel->getActiveSheet()->getColumnDimension('G')->setWidth(15);
+            $this->excel->getActiveSheet()->getColumnDimension('K')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('I')->setWidth(20);
+            $this->excel->getActiveSheet()->getColumnDimension('J')->setWidth(20);
+            $this->excel->getDefaultStyle()->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+            $filename = 'Transaction_' . date('Y_m_d_H_i_s');
+            if ($xls) {
+                header('Content-Type: application/vnd.ms-excel');
+                header('Content-Disposition: attachment;filename="' . $filename . '.xls"');
+                header('Cache-Control: max-age=0');
+                $objWriter = PHPExcel_IOFactory::createWriter($this->excel, 'Excel5');
+                return $objWriter->save('php://output');
+            }
+            redirect($_SERVER["HTTP_REFERER"]);
+        }
+
+        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('reports'), 'page' => lang('reports')), array('link' => '#', 'page' => lang('transaction_detail_by_acount')));
+        $meta = array('page_title' => lang('transaction_detail_by_acount'), 'bc' => $bc);
+        $this->page_construct('reports/transaction_detail_by_account', $meta, $this->data);
+    }
+    function suppliers_detail_r($pdf = NULL,$biller_id = NULL, $xls = NULL)
+    {
+
+        $this->erp->checkPermissions('cash_book',NULL,'account_report');
+        $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
+        $this->data['categories'] = $this->site->getAllCategories_r();
+        $this->data['users'] = $this->reports_model->getStaff_r();
+        //$this->data['products'] = $this->site->getProducts_r();
+        $this->data['customers'] = $this->site->getCustomerSale_r();
+        $this->data['billers']  = $this->site->getAllCompanies_r('biller');
+       // $this->erp->print_arrays($getCustomerSale_r);
+
+
+
+        if (!$this->Owner && !$this->Admin) {
+            $gp = $this->site->checkPermissions();
+            $this->permission = $gp[0];
+            $this->permission[] = $gp[0];
+        } else {
+            $this->permission[] = NULL;
+        }
+
+        $this->erp->checkPermissions('index',null,'products');
+
+        if ($this->input->post('supplier')) {
+            $supplierId = $this->input->post('supplier');
+        } else {
+            $supplierId = NULL;
+        }
+        if($this->input->get('p_c')){
+            $supplierId = $this->input->get('p_c');
+        }
+//        $this->erp->print_arrays($supplierId);
+        if ($this->input->post('reference_no')) {
+            $reference_no = str_replace(' ','',$this->input->post('reference_no'));
+        } else {
+            $reference_no = NULL;
+        }
+
+
+
+        if ($this->input->post('start_date')) {
+
+            $start_date =$this->input->post('start_date');
+            $start = $this->erp->fld($start_date);
+        } else {
+            $start_date = NULL;
+        }
+
+
+
+        if ($this->input->post('end_date')) {
+            $end_date = $this->input->post('end_date');
+            $end = $this->erp->fld($end_date);
+        } else {
+            $end_date = NULL;
+        }
+
+
+        if ($this->input->post('biller')) {
+            $biller_id = $this->input->post('biller');
+        } else {
+            $biller_id = NULL;
+        }
+
+//        $this->erp->print_arrays($biller_id.$biller_ids);
+        $this->data['purchase_id']= $this->reports_model->getSuppliersByID($supplierId,$reference_no,$start,$end,$biller_id);
+        $this->data['getAllSupplier']= $this->reports_model->getAllSupplier();
+        // $this->data['products_code'] = $product_code;
+
+
+        if ($pdf != NULL && $biller_id == NULL) {
+            $html = $this->load->view($this->theme . 'reports/cash_books', $this->data, true);
+            $name = lang("cash_books") . "_" . date('Y_m_d_H_i_s') . ".pdf";
+            $html = str_replace('<p class="introtext">' . lang("reports_cash_books_text") . '</p>', '', $html);
+            $this->erp->generate_pdf($html, $name, null, null, null, null, null, 'L');
+        }
+
+
+        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('reports'), 'page' => lang('reports')), array('link' => '#', 'page' => lang('Supplier Report Detail')));
+        $meta = array('page_title' => lang('SuppliersDetail'), 'bc' => $bc);
+        $this->page_construct('reports/suppliers_detail_r', $meta, $this->data);
+    }
+    function supplier_report_summary_r($pdf = NULL,$biller_id = NULL, $xls = NULL)
+    {
+        $this->erp->checkPermissions('cash_book',NULL,'account_report');
+        $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
+        $this->data['categories'] = $this->site->getAllCategories();
+        $this->data['users'] = $this->reports_model->getStaff();
+        $this->data['supplier'] = $this->site->getAllSuppliers();
+        $this->data['customers'] = $this->site->getCustomerSale();
+        $this->data['billers']  = $this->site->getAllCompanies('biller');
+
+
+        if (!$this->Owner && !$this->Admin) {
+            $gp = $this->site->checkPermissions();
+            $this->permission = $gp[0];
+            $this->permission[] = $gp[0];
+        } else {
+            $this->permission[] = NULL;
+        }
+
+        if ($this->input->post('supplier')) {
+            $pur_id = $this->input->post('supplier');
+        }
+        else {
+            $pur_id = NULL;
+        }
+//        if ($this->input->post('customers')) {
+//            $cus = $this->input->post('customers');
+//        }
+//        else {
+//            $cus = NULL;
+//        }
+        if ($this->input->post('reference_no')) {
+            $reference_no = $this->input->post('reference_no');
+        }
+        else {
+            $reference_no = NULL;
+        }
+        if ($this->input->post('biller')) {
+            $biller = $this->input->post('biller');
+        }
+        else {
+            $biller = NULL;
+        }
+
+        if ($this->input->post('start_date')) {
+
+            $start_date =$this->input->post('start_date');
+            $start1 = $this->erp->fld($start_date);
+        } else {
+            $start_dat1e = NULL;
+        }
+        //$this->data['start']= $start1;
+
+
+
+        if ($this->input->post('end_date')) {
+            $end_date = $this->input->post('end_date');
+            $end1 = $this->erp->fld($end_date);
+
+        } else {
+            $end_date1 = NULL;
+
+        }
+
+        $this->data['suppliers']= $this->reports_model->getSupplierCodeSummary($pur_id,$start1,$end1,$biller,$reference_no);
+        $this->erp->checkPermissions('index',null,'products');
+        if ($pdf != NULL && $biller_id == NULL) {
+            $html = $this->load->view($this->theme . 'reports/cash_books', $this->data, true);
+            $name = lang("cash_books") . "_" . date('Y_m_d_H_i_s') . ".pdf";
+            $html = str_replace('<p class="introtext">' . lang("reports_cash_books_text") . '</p>', '', $html);
+            $this->erp->generate_pdf($html, $name, null, null, null, null, null, 'L');
+        }
+
+        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('reports'), 'page' => lang('reports')), array('link' => '#', 'page' => lang('Supplier_Report_Summary')));
+        $meta = array('page_title' => lang('Supplier_Seport_Summary'), 'bc' => $bc);
+        $this->page_construct('reports/supplier_report_summary_r', $meta, $this->data);
+    }
+    function supplier_balance_summary_r()
+    {
+        $this->erp->checkPermissions('supplier_balance',NULL,'purchases');
+        $this->data['error'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('error');
+        $this->data['suppliers'] = $this->site->getAllCompanies('supplier');
+        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('reports'), 'page' => lang('Reports')), array('link' => '#', 'page' => lang('Supplier_Balance_Summary')));
+        $meta = array('page_title' => lang('Supplier_Balance_Summary'), 'bc' => $bc);
+        $this->page_construct('reports/supplier_balance_sammary_r', $meta, $this->data);
+    }
+    function getSupplierBalanceSummary_r($pdf = NULL, $xls = NULL)
+    {
+        if ($this->input->get('supplier')) {
+            $supplier = $this->input->get('supplier');
+        } else {
+            $supplier = NULL;
+        }
+        if ($this->input->get('start_date')) {
+            $start_date = $this->input->get('start_date');
+        } else {
+            $start_date = NULL;
+        }
+        if ($this->input->get('end_date')) {
+            $end_date = $this->input->get('end_date');
+        } else {
+            $end_date = NULL;
+        }
+        if ($start_date) {
+            $start_date = $this->erp->fld($start_date);
+            $end_date = $this->erp->fld($end_date);
+        }
+        if ($pdf || $xls) {
+
+            $this->db
+                ->select($this->db->dbprefix('companies') . ".id as id, company, name, phone, email, count(erp_purchases.id) as total, COALESCE(sum(grand_total), 0) as total_amount, COALESCE(sum(paid), 0) as paid, ( COALESCE(sum(grand_total), 0) - COALESCE(sum(paid), 0)) as balance", FALSE)
+                ->from("companies")
+                ->join('purchases', 'purchases.supplier_id=companies.id')
+                ->where('companies.group_name', 'supplier')
+                ->order_by('companies.company asc')
+                ->group_by('companies.id');
+
+            $q = $this->db->get();
+            if ($q->num_rows() > 0) {
+                foreach (($q->result()) as $row) {
+                    $data[] = $row;
+                }
+            } else {
+                $data = NULL;
+            }
+
+            if (!empty($data)) {
+
+                $this->load->library('excel');
+                $this->excel->setActiveSheetIndex(0);
+                $this->excel->getActiveSheet()->setTitle(lang('suppliers_report'));
+                $this->excel->getActiveSheet()->SetCellValue('A1', lang('company'));
+                $this->excel->getActiveSheet()->SetCellValue('B1', lang('name'));
+                $this->excel->getActiveSheet()->SetCellValue('C1', lang('phone'));
+                $this->excel->getActiveSheet()->SetCellValue('D1', lang('email'));
+                $this->excel->getActiveSheet()->SetCellValue('E1', lang('total_purchases'));
+                $this->excel->getActiveSheet()->SetCellValue('F1', lang('total_amount'));
+                $this->excel->getActiveSheet()->SetCellValue('G1', lang('paid'));
+                $this->excel->getActiveSheet()->SetCellValue('H1', lang('balance'));
+
+                $row = 2;
+                foreach ($data as $data_row) {
+                    $this->excel->getActiveSheet()->SetCellValue('A' . $row, $data_row->company);
+                    $this->excel->getActiveSheet()->SetCellValue('B' . $row, $data_row->name);
+                    $this->excel->getActiveSheet()->SetCellValue('C' . $row, $data_row->phone);
+                    $this->excel->getActiveSheet()->SetCellValue('D' . $row, $data_row->email);
+                    $this->excel->getActiveSheet()->SetCellValue('E' . $row, $this->erp->formatNumber($data_row->total));
+                    $this->excel->getActiveSheet()->SetCellValue('F' . $row, $this->erp->formatMoney($data_row->total_amount));
+                    $this->excel->getActiveSheet()->SetCellValue('G' . $row, $this->erp->formatMoney($data_row->paid));
+                    $this->excel->getActiveSheet()->SetCellValue('H' . $row, $this->erp->formatMoney($data_row->balance));
+                    $row++;
+                }
+
+                $this->excel->getActiveSheet()->getColumnDimension('A')->setWidth(20);
+                $this->excel->getActiveSheet()->getColumnDimension('B')->setWidth(25);
+                $this->excel->getActiveSheet()->getColumnDimension('C')->setWidth(25);
+                $this->excel->getActiveSheet()->getColumnDimension('D')->setWidth(25);
+                $this->excel->getActiveSheet()->getColumnDimension('E')->setWidth(15);
+                $this->excel->getActiveSheet()->getColumnDimension('F')->setWidth(15);
+                $this->excel->getActiveSheet()->getColumnDimension('G')->setWidth(15);
+                $filename = 'suppliers_report';
+                $this->excel->getDefaultStyle()->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+                if ($pdf) {
+                    $styleArray = array(
+                        'borders' => array(
+                            'allborders' => array(
+                                'style' => PHPExcel_Style_Border::BORDER_THIN
+                            )
+                        )
+                    );
+                    $this->excel->getDefaultStyle()->applyFromArray($styleArray);
+                    $this->excel->getActiveSheet()->getPageSetup()->setOrientation(PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
+                    require_once(APPPATH . "third_party" . DIRECTORY_SEPARATOR . "MPDF" . DIRECTORY_SEPARATOR . "mpdf.php");
+                    $rendererName = PHPExcel_Settings::PDF_RENDERER_MPDF;
+                    $rendererLibrary = 'MPDF';
+                    $rendererLibraryPath = APPPATH . 'third_party' . DIRECTORY_SEPARATOR . $rendererLibrary;
+                    if (!PHPExcel_Settings::setPdfRenderer($rendererName, $rendererLibraryPath)) {
+                        die('Please set the $rendererName: ' . $rendererName . ' and $rendererLibraryPath: ' . $rendererLibraryPath . ' values' .
+                            PHP_EOL . ' as appropriate for your directory structure');
+                    }
+
+                    header('Content-Type: application/pdf');
+                    header('Content-Disposition: attachment;filename="' . $filename . '.pdf"');
+                    header('Cache-Control: max-age=0');
+
+                    $objWriter = PHPExcel_IOFactory::createWriter($this->excel, 'PDF');
+                    $objWriter->save('php://output');
+                    exit();
+                }
+                if ($xls) {
+                    ob_clean();
+                    header('Content-Type: application/vnd.ms-excel');
+                    header('Content-Disposition: attachment;filename="' . $filename . '.xls"');
+                    header('Cache-Control: max-age=0');
+                    ob_clean();
+                    $objWriter = PHPExcel_IOFactory::createWriter($this->excel, 'Excel5');
+                    $objWriter->save('php://output');
+                    exit();
+                }
+            }
+            $this->session->set_flashdata('error', lang('nothing_found'));
+            redirect($_SERVER["HTTP_REFERER"]);
+        } else {
+
+            $sp = "(
+				SELECT
+					erp_purchases.id,
+					erp_purchases.supplier_id,
+					SUM(
+						COALESCE (erp_payments.discount, 0)
+					) AS discount,
+					SUM(
+
+						IF (
+							erp_payments.paid_by = 'deposit',
+							COALESCE (erp_payments.amount, 0),
+							0
+						)
+					) AS deposit,
+					SUM(
+
+						IF (
+							(
+								erp_payments.paid_by != 'deposit'
+								AND ISNULL(erp_payments.return_id)
+							),
+							erp_payments.amount,
+
+						IF (
+							NOT ISNULL(erp_payments.return_id),
+							((- 1) * erp_payments.amount),
+							0
+						)
+						)
+					) AS payment
+				FROM
+					erp_payments
+				LEFT JOIN erp_purchases ON erp_purchases.id = erp_payments.purchase_id
+				WHERE
+					erp_purchases.payment_status <> 'paid'
+				AND erp_purchases.status <> 'ordered'
+				GROUP BY erp_purchases.supplier_id
+				) AS erp_pmt";
+
+            $return = "(
+				SELECT
+					erp_purchases.id,
+					erp_purchases.supplier_id,
+					SUM(
+						erp_return_purchases.grand_total
+					) AS return_amount
+				FROM
+					erp_return_purchases
+				LEFT JOIN erp_purchases ON erp_purchases.id = erp_return_purchases.purchase_id
+				WHERE
+					erp_purchases.payment_status <> 'paid'
+				AND (
+						erp_purchases.return_id IS NULL
+						OR erp_purchases.grand_total <> erp_return_purchases.grand_total
+					)
+				GROUP BY
+					erp_return_purchases.supplier_id
+				) AS erp_total_return_purchase";
+
+            $this->load->library('datatables');
+            $this->datatables
+                ->select($this->db->dbprefix('companies') . ".id as idd,
+                           company,
+                           name,
+                           phone,
+                           email,
+                           count(" . $this->db->dbprefix('purchases') . ".id) as total,
+                           COALESCE(sum(grand_total), 0) as total_amount,
+                           total_return_purchase.return_amount as return_sale,
+                           COALESCE(sum(paid), 0) as paid,
+                           COALESCE(erp_pmt.deposit, 0) AS total_deposit,
+					       COALESCE(erp_pmt.discount, 0) AS total_discount,
+                           ( COALESCE(sum(grand_total), 0) - COALESCE(sum(paid), 0)) as balance", FALSE)
+                ->from("companies")
+                ->join('purchases', 'purchases.supplier_id=companies.id')
+                ->join($sp, 'pmt.supplier_id = purchases.supplier_id', 'left')
+                ->join($return, 'total_return_purchase.supplier_id = purchases.supplier_id', 'left')
+                ->where('companies.group_name', 'supplier')
+                ->where(array('purchases.status' => 'received', 'purchases.payment_status <>' => 'paid'))
+                ->group_by('companies.id')
+                ->add_column("Actions", "<div class='text-center'><a class=\"tip\" title='Supplier Balance Detail' href='" . site_url('reports/supplier_balance_detail_r/$1') . "'><span class='label label-primary'>Supplier Balance Detail</span></a></div>", "idd")
+                ->unset_column('id');
+            if($supplier){
+                $this->datatables->where('purchases.supplier_id', $supplier);
+            }
+            if (!$this->Owner && !$this->Admin && !$this->session->userdata('view_right')) {
+                $user = $this->session->userdata('user_id');
+                $this->datatables->where('purchases.created_by', $user);
+            }
+            if($this->session->userdata('biller_id') ) {
+                $user_biller = json_decode($this->session->userdata('biller_id'));
+                $this->datatables->where_in('purchases.biller_id', $user_biller );
+            }
+            if ($start_date) {
+                $this->datatables->where($this->db->dbprefix('purchases').'.date BETWEEN "' . $start_date . '" and "' . $end_date . '"');
+            }
+            echo $this->datatables->generate();
+
+        }
+
+    }
+    function supplier_balance_detail_r($user_id = NULL, $biller_id = NULL)
+    {
+//        $this->erp->checkPermissions('supplier_balance',NULL,'purchases');
+//        if (!$user_id && $_GET['d'] == null) {
+//            $this->session->set_flashdata('error', lang("no_supplier_selected"));
+//            redirect('reports/suppliers');
+//        }
+
+        if($biller_id != NULL){
+            $this->data['biller_id'] = $biller_id;
+        }else{
+            $this->data['biller_id'] = "";
+        }
+        if ($this->input->get('user')) {
+            $user = $this->input->get('user');
+        } else {
+            $user = NULL;
+        }
+        if(!$this->Owner && !$this->Admin) {
+            if($user->biller_id){
+                $this->data['billers'] = $this->site->getCompanyByArray($user->biller_id);
+            }else{
+                $this->data['billers'] = $this->site->getAllCompanies('biller');
+            }
+        }else{
+            $this->data['billers'] = $this->site->getAllCompanies('biller');
+        }
+        $this->data['categories'] = $this->site->getAllCategories();
+//        $this->data['purchases'] = $this->purchases_model->getPurchasesTotals($user_id);
+//        $this->data['total_purchases'] = $this->purchases_model->getSupplierPurchases($user_id);
+//        $this->data['users'] = $this->purchases_model->getStaff();
+        $this->data['warehouses'] = $this->site->getAllWarehouses();
+
+        $this->data['error'] = validation_errors() ? validation_errors() : $this->session->flashdata('error');
+
+        $this->data['user_id'] = $user_id;
+        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('purchases'), 'page' => lang('purchases')), array('link' => '#', 'page' => lang('view_supplier_balance')));
+        $meta = array('page_title' => lang('view_supplier_balance'), 'bc' => $bc);
+        $this->page_construct('reports/supplier_balance_detail_r', $meta, $this->data);
+    }
 }
      

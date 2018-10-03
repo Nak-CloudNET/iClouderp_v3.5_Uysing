@@ -530,3 +530,4 @@ $lang["group_product_prices"] = "Group Product Prices";
 $lang["edit_price_group"] = "Edit Price Group";
 $lang["delete_price_group"] = "Delete Price Group";
 $lang["order_discount_%"] = "Order Discount (without % sign)";
+$lang["add_closing_date"] = "Add Closing Date";

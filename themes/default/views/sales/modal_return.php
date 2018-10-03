@@ -367,6 +367,12 @@
                                 <span class="hidden-sm hidden-xs"><?= lang('Creadit_Note') ?></span>
                             </a>
                         </div>
+                        <div class="btn-group">
+                            <a href="<?= site_url('sales/print_credit_invoice/' . $inv->id) ?>" class="tip btn btn-primary" title="<?= lang('Sale Return Sela Pepper') ?>">
+                                <i class="fa fa-angle-double-left"></i>
+                                <span class="hidden-sm hidden-xs"><?= lang('Sale Return Sela_Pepper') ?></span>
+                            </a>
+                        </div>
                         <!--<div class="btn-group">
                             <a href="<? /*= site_url('sales/invoice_return_sbps/' . $inv->id) */ ?>" class="tip btn btn-primary" title="<? /*= lang('SBPS') */ ?>">
                                 <i class="fa fa-angle-double-left"></i>

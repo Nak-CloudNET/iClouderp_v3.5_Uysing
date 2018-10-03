@@ -1090,6 +1090,15 @@ class Settings_model extends CI_Model
         }
         return false;
     }
+    public function add_closing_date($data)
+    {
+        if ($this->db->insert("closing_date", $data)) {
+            $uid = $this->db->insert_id();
+            return $uid;
+            // return true;
+        }
+        return false;
+    }
 
     public function updateUnit($id, $data = array())
     {
@@ -1736,6 +1745,33 @@ class Settings_model extends CI_Model
         }else{
             return false;
         }
+    }
+    public function updateClosingDate($id, $data = array())
+    {
+        if ($this->db->update("closing_date", $data, array('id' => $id))) {
+            return true;
+        }
+        return false;
+    }
+    public function deleteClosingDate($id)
+    {
+        if ($this->db->delete("closing_date", array('id' => $id))) {
+            return true;
+        }
+        return FALSE;
+    }
+
+
+    public function addExpense($data = array())
+    {
+        if ($this->db->insert('closing_date', $data)) {
+            $expense_id = $this->db->insert_id();
+            if ($this->site->getReference('ex',$data['biller_id']) == $data['reference']) {
+                $this->site->updateReference('ex',$data['biller_id']);
+            }
+            return true;
+        }
+        return false;
     }
 
 }

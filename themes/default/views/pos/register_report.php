@@ -16,7 +16,7 @@
         }
 
         table thead tr th {
-            font-size: 10px !important;   
+            font-size: 10px !important;
         }
 
         .no-print {
@@ -62,30 +62,28 @@
                             <span><?= $this->erp->formatMoney($chsales->paid ? $chsales->paid : '0.00') . ' (' . $this->erp->formatMoney($chsales->total ? $chsales->total : '0.00') . ')'; ?></span>
                         </h4></td>
                 </tr>
-				
+
                 <tr>
                     <td style="border-bottom: 1px solid #DDD;"><h4><?= lang('cc_sale'); ?>:</h4></td>
                     <td style="text-align:right;border-bottom: 1px solid #DDD;"><h4>
                             <span><?= $this->erp->formatMoney($ccsales->paid ? $ccsales->paid : '0.00') . ' (' . $this->erp->formatMoney($ccsales->total ? $ccsales->total : '0.00') . ')'; ?></span>
                         </h4></td>
                 </tr>
-				
+
 				<tr>
                     <td style="border-bottom: 1px solid #DDD;"><h4><?= lang('mm_sale'); ?>:</h4></td>
                     <td style="text-align:right;border-bottom: 1px solid #DDD;"><h4>
                             <span><?= $this->erp->formatMoney($memsales->paid ? $memsales->paid : '0.00') . ' (' . $this->erp->formatMoney($memsales->total ? $memsales->total : '0.00') . ')'; ?></span>
                         </h4></td>
                 </tr>
-				
+
 				<tr>
                     <td style="border-bottom: 1px solid #DDD;"><h4><?= lang('voucher_sale'); ?>:</h4></td>
                     <td style="text-align:right;border-bottom: 1px solid #DDD;"><h4>
                             <span><?= $this->erp->formatMoney($vouchersales->paid ? $vouchersales->paid : '0.00') . ' (' . $this->erp->formatMoney($vouchersales->total ? $vouchersales->total : '0.00') . ')'; ?></span>
                         </h4></td>
                 </tr>
-				
-				
-				
+
                 <?php if ($pos_settings->paypal_pro) { ?>
                     <tr>
                         <td style="border-bottom: 1px solid #DDD;"><h4><?= lang('paypal_pro'); ?>:</h4></td>
@@ -106,6 +104,7 @@
                 <?php
                     $total_sales = ((($cash_in_hand ? $cash_in_hand : $this->session->userdata('cash_in_hand')) + $cashsales->paid) + ($chsales->paid + $ccsales->paid) + ($memsales->paid + $vouchersales->paid));
                     $total_sales2 = $cashsales->total + $chsales->total + $ccsales->total + $memsales->total + $vouchersales->total;
+                   // $this->erp->print_arrays(formatMoney($cashsales));
                 ?>
 
                 <tr>
@@ -152,7 +151,7 @@
 
             ?>
             <hr>
-            <?php //$this->erp->print_arrays($_SERVER['REQUEST_URI']); ?>
+            <?php //$this->erp->print_arrays($chsales); ?>
             <div class="row no-print">
                 <div class="col-sm-6">
                     <div class="form-group">
@@ -195,7 +194,7 @@
                         <?= form_input('total_member_slips_submitted', (isset($_POST['total_member_slips_submitted']) ? $_POST['total_member_slips_submitted'] : $memsales->total_mem), 'class="form-control input-tip" id="total_member_slips_submitted" required="required"'); ?>
                     </div>
 				</div>
-				
+
 				<div class="col-sm-6">
 					<div class="form-group">
                         <?= lang("total_voucher_slips", "total_voucher_slips_submitted"); ?>

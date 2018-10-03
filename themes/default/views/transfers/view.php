@@ -200,18 +200,63 @@
                                 <span class="hidden-sm hidden-xs"><?= lang('invoice') ?></span>
                             </a>
                         </div>
+                        <div class="btn-group">
+                            <a href="<?= site_url('transfers/invoice_transfer_mcar/' . $transfer->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('invoice transfer mcar') ?>">
+                                <i class="fa fa-print"></i>
+                                <span class="hidden-sm hidden-xs"><?= lang('Invoice transfer mcar') ?></span>
+                            </a>
+                        </div>
+                        <!--<div class="btn-group">
+                            <a href="<?= site_url('transfers/invoice_chea_kheng/' . $transfer->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('chea_kheng') ?>">
+                                <i class="fa fa-print"></i>
+                                <span class="hidden-sm hidden-xs"><?= lang('chea_kheng') ?></span>
+                            </a>
+                        </div>
+                        <div class="btn-group">
+                            <a href="<?= site_url('transfers/invoice_transfer_kh_chea_kheng/' . $transfer->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('transfer_chea_kheng') ?>">
+                                <i class="fa fa-print"></i>
+                                <span class="hidden-sm hidden-xs"><?= lang('invoice_transfer_kh_chea_kheng') ?></span>
+                            </a>
+                        </div>-->
 						 <div class="btn-group">
                             <a href="<?= site_url('transfers/invoice_uy_sing/' . $transfer->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('Uy_Sing') ?>">
                                 <i class="fa fa-print"></i>
                                 <span class="hidden-sm hidden-xs"><?= lang('Uy_Sing') ?></span>
                             </a>
                         </div>
+                        <?php if ($Owner || $Admin || $GP['transfers-email']) { ?>
+                        <div class="btn-group">
+                            <a href="<?= site_url('transfers/email/' . $transfer->id) ?>" data-toggle="modal" data-target="#myModal2" class="tip btn btn-primary" title="<?= lang('email') ?>">
+                                <i class="fa fa-envelope-o"></i>
+                                <span class="hidden-sm hidden-xs"><?= lang('email') ?></span>
+                            </a>
+                        </div>
+                        <?php } ?>
 
+                        <?php if ($Owner || $Admin || $GP['transfers-export']) { ?>
+                        <div class="btn-group">
+                            <a href="<?= site_url('transfers/pdf/' . $transfer->id) ?>" class="tip btn btn-primary" title="<?= lang('download_pdf') ?>">
+                                <i class="fa fa-download"></i>
+                                <span class="hidden-sm hidden-xs"><?= lang('pdf') ?></span>
+                            </a>
+                        </div>
+                        <?php } ?>
                         <?php if ($Owner || $Admin || $GP['transfers-edit']) { ?>
                         <div class="btn-group">
                             <a href="<?= site_url('transfers/edit/' . $transfer->id) ?>" class="tip btn btn-warning sledit" title="<?= lang('edit') ?>">
                                 <i class="fa fa-edit"></i>
                                 <span class="hidden-sm hidden-xs"><?= lang('edit') ?></span>
+                            </a>
+                        </div>
+                        <?php } ?>
+
+                        <?php if ($Owner || $Admin || $GP['transfers-delete']) { ?>
+                        <div class="btn-group">
+                            <a href="#" class="tip btn btn-danger bpo" title="<b><?= $this->lang->line("delete") ?></b>"
+                                data-content="<div style='width:150px;'><p><?= lang('r_u_sure') ?></p><a class='btn btn-danger' href='<?= site_url('transfers/delete/' . $transfer->id) ?>'><?= lang('i_m_sure') ?></a> <button class='btn bpo-close'><?= lang('no') ?></button></div>"
+                                data-html="true" data-placement="top">
+                                <i class="fa fa-trash-o"></i>
+                                <span class="hidden-sm hidden-xs"><?= lang('delete') ?></span>
                             </a>
                         </div>
                         <?php } ?>

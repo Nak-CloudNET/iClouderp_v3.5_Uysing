@@ -572,7 +572,21 @@ class Purchases_model extends CI_Model
 
         return false;
     }
-	
+
+    public function getReferences()
+    {
+        $this->db->select('reference_no');
+        $q =$this->db->get('erp_purchases');
+        if ($q->num_rows() > 0){
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return FALSE;
+    }
+
+
     public function getAllProducts()
     {
         $q = $this->db->get('products');
@@ -770,8 +784,8 @@ class Purchases_model extends CI_Model
 		return $q->row();
 			
 	}
-	
-	public function getAllPurchaseOrderItems($purchase_id)
+
+    public function getAllPurchaseOrderItems($purchase_id)
     {
         $this->db->select('	purchase_order_items.id,
 							purchase_order_items.purchase_id,
@@ -807,7 +821,7 @@ class Purchases_model extends CI_Model
 							purchase_order_items.price,purchase_order_items.create_id, tax_rates.code as tax_code, tax_rates.name as tax_name, tax_rates.rate as tax_rate, units.name as unit, products.details as details,products.image,products.name as pname, product_variants.name as variant,companies.name')
             ->join('products', 'products.id=purchase_order_items.product_id', 'left')
             ->join('units', 'products.unit = units.id', 'left')
-			->join('companies', 'companies.id=purchase_order_items.supplier_id', 'left')
+            ->join('companies', 'companies.id=purchase_order_items.supplier_id', 'left')
             ->join('product_variants', 'product_variants.id=purchase_order_items.option_id', 'left')
             ->join('tax_rates', 'tax_rates.id=purchase_order_items.tax_rate_id', 'left')
             ->group_by('purchase_order_items.id')
@@ -821,8 +835,8 @@ class Purchases_model extends CI_Model
         }
         return FALSE;
     }
-	
-	public function getAllPurchaseOrderItems_order($purchase_id)
+
+    public function getAllPurchaseOrderItems_order($purchase_id)
     {
         $this->db->select('	purchase_order_items.id,
 							purchase_order_items.purchase_id,
@@ -1413,7 +1427,6 @@ class Purchases_model extends CI_Model
                         purchases.reference_no,
 						purchases.type_of_po,
                         companies.name,
-                        companies.invoice_footer,
                         purchases.status,
 						purchases.biller_id,
 						purchases.warehouse_id,
@@ -1427,7 +1440,10 @@ class Purchases_model extends CI_Model
                         purchases.note,
                         purchases.order_discount_id,
                         purchases.order_tax_id,
-                        purchases.payment_term,
+                        payment_term.id as payment_term,
+                        payment_term.due_day as payment_term_due_day,
+                        payment_term.due_day_for_discount as payment_term_due_day_for_discount,
+                        payment_term.discount as payment_term_discount,
                         purchases.order_discount,
                         purchases.customer_id,
                         purchases.sale_id,
@@ -1445,6 +1461,7 @@ class Purchases_model extends CI_Model
 				->join('companies', 'companies.id = purchases.biller_id', 'inner')
                 ->join('purchases_order', 'purchases.order_id = purchases_order.id', 'left')
                 ->join('purchases_request', 'purchases_order.request_id = purchases_request.id', 'left')
+                ->join('payment_term','purchases.payment_term=payment_term.id','left')
                 ->join('users', 'purchases.created_by = users.id', 'left')
                 ->join('tax_rates', 'purchases.order_tax_id = tax_rates.id', 'left')
                 ->join('warehouses', 'purchases.warehouse_id = warehouses.id', 'left')
@@ -1909,9 +1926,9 @@ class Purchases_model extends CI_Model
 				$qu_balance = $this->getPOstatusByID($quote_id);
 				if($qu_balance->balance <= 0) {
 					$status = array('order_status' => 'completed');
-				}else if($qu_balance->balance > 0) {
+				} else if($qu_balance->balance > 0) {
 					$status = array('order_status' => 'partial');
-				}else {
+				} else {
 					$status = array('order_status' => 'pending');
 				}
 				$this->db->update('purchases_order', $status, array('id' => $quote_id));

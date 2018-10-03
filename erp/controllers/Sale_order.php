@@ -139,7 +139,7 @@ class Sale_order extends MY_Controller
             } else {
                 $date = date('Y-m-d H:i:s');
             }
-            
+            isClosedDate($date);
             $delivery_date = $this->erp->fld($this->input->post('delivery_date'));
             $warehouse_id = $this->input->post('warehouse');
             $customer_id = $this->input->post('customer');
@@ -147,10 +147,13 @@ class Sale_order extends MY_Controller
 			$group_area = $this->input->post('area');
 			$saleman_by = $this->input->post('saleman');
             $total_items = $this->input->post('total_items');
+
+            // Payment term
             $payment_term = $this->input->post('payment_term');
-			//$payment_status = $this->input->post('payment_status');
+            $payment_term_details   = $this->site->getAllPaymentTermByID($payment_term);
+            $due_date           = (isset($payment_term_details[0]->id)? date('Y-m-d', strtotime($date . '+' . $payment_term_details[0]->due_day . ' days')) : NULL);
+
 			$payment_status = 'due';
-            $due_date = $payment_term ? date('Y-m-d', strtotime('+' . $payment_term . ' days')) : NULL;
             $shipping = $this->input->post('shipping') ? $this->input->post('shipping') : 0;
             $sale_type = $this->input->post('purchase_type');
             $tax_type = $this->input->post('tax_type');
@@ -299,10 +302,9 @@ class Sale_order extends MY_Controller
                     $ods = explode("%", $order_discount_id);
                     $order_discount = $this->erp->formatDecimal((($total * (Float) ($ods[0])) / 100), 4);
                 } else {
-                    $order_discount = $this->erp->formatDecimal(($total * $order_discount_id) / 100);
+                    $order_discount = $this->erp->formatDecimal($order_discount_id);
                 }
             } else {
-				
                 $order_discount = NULL;
             }
 			
@@ -456,6 +458,7 @@ class Sale_order extends MY_Controller
 				'attachment1' => $photo1,
 				'attachment2' => $photo2
             );
+			//$this->erp->print_arrays($data, $products);
         }
 		
 		
@@ -484,7 +487,6 @@ class Sale_order extends MY_Controller
 				$this->load->model('sales_model');
                 $quote = $this->sales_model->getQuoteByID($quote_ID);
                 $this->data['quotes'] = $quote;
-				//$this->erp->print_arrays($this->sales_model->getQuoteByID($quote_ID));
 				$items = $this->sales_model->getAllQuoteItems($quote_ID);
 				$this->data['quote_ID'] = $quote_ID;
 				$this->data['type'] = "quote";
@@ -525,6 +527,7 @@ class Sale_order extends MY_Controller
                     $row->qty           = $item->quantity;
                     $row->discount      = $item->discount ? $item->discount : '0';
                     $row->price         = $this->erp->formatDecimal($item->net_unit_price+$this->erp->formatDecimal($item->item_discount/$item->quantity));
+                    $row->cost  = $this->products_model->getProductCostByVariantId($item->product_id,$item->option_id);
                     $row->unit_price    = $row->tax_method ? $item->unit_price+$this->erp->formatDecimal($item->item_discount/$item->quantity)+$this->erp->formatDecimal($item->item_tax/$item->quantity) : $item->unit_price+($item->item_discount/$item->quantity);
                     $row->real_unit_price = $item->real_unit_price;
                     $row->tax_rate      = $item->tax_rate_id;
@@ -2031,6 +2034,8 @@ class Sale_order extends MY_Controller
 	
 	function deleteSaleOrder($sale_order_id = null){
 		$this->erp->checkPermissions('delete',null,'sale_order');
+        $check=$this->sale_order_model->getSaleOrder($sale_order_id);
+        isClosedDate($check->date);
 		if($this->sale_order_model->deleteSaleOrderByID($sale_order_id)){
 			$this->session->set_flashdata('message', lang("sale_order_deleted"));
 			redirect("sale_order/list_sale_order");
@@ -2229,7 +2234,7 @@ class Sale_order extends MY_Controller
             } else {
                 $date = date('Y-m-d H:i:s');
             }
-            
+            isClosedDate($date);
             $quantity = "quantity";
             $product = "product";
             $unit_cost = "unit_cost";
@@ -2393,7 +2398,7 @@ class Sale_order extends MY_Controller
                     $ods = explode("%", $order_discount_id);
                     $order_discount = $this->erp->formatDecimal(((($total) * (Float) ($ods[0])) / 100), 4);
                 } else {
-                    $order_discount = $this->erp->formatDecimal(($order_discount_id * $total) / 100);
+                    $order_discount = $this->erp->formatDecimal($order_discount_id);
                 }
             } else {
                 $order_discount_id = null;
@@ -2525,7 +2530,6 @@ class Sale_order extends MY_Controller
             $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
 			$inv = $this->sale_order_model->getSaleOrder($id);
             $inv_items = $this->sale_order_model->getSaleOrderItems($id);
-
             $this->data['inv'] = $inv;
 			$this->data['quote'] = $this->quotes_model->getQuoteByID($inv->quote_id);
 			$customer = $this->site->getCompanyByID($inv->customer_id);
@@ -2576,6 +2580,7 @@ class Sale_order extends MY_Controller
 				//$row->cost += $item->cost;
                 $row->discount = $item->discount ? $item->discount : '0';
                 $row->price = $this->erp->formatDecimal($item->net_unit_price+$this->erp->formatDecimal($item->item_discount/$item->quantity));
+                $row->cost  = $this->products_model->getProductCostByVariantId($item->product_id,$item->option_id);
                 $row->unit_price = $row->tax_method ? $item->unit_price+$this->erp->formatDecimal($item->item_discount/$item->quantity)+$this->erp->formatDecimal($item->item_tax/$item->quantity) : $item->unit_price+($item->item_discount/$item->quantity);
                 $row->real_unit_price = $item->real_unit_price;
                 $row->tax_rate = $item->tax_rate_id;
@@ -2630,7 +2635,7 @@ class Sale_order extends MY_Controller
                     $pr[$ri] = array('id' => $c, 'item_id' => $row->id, 'label' => $row->name . " (" . $row->code . ")", 'row' => $row, 'combo_items' => $combo_items, 'tax_rate' => false, 'options' => $options,'makeup_cost' => 0,'group_prices'=>$group_prices, 'all_group_prices' => $all_group_prices,'customer_percent' => $customer_percent);
                 }
                 $c++;
-			
+
             }
 			$this->load->model('purchases_model');
 			$this->data['exchange_rate'] 	= $this->site->getCurrencyByCode('KHM');
@@ -4003,7 +4008,71 @@ class Sale_order extends MY_Controller
         $this->data['sid'] = $id;
         $this->load->view($this->theme.'sale_order/deliverys_nano_tech',$this->data);
     }
-	
-	
+    function invoice_sale_order($id = NULL)
+    {
+        if ($this->input->get('id')) {
+            $id = $this->input->get('id');
+        }
+
+        $this->load->model('pos_model');
+        $this->data['pos'] = $this->pos_model->getSetting();
+        $this->data['setting'] = $this->site->get_setting();
+        $this->data['error'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('error');
+        $inv = $this->sales_model->getSaleOrder($id);
+        $this->data['deposit'] = $this->sales_model->getDepositByID($id);
+        $this->data['customer'] = $this->site->getCompanyByID($inv->customer_id);
+        $this->data['biller'] = $this->site->getCompanyByID($inv->biller_id);
+        $this->data['created_by'] = $this->site->getUser($inv->created_by);
+        $this->data['updated_by'] = $inv->updated_by ? $this->site->getUser($inv->updated_by) : NULL;
+        $this->data['warehouse'] = $this->site->getWarehouseByID($inv->warehouse_id);
+        $this->data['invs'] = $inv;
+        $return = $this->sales_model->getReturnBySID($id);
+        $this->data['return_sale'] = $return;
+        $this->data['rows'] = $this->sale_order_model->getAllInvoiceItemsById($id);
+        $this->data['logo'] = true;
+        $this->load->view($this->theme . 'sale_order/invoice_sale_order', $this->data);
+    }
+
+    function sanagro_invoice_a4_r($id = NULL){
+        $this->erp->checkPermissions('deliveries');
+        if ($this->input->get('id')) {
+            $id = $this->input->get('id');
+        }
+        $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
+        $deli = $this->sales_model->getSaleOrderDeliveryByID($id);
+        $this->data['delivery'] = $deli;
+        $this->data['biller'] = $this->site->getCompanyByID($deli->biller_id);
+        $this->data['rows'] = $this->sales_model->getDeliveryItemsByID($id, 'sale_order');
+        $this->data['setting'] = $this->site->get_setting();
+        $this->data['user'] = $this->site->getUser($deli->created_by);
+        $this->data['page_title'] = lang("delivery_order");
+        $this->load->view($this->theme.'sales/sana_gro_deliveries',$this->data);
+        }
+    function sanagro_modal_order_view($id = NULL)
+    {
+        $this->erp->checkPermissions('index', false, 'sale_order');
+
+        if ($this->input->get('id')) {
+            $id = $this->input->get('id');
+        }
+        $this->load->model('pos_model');
+        $this->data['pos'] = $this->pos_model->getSetting();
+        $this->data['setting'] = $this->site->get_setting();
+        $this->data['error'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('error');
+        $inv = $this->sales_model->getSaleOrder($id);
+        $this->data['customer'] = $this->site->getCompanyByID($inv->customer_id);
+        $this->data['biller'] = $this->site->getCompanyByID($inv->biller_id);
+        $this->data['created_by'] = $this->site->getUser($inv->created_by);
+        $this->data['updated_by'] = $inv->updated_by ? $this->site->getUser($inv->updated_by) : NULL;
+        $this->data['sale_by'] = $this->site->getUser($inv->saleman_by);
+        $this->data['warehouse'] = $this->site->getWarehouseByID($inv->warehouse_id);
+        $this->data['due_amount'] 	= $this->site->getDueAmountByID($inv->customer_id);
+        $this->data['inv'] = $inv;
+        $return = $this->sales_model->getReturnBySID($id);
+        $this->data['return_sale'] = $return;
+        $this->data['rows'] = $this->sale_order_model->getAllInvoiceItems($id);
+        $this->data['khCur']=$this->sales_model->getKhCurrency();
+        $this->load->view($this->theme.'sale_order/modal_order_view_sanagro', $this->data);
+    }
 }
 

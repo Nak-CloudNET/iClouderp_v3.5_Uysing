@@ -811,4 +811,5 @@ $lang['product_transfer_list']            = "បញ្ជីការផ្ទ�
 $lang['add_product_transfer']            = "បន្ថែមការផ្ទេរផលិតផល";
 $lang['product_count_list']            = "បញ្ជីរាប់ផលិតផល";
 $lang['add_product_count']            = "បន្ថែមការរាប់ផលិតផល";
+$lang['description_kh']            = "ការវាយតម្លៃ";
 

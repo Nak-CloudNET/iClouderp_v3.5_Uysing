@@ -9,10 +9,10 @@ class Sales_model extends CI_Model
     }
 
     public function getProductNames($term, $warehouse_id, $standard, $combo, $digital, $service, $user_category, $category_id, $limit = 20)
-    {
-        $this->db->select('products.id, start_date, end_date, erp_products.code, erp_products.name, erp_products.type, cost, warehouses_products.product_id, warehouses_products.quantity AS qoh, warehouses_products.quantity, price, tax_rate, tax_method, erp_products.image, promotion, promo_price, product_details, details, categories.type AS cate_type, subcategory_id, cf1, COALESCE((SELECT GROUP_CONCAT(sp.`serial_number`) FROM erp_serial as sp WHERE sp.product_id='.$this->db->dbprefix('products').'.id), "") as sep')
-                 ->join('categories', 'categories.id=products.category_id', 'left')
-				 ->join('warehouses_products', 'warehouses_products.product_id=products.id', 'left')
+    { $this->db->select('products.id, products.start_date, products.end_date, products.code, products.name, products.type, cost, warehouses_products.product_id, warehouses_products.quantity AS qoh, warehouses_products.quantity, price, tax_rate, tax_method, products.image, promotion, promo_price, product_details, details, subcategory_id, cf1, COALESCE((SELECT GROUP_CONCAT(sp.`serial_number`) FROM erp_serial as sp WHERE sp.product_id='.$this->db->dbprefix('products').'.id), "") as sep, categories.type AS cate_type')
+        ->join('warehouses_products', 'warehouses_products.product_id=products.id', 'left')
+        ->join('categories', 'products.category_id= categories.id', 'left');
+        $this->db->where("categories.disable_sale IS NULL ")
 				 ->group_by('products.id');
         if ($this->Settings->overselling) {
             $this->db->where("(erp_products.name LIKE '%" . $term . "%' OR erp_products.code LIKE '%" . $term . "%' OR  concat(erp_products.name, ' (', erp_products.code, ')') LIKE '%" . $term . "%') AND inactived <> 1");
@@ -63,7 +63,7 @@ class Sales_model extends CI_Model
 			}
         } else {
             $this->db->where("(products.track_quantity = 0 OR warehouses_products.quantity > 0) AND warehouses_products.warehouse_id = '" . $warehouse_id . "' AND "
-                . "(erp_products.name LIKE '%" . $term . "%' OR erp_products.code LIKE '%" . $term . "%' OR  concat(erp_products.name, ' (', erp_products.code, ')') LIKE '%" . $term . "%') AND inactived <> 1");
+                . "(products.name LIKE '%" . $term . "%' OR products.code LIKE '%" . $term . "%' OR  concat(erp_products.name, ' (', erp_products.code, ')') LIKE '%" . $term . "%') AND inactived <> 1");
             if ($this->Owner || $this->Admin) {
 				if($standard != ""){
 					$this->db->where("products.type <> 'standard' ");
@@ -289,9 +289,9 @@ class Sales_model extends CI_Model
 			}
 		}else {
 
-            $this->db->select('products.id, products.code, products.name, products.type, categories.type AS cate_type, cost, warehouses_products.quantity, warehouses_products.quantity as qoh, price, tax_rate, tax_method, product_details, details, COALESCE((SELECT GROUP_CONCAT(sp.`serial_number`) FROM erp_serial as sp WHERE sp.product_id=' . $this->db->dbprefix('products') . '.id ), "") as sep, cf1, subcategory_id')
-                ->join('categories', 'categories.id=products.category_id', 'left')
+            $this->db->select('products.id, products.code, products.name, products.type, cost, warehouses_products.quantity, price, tax_rate, tax_method, product_details, details, COALESCE((SELECT GROUP_CONCAT(sp.`serial_number`) FROM erp_serial as sp WHERE sp.product_id='.$this->db->dbprefix('products').'.id ), "") as sep, cf1, subcategory_id')
                 ->join('warehouses_products', 'warehouses_products.product_id=products.id', 'left')
+                ->join('categories', 'products.category_id= categories.id', 'left')
                 ->group_by('products.id');
 			if($this->Owner || $this->admin){
 				if ($category_id != "") {
@@ -317,7 +317,8 @@ class Sales_model extends CI_Model
 					$this->db->where("products.category_id NOT IN (".$user_category.") ");
 				}
 			}
-			$this->db->where("(erp_products.code LIKE '%" . $term . "%' OR erp_products.name LIKE '%" . $term . "%')");
+            $this->db->where("categories.disable_sale IS NULL");
+            $this->db->where("(products.code LIKE '%" . $term . "%' OR products.name LIKE '%" . $term . "%')");
 			
 			$this->db->limit($limit);
 			$q = $this->db->get('products');
@@ -636,7 +637,7 @@ class Sales_model extends CI_Model
 	/* POS Option */
     public function getProductOptions($product_id, $warehouse_id, $all = NULL)
     {
-        $this->db->select('product_variants.id as id, product_variants.name as name, product_variants.price as price, product_variants.quantity as total_quantity, warehouses_products_variants.quantity as quantity,product_variants.qty_unit as qty_unit,
+        $this->db->select('product_variants.id as id, product_variants.name as name, product_variants.price as price, product_variants.cost as cost,product_variants.quantity as total_quantity, warehouses_products_variants.quantity as quantity,product_variants.qty_unit as qty_unit,
 		1 AS rate,
 		(
 			SELECT
@@ -1313,14 +1314,18 @@ class Sales_model extends CI_Model
     {
 		$this->db
 			 ->select("sales.*, companies.name,companies.company,companies.logo,companies.cf4,companies.phone, companies.email,
-			  quotes.reference_no as quote_no, users.username as saleman,
+			  quotes.reference_no as quote_no, users.username as saleman,payment_term.due_day as due_day,payment_term.description as description_en,payment_term.description_kh as description_kh,
 			  (SELECT SUM(IF(erp_payments.paid_by = 'deposit', erp_payments.amount, 0)) 
 			  FROM erp_payments WHERE erp_payments.sale_id = erp_sales.id  ) as deposit,
 			   (erp_sales.paid - (SELECT SUM(IF(erp_payments.paid_by = 'deposit', erp_payments.amount, 0)) 
 			   FROM erp_payments WHERE erp_payments.sale_id = erp_sales.id)) as real_paid, 
 			   sale_order.reference_no as so_no, erp_companies.address, erp_sales.sale_status, 
 			   companies.invoice_footer as invoice_footer, group_areas.areas_group, 
-			   tax_rates.name as vat, payment_term.description as payment_term, sales.due_date")
+			   tax_rates.name as vat, payment_term.id as payment_term,
+			   payment_term.due_day as payment_term_due_day,
+			   payment_term.due_day_for_discount as payment_term_due_day_for_discount, 
+			   payment_term.discount as payment_term_discount, 
+			   sales.due_date,com.vat_no as customer_vat")
 			 ->join('companies', 'sales.biller_id = companies.id', 'left')
 			 ->join('quotes', 'sales.quote_id = quotes.id', 'left')
 			 ->join('payments', 'payments.sale_id = sales.id', 'left')
@@ -1328,7 +1333,8 @@ class Sales_model extends CI_Model
 			 ->join('sale_order', 'sale_order.id = sales.so_id', 'left')
 			 ->join('users', 'sales.saleman_by = users.id', 'left')
 			 ->join('tax_rates', 'sales.order_tax_id = tax_rates.id', 'left')
-			 ->join('payment_term', 'sales.payment_term = payment_term.id', 'left');
+			 ->join('payment_term', 'sales.payment_term = payment_term.id', 'left')
+		     ->join('companies as com','sales.customer_id= com.id','left');
 
 			 if($wh){
 			 	$this->db->where_in('erp_sales.warehouse_id',$wh);
@@ -3988,17 +3994,42 @@ class Sales_model extends CI_Model
         }
         return FALSE;
 	}
+	public function getReferences()
+	{
+		$this->db->select('reference_no');
+        $q =$this->db->get('erp_sales');
+        if ($q->num_rows() > 0){
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return FALSE;
+	}
+
+    public function getCustomerId()
+    {
+        $this->db->select('*');
+        $q =$this->db->get('erp_companies');
+        if ($q->num_rows() > 0){
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return FALSE;
+    }
 
 
-    public function getSaleByRef($ref)
+/*    public function getSaleByRef($ref)
 	{
 		$q = $this->db->get_where('sales', array('reference_no' => $ref), 1);
         if ($q->num_rows() > 0) {
             return $q->row();
         }
         return FALSE;
-	}
-	
+	}*/
+
 	/*public function getLoanView($id)
 	{
 		$this->db->order_by('period','DESC');
@@ -4986,7 +5017,7 @@ class Sales_model extends CI_Model
 	}
 	
 	public function getSaleOrder($sale_order_id){
-		$this->db->select("sale_order.*, companies.name, companies.company,
+		$this->db->select("sale_order.*, companies.name, companies.company,erp_payment_term.description as pt_dc,erp_users.username as saleman, 
 			CASE erp_sale_order.order_status
 			WHEN 'completed' THEN
 				'Approved'
@@ -4997,6 +5028,8 @@ class Sales_model extends CI_Model
 			END AS status, tax_rates.rate AS tax,tax_rates.name as tax_name");
 		$this->db->join('companies', 'sale_order.customer_id = companies.id', 'inner');
 		$this->db->join('tax_rates', 'sale_order.order_tax_id = tax_rates.id', 'left');
+        $this->db->join('erp_users', 'sale_order.saleman_by = erp_users.id', 'left');
+        $this->db->join('erp_payment_term', 'sale_order.payment_term = erp_payment_term.id', 'left');
 		$q = $this->db->get_where('sale_order', array('sale_order.id' => $sale_order_id));
 		if($q->num_rows() > 0){
 			return $q->row();
@@ -6907,4 +6940,83 @@ public function getRielCurrency(){
 		}
 		return false;
 	}
+
+    public function getSaleByRef($id,$limit = 10)
+    {
+        $this->db->select('erp_sales.id as id, erp_sales.reference_no as text');
+        $this->db->like('id',$id);
+        $q = $this->db->get('sales',$limit);
+        if ($q->num_rows() > 0) {
+            return $q->row();
+        }
+        return FALSE;
+    }
+    public function getSaleOrderByRef($id,$limit = 10)
+    {
+        $this->db->select('erp_sale_order.id as id, erp_sale_order.reference_no as text');
+        $this->db->like('id',$id);
+        $q = $this->db->get('erp_sale_order',$limit);
+        if ($q->num_rows() > 0) {
+            return $q->row();
+        }
+        return FALSE;
+    }
+    public function getSaleByRefNo($ref)
+    {
+        if($ref){
+            $q=$this->db->query("
+                select id as id, 
+                reference_no as text 
+                from erp_sales where reference_no like '%{$ref}%'
+                ");
+        }else{
+            $q=$this->db->query("
+                select id as id, 
+                reference_no as text 
+                from erp_sales
+                ");
+        }
+        //$this->db->like('reference_no',$ref);
+        //$q = $this->db->get('sale_order',$limit);
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+
+            return $data;
+        }
+    }
+    public function getSaleOrderByRefNo($ref)
+    {
+        if($ref){
+            $q=$this->db->query("
+                select id as id, 
+                reference_no as text 
+                from erp_sale_order where reference_no like '%{$ref}%'
+                ");
+        }else{
+            $q=$this->db->query("
+                select id as id, 
+                reference_no as text 
+                from erp_sale_order
+                ");
+        }
+        //$this->db->like('reference_no',$ref);
+        //$q = $this->db->get('sale_order',$limit);
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+    }
+    public function getKhCurrency(){
+        $this->db->select('erp_currencies.rate');
+        $this->db->where('id','2');
+        $q = $this->db->get('erp_currencies');
+        if ($q->num_rows() > 0) {
+            return $q->row();
+        }
+        return FALSE;
+    }
 }

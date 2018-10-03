@@ -365,8 +365,21 @@
             <?php if (!$Supplier || !$Customer) { ?>
                 <div class="buttons">
                     <div class="btn-group btn-group-justified">
+                        <div class="btn-group btn-group-justified">
+                            <!--<div class="btn-group">
+                                <a href="<?= site_url('sale_order/sanagro_modal_order_view/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('Snanagro') ?>">
+                                    <i class="fa fa-print"></i>
+                                    <span class="hidden-sm hidden-xs"><?= lang('Sanagro_sale_order') ?></span>
+                                </a>
+                            </div>
+                            <div class="btn-group">
+                                <a href="<?= site_url('sales/sale_order_view_add_delivery_sanagro/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('Snanagro') ?>">
+                                    <i class="fa fa-print"></i>
+                                    <span class="hidden-sm hidden-xs"><?= lang('Sanagro_Delivery') ?></span>
+                                </a>
+                            </div>-->
 						<div class="btn-group">
-                            <a href="<?= site_url('sale_order/tax_invoice1/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('sale order') ?>">
+                            <a href="<?= site_url('sale_order/tax_invoice1/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('Delivery') ?>">
                                 <i class="fa fa-print"></i>
                                 <span class="hidden-sm hidden-xs"><?= lang('print_sale_order') ?></span>
                             </a>
@@ -427,14 +440,14 @@
                             </a>
                         </div>
 						-->
-						<!--  
+						<!--
 						<div class="btn-group">
                             <a href="<?= site_url('sale_order/invoice_order/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('invoice') ?>">
                                 <i class="fa fa-print"></i>
                                 <span class="hidden-sm hidden-xs"><?= lang('invoice') ?></span>
                             </a>
                         </div> -->
-						<!-- 
+						<!--
 						<div class="btn-group">
 							<a href="<?=base_url()?>sales/Sanagro_Invoice/<?=$inv->id?>" target="_blank" class="tip btn btn-primary" title="<?= lang('Sanagro_Invoice') ?>">
 								<i class="fa fa-print"></i>
@@ -457,27 +470,7 @@
                             </a>
                         </div>
                         -->
-                        <div class="btn-group">
-                            <a href="<?= site_url('sale_order/view/' . $inv->id) ?>" class="tip btn btn-primary" title="<?= lang('view') ?>">
-                                <i class="fa fa-file-text-o"></i>
-                                <span class="hidden-sm hidden-xs"><?= lang('view') ?></span>
-                            </a>
-                        </div>
-                        <?php if ($inv->attachment) { ?>
-                            <div class="btn-group">
-                                <a href="<?= site_url('welcome/download/' . $inv->attachment) ?>" class="tip btn btn-primary" title="<?= lang('attachment') ?>">
-                                    <i class="fa fa-chain"></i>
-                                    <span class="hidden-sm hidden-xs"><?= lang('attachment') ?></span>
-                                </a>
-                            </div>
-                        <?php } ?>
 
-                        <div class="btn-group">
-                            <a href="<?= site_url('sales/email/' . $inv->id) ?>" data-toggle="modal" data-target="#myModal2" class="tip btn btn-primary" title="<?= lang('email') ?>">
-                                <i class="fa fa-envelope-o"></i>
-                                <span class="hidden-sm hidden-xs"><?= lang('email') ?></span>
-                            </a>
-                        </div>
 						<!--
 						<div class="btn-group">
                             <a href="<?= site_url('sale_order/flora/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('flora') ?>">
@@ -515,6 +508,36 @@
     						<?php } ?> -->
                         <?php } ?>
                     </div>
+
+                        </div>
+                    <div class="btn-group btn-group-justified">
+                        <!--<div class="btn-group">
+                            <a href="<?= site_url('sale_order/invoice_sale_order/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('invoice_sale order') ?>">
+                                <i class="fa fa-print"></i>
+                                <span class="hidden-sm hidden-xs"><?= lang('invoice_sale_order') ?></span>
+                            </a>
+                        </div>
+                        <div class="btn-group">
+                            <a href="<?= site_url('sale_order/view/' . $inv->id) ?>" class="tip btn btn-primary" title="<?= lang('view') ?>">
+                                <i class="fa fa-file-text-o"></i>
+                                <span class="hidden-sm hidden-xs"><?= lang('view') ?></span>
+                            </a>
+                        </div>
+                        <?php if ($inv->attachment) { ?>
+                            <div class="btn-group">
+                                <a href="<?= site_url('welcome/download/' . $inv->attachment) ?>" class="tip btn btn-primary" title="<?= lang('attachment') ?>">
+                                    <i class="fa fa-chain"></i>
+                                    <span class="hidden-sm hidden-xs"><?= lang('attachment') ?></span>
+                                </a>
+                            </div>
+                        <?php } ?>
+
+                        <div class="btn-group">
+                            <a href="<?= site_url('sales/email/' . $inv->id) ?>" data-toggle="modal" data-target="#myModal2" class="tip btn btn-primary" title="<?= lang('email') ?>">
+                                <i class="fa fa-envelope-o"></i>
+                                <span class="hidden-sm hidden-xs"><?= lang('email') ?></span>
+                            </a>
+                        </div>
                 </div>
             <?php } ?>
         </div>

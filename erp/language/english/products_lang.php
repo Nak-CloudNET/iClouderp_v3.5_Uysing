@@ -263,6 +263,7 @@ $lang['audit']                                      = "Audit";
 $lang['product_using'] 								= "Product Using";
 $lang['product_adjustment'] 						= "Product Adjustment";
 $lang['other_name'] 								= "Other Name";
-
+$lang['sale_invoice'] 								= "Sale Ref";
+$lang['sale_order_invoice'] 						= "Sale Order Ref";
 
 

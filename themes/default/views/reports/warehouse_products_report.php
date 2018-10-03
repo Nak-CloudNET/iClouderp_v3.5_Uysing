@@ -140,9 +140,9 @@ $(document).ready(function(){
                                 <th style="width:100px;"><?= lang("image") ?></th>
 								<th><?= lang("product_code") ?></th>
 								<th><?= lang("product_name") ?></th>
-								<?php if ($Settings->product_expiry == 1) { ?>
+                                <?php if ($this->Settings->product_expiry == 1) { ?>
 								<th><?= lang("expiry_date") ?></th>
-								<?php } ?>
+                                <?php } ?>
 								<?php
 								if(is_array($warefull)){
 									foreach($warefull as $w){
@@ -156,10 +156,11 @@ $(document).ready(function(){
 						</thead>
                         <tbody>
 						<?php
-							$total_q = 0;
-							$str = "";
-							$tt_qty=0;
-							$arr = array();
+
+						$total_q = 0;
+						$str = "";
+						$tt_qty=0;
+						$arr = array();
 						if(is_array($products_details)){
 							foreach($products_details as $pro){
 								if($pro->uname){
@@ -187,15 +188,15 @@ $(document).ready(function(){
                                 </td>
 								<td><?=$pro->code?></td>
 								<td><?=$pro->name." ".$str?></td>
-								<?php if ($Settings->product_expiry == 1) { ?>
-								<td><?= $this->erp->hrsd($pro->expiry); ?></td>
-								<?php } ?>
+                                <?php if ($this->Settings->product_expiry == 1) { ?>
+								<td><?= $pro->expiry?$this->erp->hrsd($pro->expiry):''; ?></td>
+                                    <?php } ?>
 								<?php
 								$tt = 0;
 								if(is_array($warefull)){
 									foreach($warefull as $w){
 										$qty = $this->reports_model->getQtyByWare($pro->id,$w->id,$product2,$category2,$biller2, $pro->expiry, $wid1, $start_date1, $end_date1, $warehouse2);
-										//$this->erp->print_arrays($qty);
+
 										if(isset($qty->wqty)){
 											echo "<td  class='text-right'>".$this->erp->formatQuantity($qty->wqty)."<br>".$this->erp->convert_unit_2_string($pro->id,$qty->wqty)."</td>";
 											$tt+=$qty->wqty;
@@ -216,9 +217,10 @@ $(document).ready(function(){
 							}
 						}
 						$col = 3;
-						if ($this->Settings->product_expiry == 0) {
-                            $col = 3;
-						}
+						if ($this->Settings->product_expiry == 1) {
+						    $col = 4;
+
+                        }
 						?>
 							<tr>
 								<td colspan="<?= $col; ?>" style='background-color: #428BCA;color:white;text-align:right;'><b><?= lang("total") ?></b></td>
@@ -234,11 +236,6 @@ $(document).ready(function(){
                         </tbody>                       
                     </table>
                 </div>
-			<!-- 	<div class=" text-right">
-					<div class="dataTables_paginate paging_bootstrap">
-						<?= $pagination; ?>
-					</div>
-				</div> -->
             </div>
         </div>
     </div>

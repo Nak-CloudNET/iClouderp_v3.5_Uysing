@@ -84,8 +84,8 @@
 			?>
 			<?php endforeach ?>
 			<?php
-				if ($empty_row < 7) {
-					$k=7 - $empty_row;
+				if ($empty_row < 16) {
+					$k=16 - $empty_row;
 					for ($j = 1; $j <= $k; $j++) {
 						echo  '<tr>
 								<td class="text-center" height="34px">'.$row_number.'</td>
@@ -123,44 +123,7 @@
 			</tr>
 		</tbody>
 	</table>
-    <div class="row" style="margin-top: 80px !important">
-        <div class="col-sm-3 col-xs-3">
-            <center>
-                <hr style="border-color: #999 !important; width: 80%">
-                <p style="margin-top: -20px !important">
 
-                    Requested by
-                </p>
-            </center>
-        </div>
-        <div class="col-sm-3 col-xs-3">
-            <center>
-                <hr style="border-color: #999 !important; width: 80%">
-                <p style="margin-top: -20px !important">
-
-                    Delivery by
-                </p>
-            </center>
-        </div>
-        <div class="col-sm-3 col-xs-3">
-            <center>
-                <hr style="border-color: #999 !important; width: 80%">
-                <p style="margin-top: -20px !important">
-
-                    Recieved by
-                </p>
-            </center>
-        </div>
-        <div class="col-sm-3 col-xs-3">
-            <center>
-                <hr style="border-color: #999 !important; width: 80%">
-                <p style="margin-top: -20px !important">
-
-                    Authorized
-                </p>
-            </center>
-        </div>
-    </div>
 </div>
 </body>
 </html>

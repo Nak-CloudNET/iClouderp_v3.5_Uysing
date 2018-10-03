@@ -87,7 +87,7 @@ class Sale_order_model extends CI_Model
     /* POS Option */
     public function getProductOptions($product_id, $warehouse_id, $all = NULL)
     {
-        $this->db->select('product_variants.id as id, product_variants.name as name, product_variants.price as price, product_variants.quantity as total_quantity, warehouses_products_variants.quantity as quantity,product_variants.qty_unit as qty_unit,
+        $this->db->select('product_variants.id as id, product_variants.name as name, product_variants.price as price, product_variants.cost as cost,product_variants.quantity as total_quantity, warehouses_products_variants.quantity as quantity,product_variants.qty_unit as qty_unit,
 		1 AS rate,
 		(
 			SELECT
@@ -321,9 +321,10 @@ class Sale_order_model extends CI_Model
 
 	public function getDeliveriesInvoiceByID($id)
     {
-    	$this->db->select('deliveries.*, delivery_items.warehouse_id, users.username as saleman')
+    	$this->db->select('deliveries.*, delivery_items.warehouse_id, users.username as saleman,erp_sale_order.shipping,erp_sale_order.order_tax')
     			 ->join('delivery_items', 'deliveries.id = delivery_items.delivery_id', 'left')
-    			 ->join('users', 'deliveries.created_by = users.id', 'left');
+    			 ->join('users', 'deliveries.created_by = users.id', 'left')
+                ->join('erp_sale_order','erp_deliveries.sale_reference_no = erp_sale_order.reference_no', 'left');
         $q = $this->db->get_where('deliveries', array('deliveries.id' => $id));
         if ($q->num_rows() > 0) {
             return $q->row();
@@ -372,7 +373,7 @@ class Sale_order_model extends CI_Model
 	
     public function getAllDeliveryInvoiceItems($delivery_id)
     {
-        $this->db->select('erp_products.code, erp_categories.categories_note_id, erp_deliveries.*, erp_products.name as description, delivery_items.quantity_received as qty, erp_companies.name, erp_units.name as unit, delivery_items.category_name as brand, delivery_items.option_id, product_variants.name as variant,product_variants.qty_unit, (erp_delivery_items.quantity_received * erp_product_variants.qty_unit) as variant_qty,sale_order_items.piece,sale_order_items.wpiece,sale_order_items.expiry,sale_items.expiry as sale_expiry');
+        $this->db->select('erp_products.code,erp_delivery_items.cost, erp_categories.categories_note_id, erp_deliveries.*, erp_products.name as description, delivery_items.quantity_received as qty, erp_companies.name, erp_units.name as unit, delivery_items.category_name as brand, delivery_items.option_id, product_variants.name as variant,product_variants.qty_unit, (erp_delivery_items.quantity_received * erp_product_variants.qty_unit) as variant_qty,sale_order_items.piece,sale_order_items.wpiece,sale_order_items.expiry,sale_items.expiry as sale_expiry');
 		$this->db->from('deliveries');
 		$this->db->join('erp_companies','deliveries.delivery_by = erp_companies.id','left');
 		$this->db->join('delivery_items','deliveries.id = delivery_items.delivery_id', 'left');

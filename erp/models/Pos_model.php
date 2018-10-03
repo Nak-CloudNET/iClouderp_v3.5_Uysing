@@ -115,14 +115,12 @@ class Pos_model extends CI_Model
             $this->db->where('subcategory_id', $subcategory_id);
         }
         if(!$this->Settings->overselling) {
-            $this->db->where('products.quantity >', 0);
+            $this->db->where('products.type', 'combo');
+            $this->db->or_where('products.quantity >', 0);
         }
         if(!$this->Owner and !$this->Admin){
             if($sales_standard != ""){
                 $this->db->where("products.type <> 'standard' ");
-            }
-            if($sales_combo != ""){
-                $this->db->where("products.type <> 'combo' ");
             }
             if($sales_digital != ""){
                 $this->db->where("products.type <> 'digital' ");
@@ -303,9 +301,10 @@ class Pos_model extends CI_Model
         $this->db->select('products.id,products.cost, products.code, products.name, products.type,categories.type AS cate_type,warehouses_products.product_id, warehouses_products.quantity, warehouses_products.quantity as qoh, price, tax_rate, tax_method,products.image,subcategory_id,cf1, COALESCE((SELECT GROUP_CONCAT(sp.`serial_number`) 
 					FROM erp_serial as sp
 				 WHERE sp.product_id='.$this->db->dbprefix('products').'.id
-				), "") as sep')
+				), "") as sep, suspended_items.suspend_id')
             ->join('categories', 'categories.id=products.category_id', 'left')
             ->join('warehouses_products', 'warehouses_products.product_id=products.id', 'left')
+            ->join('suspended_items', 'products.id = suspended_items.product_id', 'left')
             ->where('warehouses_products.warehouse_id', $warehouse_id)
             ->group_by('products.id');
         $q = $this->db->get_where("products", array('products.code' => $code));
@@ -1214,6 +1213,7 @@ class Pos_model extends CI_Model
     {
         if (!$date) {
             $date = $this->session->userdata('register_open_time');
+
         }
         if (!$user_id) {
             $user_id = $this->session->userdata('user_id');
@@ -1318,7 +1318,7 @@ class Pos_model extends CI_Model
             $user_id = $this->session->userdata('user_id');
         }
         $this->db->select('SUM( COALESCE( amount, 0 ) ) AS total', FALSE)
-            ->where('date >', $date);
+            ->where('date BETWEEN', $date ,'AND',$date);
         $this->db->where('created_by', $user_id);
 
         $q = $this->db->get('expenses');
@@ -2198,10 +2198,14 @@ class Pos_model extends CI_Model
     public function updateprinted($susp_id,$item_id)
     {
         $this->db->where('suspend_id', $susp_id);
-        $this->db->where_in('product_code',$item_id);
-        if ($this->db->update('suspended_items',array('printed'=>1))) {
-            return true;
+        if ($item_id){
+            $this->db->where_in('product_code',$item_id);
+
+            if ($this->db->update('suspended_items',array('printed'=>1))) {
+                return true;
+            }
         }
+
         return false;
     }
 

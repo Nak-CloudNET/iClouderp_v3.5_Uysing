@@ -1007,13 +1007,16 @@ class Products_model extends CI_Model
 	public function updateQuantityExcelPurchase($data = array())
     {
 		foreach($data as $value){
+            //$this->erp->print_arrays($value);
 			$this->db->select('*');
 			$this->db->from('products');
 			$this->db->where(array('id'=>$value['product_id']));
 			$prod			= $this->db->get();
+
             $expiry_date 	= $this->erp->fsd($value['expiry']);//date('Y-m-d', strtotime($expiry));
 			$pur_data = array(
 				'product_id'		=> $value['product_id'],
+				'biller_id'		    => $value['project_id'],
 				'product_code'		=> $prod->row()->code,
 				'product_name'		=> $prod->row()->name,
 				'warehouse_id'		=> $value['warehouse_id'],
@@ -1032,23 +1035,37 @@ class Products_model extends CI_Model
 				'expiry' 			=> $expiry_date,
 				'serial_no'			=> $value['serial']
 			);
-			
+            //$this->erp->print_arrays($pur_data);
 			if(isset($value['transaction_type'])){
 				$pur_data['transaction_type'] = $value['transaction_type'];
 			}
+
 			$this->db->insert('purchase_items',$pur_data);
 
             //$this->site->syncQuantity(NULL, NULL, NULL, $value['product_id']);
 		}
 		return true;
     }
+    public function getWarehostId($project_id = null)
+    {
+            $this->db->select('cf5');
+            $this->db->where('id',$project_id);
+            $q = $this->db->get('erp_companies');
+            if ($q->num_rows() > 0) {
+                foreach (($q->result()) as $row) {
+                    $data[] = $row;
+                }
+                return $data;
+            }
+        return FALSE;
+    }
 	
 	public function insertGlTran($total_cost)
 	{
-		$v_tran_no = $this->db->select('(COALESCE (MAX(tran_no), 0) + 1) as tran')->from('gl_trans')->get()->row()->tran;
-		$v_reference = $this->db->select('COUNT(*) as trans')->from('purchase_items')->where('option_id', 3)->get()->row()->trans;
-		$tran = $this->getTrans('default_purchase');
-		$dob = $this->getTrans('default_open_balance');
+		$v_tran_no      = $this->db->select('(COALESCE (MAX(tran_no), 0) + 1) as tran')->from('gl_trans')->get()->row()->tran;
+		$v_reference    = $this->db->select('COUNT(*) as trans')->from('purchase_items')->where('option_id', 3)->get()->row()->trans;
+		$tran           = $this->getTrans('default_purchase');
+		$dob            = $this->getTrans('default_open_balance');
 		$data = array(
 			array(
 				'tran_type'    => 'JOURNAL',
@@ -2131,7 +2148,8 @@ class Products_model extends CI_Model
     public function getUsingStockProjectByRef($r_r)
 	{
         $ref = str_replace('_', '&', $r_r);
-        $this->db->select('erp_companies.*, erp_enter_using_stock.*,warehouses.name as warehouse_name,warehouses.address as w_address, authorize.username as authorize_name, employee.username as employee_name,employee.first_name,employee.last_name,employee.company');
+		
+        $this->db->select('erp_companies.*, erp_enter_using_stock.*,warehouses.name as warehouse_name, authorize.username as authorize_name, employee.username as employee_name,employee.first_name,employee.last_name,warehouses.address as w_address');
         $this->db->from('erp_enter_using_stock');
         $this->db->join('erp_companies','erp_enter_using_stock.shop = erp_companies.id','left');
         $this->db->join('erp_warehouses', 'erp_enter_using_stock.warehouse_id = erp_warehouses.id', 'left');
@@ -2762,7 +2780,25 @@ class Products_model extends CI_Model
         }
         return NULL;
     }
-	
+
+    public function getProductCostByVariantName($product_id, $name)
+    {
+        $q = $this->db->get_where("product_variants", array('product_id' => $product_id, 'name' => $name), 1);
+        if ($q->num_rows() > 0) {
+            $variant = $q->row();
+            return $variant->cost;
+        }
+        return false;
+    }
+    public function getProductCostByVariantId($product_id, $id)
+    {
+        $q = $this->db->get_where("product_variants", array('product_id' => $product_id, 'id' => $id), 1);
+        if ($q->num_rows() > 0) {
+            $variant = $q->row();
+            return $variant->cost;
+        }
+        return false;
+    }
 	public function deleteProductPhoto($id)
     {
         if ($this->db->delete('product_photos', array('id' => $id))) {
@@ -3037,9 +3073,13 @@ class Products_model extends CI_Model
             ->join('warehouses', 'warehouses.id = sale_order_items.warehouse_id', 'left')
 			->join('product_variants', 'sale_order_items.option_id = product_variants.id', 'left')
             ->where('sale_order_items.product_id', $product_id)
-            ->where('sale_order.order_status =', 'completed')
-			->where('((erp_sale_order_items.quantity * COALESCE(erp_product_variants.qty_unit, 1)) - (erp_sale_order_items.quantity_received * COALESCE(erp_product_variants.qty_unit, 1))) > 0')
-            ->where("(erp_sale_order.sale_status ='order' OR (erp_sale_order.delivery_status <> 'completed' AND erp_sale_order.sale_status <>'sale'))", NULL, FALSE);
+           ->where('sale_order.order_status <>', 'pending')
+           // ->where('sale_order.sale_status <>', 'sale')
+			->where('(((erp_sale_order_items.quantity * COALESCE(erp_product_variants.qty_unit, 1)) - (erp_sale_order_items.quantity_received * COALESCE(erp_product_variants.qty_unit, 1))) > 0 OR sale_order.sale_status <> "sale")'  )
+
+
+            ->where('sale_order.order_status <>', 'pending');
+            //->where("(erp_sale_order.sale_status ='order' OR (erp_sale_order.delivery_status <> 'completed' AND erp_sale_order.sale_status <>'sale'))", NULL, FALSE);
         
         $q = $this->db->get();
         if ($q->num_rows() > 0) {
@@ -3193,5 +3233,15 @@ class Products_model extends CI_Model
             return $q->row();
         }
         return FALSE;
+    }
+    public function getProjectByCode($id = null)
+    {
+        $q = $this->db->query("select company from erp_companies where code='".$id."' ");
+        if($q->num_rows()>0){
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
     }
 }

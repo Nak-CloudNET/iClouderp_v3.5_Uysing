@@ -52,6 +52,10 @@
 						echo form_dropdown('categories_note[]', $note, '','id="categories_note" class="form-control" multiple="multiple" style="width:100%;" ');
 					?>
 			</div>
+            <div>
+                <input type="checkbox" id="disable_sale" class="form-control" name="disable_sale" value="1" <?php  echo set_checkbox('disable_sale', '1', $category->disable_sale==1?TRUE:FALSE); ?>>
+                <?= lang("disable_sale", "disable_sale"); ?>
+            </div>
             <div class="form-group">
                 <?= lang("category_image", "image") ?>
                 <input id="image" type="file" name="userfile" data-show-upload="false" data-show-preview="false"
@@ -62,7 +66,8 @@
 				<div class="form-group">
 					<?= lang("account_sale","account_sale"); ?>
 					<?php
-						$acc_section = array();
+						//$acc_section = array();
+                    $acc_section[''] = lang('None');
 						$selected = 0;
 						foreach($chart_accounts as $section){
 						    if($section->accountcode == 410101){
@@ -77,7 +82,8 @@
 				<div class="form-group">
 					<?= lang("account_purchase","account_purchase"); ?>
 					<?php 
-						$acc_section = array('' => '');
+						//$acc_section = array('' => '');
+                    $acc_section[''] = lang('None');
                         $selected = 0;
 						foreach($chart_accounts as $section){
                             if($section->accountcode == 100430){
@@ -91,7 +97,8 @@
 				<div class="form-group">
 					<?= lang("account_stock","account_stock"); ?>
 					<?php
-						$acc_section = array('' => '');
+						//$acc_section = array('' => '');
+                   $acc_section[''] = lang('None');
                         $selected = 0;
 						foreach($chart_accounts as $section){
                             if($section->accountcode == 100430){
@@ -105,7 +112,8 @@
 				<div class="form-group">
                     <?= lang("account_stock_adjustment", "account_stock_adjustment"); ?>
 					<?php
-						$acc_section = array('' => '');
+						//$acc_section = array('' => '');
+                    $acc_section[''] = lang('None');
                         $selected = 0;
 						foreach($chart_accounts as $section){
                             if($section->accountcode == 500107){
@@ -119,7 +127,8 @@
 				<div class="form-group">
 					<?= lang("account_cost","account_cost"); ?>
 					<?php
-						$acc_section = array('' => '');
+						//$acc_section = array('' => '');
+                    $acc_section[''] = lang('None');
                         $selected = 0;
 						foreach($chart_accounts as $section){
                             if($section->accountcode == 500101){
@@ -133,7 +142,8 @@
 				<div class="form-group">
 					<?= lang("account_cost_variant","account_cost_variant"); ?>
 					<?php 
-						$acc_section = array('' => '');
+						//$acc_section = array('' => '');
+                    $acc_section[''] = lang('None');
                         $selected = 0;
 						foreach($chart_accounts as $section){
                             if($section->accountcode == 500108){

@@ -193,9 +193,9 @@
         <?php } ?>
         <?php
             if (isset($sale_order->date) != NULL) {
-                $sale_order = $sale_order->date;
+                $sale_order_date = $sale_order->date;
             } else {
-                $sale_order = NULL;
+                $sale_order_date = NULL;
             }
         ?>
         if (!__getItem('sldate')) {
@@ -221,7 +221,7 @@
                 todayHighlight: 1,
                 startView: 2,
                 forceParse: 0
-            }).datetimepicker('update', '<?= $sale_order ?>');
+            }).datetimepicker('update', '<?= $sale_order_date ?>');
 		}
 
         $(document).on('change', '#sldate', function (e) {
@@ -559,10 +559,10 @@
                                                 foreach ($warehouses as $warehouse) {
                                                     $wh[$warehouse->id] = $warehouse->name;
                                                 }
-                                                echo get_dropdown_project('warehouse', 'slwarehouse', $default_warehouse[0]);
-                                                //echo form_dropdown('warehouse', $wh, (isset($_POST['warehouse']) ? $_POST['warehouse'] : $Settings->default_warehouse), 'id="slwarehouse" class="form-control input-tip select" data-placeholder="' . lang("select") . ' ' . lang("warehouse") . '" required="required" style="width:100%;" ');
+                                                echo form_dropdown('warehouse', $wh,'slwarehouse','id="slwarehouse" class="form-control input-tip select" required="required" style="width:100%;"');
                                                 ?>
                                             </div>
+
                                         </div>
                                     <?php } else if($this->session->userdata('warehouse_id')){ ?>
                                         <div class="col-md-4">
@@ -573,7 +573,7 @@
                                                 foreach ($warehouses as $warehouse) {
                                                     $wh[$warehouse->id] = $warehouse->name;
                                                 }
-                                                echo get_dropdown_project('warehouse', 'slwarehouse', $default_warehouse[0]);
+                                                echo form_dropdown('warehouse', 'slwarehouse', $default_warehouse[0]);
                                                 //echo form_dropdown('warehouse', '', (isset($_POST['warehouse']) ? $_POST['warehouse'] : $this->session->userdata('warehouse_id')), 'id="slwarehouse" class="form-control input-tip select" data-placeholder="' . lang("select") . ' ' . lang("warehouse") . '" required="required" style="width:100%;" ');
                                                 ?>
                                             </div>
@@ -815,11 +815,12 @@
 								<div class="form-group">
 									<?= lang("payment_term", "slpayment_term"); ?>
 									<?php
+
 										$ptr[""] = "";
 										foreach ($payment_term as $term) {
 											$ptr[$term->id] = $term->description;
 										}
-										echo form_dropdown('payment_term', $ptr,isset($sale_order->payment_term)?$sale_order->payment_term:"", 'id="slpayment_term" data-placeholder="' . lang("payment_term_tip") .  '" class="form-control input-tip select" style="width:100%;"');
+										echo form_dropdown('payment_term', $ptr,$sale_order->payment_term?$sale_order->payment_term:"", 'id="slpayment_term" data-placeholder="' . lang("payment_term_tip") .  '" class="form-control input-tip select" style="width:100%;"');
 										//echo form_input('payment_term',$ptr,'11', 'class="form-control tip" data-trigger="focus" data-placement="top" title="' . lang('payment_term_tip') . '" id="slpayment_term"'); ?>
 								</div>
 							</div>
@@ -1212,6 +1213,7 @@
                             <input type="text" class="form-control" id="pprice">
 							<input type="hidden" class="form-control" id="own_rate">
 							<input type="hidden" class="form-control" id="setting_rate">
+                            <input type="hidden" class="form-control" id="pcost">
                         </div>
                     </div>
 					<?php } ?>
@@ -1480,7 +1482,8 @@
             e.preventDefault();
             var message = '';
             var help = false;
-            $('.qty_rec').each(function () {
+            var alert_price= <?= $setting->alert_price_less_than_cost ?>;
+            /*$('.qty_rec').each(function () {
                 var tr = $(this).closest('tr');
                 var order_qty = tr.find('.psoqty').val() - 0;
                 var received_qty = $(this).val() - 0;
@@ -1497,6 +1500,7 @@
                     }
                 }
             });
+            
             if (help) {
                 message += "\n Do you want to continue your sale order? \n";
                 message += "Press \"OK\" is continue and \"Cancel\" is recheck!!!";
@@ -1506,6 +1510,51 @@
                 } else {
                     return false;
                 }
+            }*/
+            if(alert_price)
+            {
+                $('.ruprice').each(function() {
+                    var tr = $(this).closest('tr');
+                    var price = $(this).val() - 0;
+                    var cost = tr.find('.rucost').val() - 0;
+
+                    if(price <= cost) {
+                        var product_name = $(this).parent().parent().closest('tr').find('.rname').val();
+                        message += 'Some products price is less than cost )!\n';
+                        help = true;
+                    }
+                });
+            }
+
+            if(help == false){
+                $('#add_sale').trigger('click');
+            }else{
+                bootbox.prompt({
+                    title: message + "Please enter password to continue",
+                    inputType: 'password',
+                    className: "medium",
+                    callback: function (result) {
+                        $.ajax({
+                            type: 'get',
+                            url: '<?= site_url('auth/checkPassDiscount'); ?>',
+                            dataType: "json",
+                            data: {
+                                password: result
+                            },
+                            success: function (data) {
+                                if(data == 1){
+                                    $('#add_sale').trigger('click');
+                                }else{
+                                    bootbox.alert({
+                                        message: "Incorrect password!",
+                                        size: 'small'
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
+                return false;
             }
 
             <?php if($setting->credit_limit == 1) {?>

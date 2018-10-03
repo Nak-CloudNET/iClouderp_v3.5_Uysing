@@ -72,24 +72,24 @@
             "aoColumns": [{
                 "bSortable": false,
                 "mRender": checkbox
-            }, {"mRender": fld}, {"mRender": fld}, null, null, null, {"mRender": row_status}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": row_status}],
+            }, {"mRender": fld}, {"mRender": fld}, null, null, null,null, {"mRender": row_status}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": row_status}],
             "fnFooterCallback": function (nRow, aaData, iStart, iEnd, aiDisplay) {
                 var gtotal = 0, paid = 0, balance = 0, tReturn = 0, tDeposit = 0, tDiscount = 0;
                 for (var i = 0; i < aaData.length; i++) {
-                    gtotal += parseFloat(aaData[aiDisplay[i]][7]);
-                    tReturn += parseFloat(aaData[aiDisplay[i]][8]);
-                    paid += parseFloat(aaData[aiDisplay[i]][9]);
-                    tDeposit += parseFloat(aaData[aiDisplay[i]][10]);
-                    tDiscount += parseFloat(aaData[aiDisplay[i]][11]);
-                    balance += parseFloat(aaData[aiDisplay[i]][12]);
+                    gtotal += parseFloat(aaData[aiDisplay[i]][8]);
+                    tReturn += parseFloat(aaData[aiDisplay[i]][9]);
+                    paid += parseFloat(aaData[aiDisplay[i]][10]);
+                    tDeposit += parseFloat(aaData[aiDisplay[i]][11]);
+                    tDiscount += parseFloat(aaData[aiDisplay[i]][12]);
+                    balance += parseFloat(aaData[aiDisplay[i]][13]);
                 }
                 var nCells = nRow.getElementsByTagName('th');
-                nCells[7].innerHTML = currencyFormat(parseFloat(gtotal));
-                nCells[8].innerHTML = currencyFormat(parseFloat(tReturn));
-                nCells[9].innerHTML = currencyFormat(parseFloat(paid));
-                nCells[10].innerHTML = currencyFormat(parseFloat(tDeposit));
-                nCells[11].innerHTML = currencyFormat(parseFloat(tDiscount));
-                nCells[12].innerHTML = currencyFormat(parseFloat(balance));
+                nCells[8].innerHTML = currencyFormat(parseFloat(gtotal));
+                nCells[9].innerHTML = currencyFormat(parseFloat(tReturn));
+                nCells[10].innerHTML = currencyFormat(parseFloat(paid));
+                nCells[11].innerHTML = currencyFormat(parseFloat(tDeposit));
+                nCells[12].innerHTML = currencyFormat(parseFloat(tDiscount));
+                nCells[13].innerHTML = currencyFormat(parseFloat(balance));
             }
         }).fnSetFilteringDelay().dtFilter([
             {column_number: 1, filter_default_label: "[<?=lang('date');?> (yyyy-mm-dd)]", filter_type: "text", data: []},
@@ -97,8 +97,9 @@
             {column_number: 3, filter_default_label: "[<?=lang('reference_no');?>]", filter_type: "text", data: []},
             {column_number: 4, filter_default_label: "[<?=lang('project');?>]", filter_type: "text", data: []},
             {column_number: 5, filter_default_label: "[<?=lang('customer');?>]", filter_type: "text"},
-            {column_number: 6, filter_default_label: "[<?=lang('sale_status');?>]", filter_type: "text"},
-            {column_number: 13, filter_default_label: "[<?=lang('payment_status');?>]", filter_type: "text", data: []},
+            {column_number: 6, filter_default_label: "[<?=lang('saleman');?>]", filter_type: "text"},
+            {column_number: 7, filter_default_label: "[<?=lang('sale_status');?>]", filter_type: "text"},
+            {column_number: 14, filter_default_label: "[<?=lang('payment_status');?>]", filter_type: "text", data: []},
         ], "footer");
 
         $(document).on('click', '.email_receipt', function () {
@@ -369,6 +370,7 @@
                             <th><?= lang("reference_no"); ?></th>
                             <th><?= lang("biller"); ?></th>
                             <th><?= lang("customer"); ?></th>
+                            <th><?= lang("saleman"); ?></th>
                             <th><?= lang("sale_status"); ?></th>
                             <th><?= lang("grand_total"); ?></th>
                             <th><?= lang("returned"); ?></th>
@@ -390,6 +392,7 @@
                             <th style="min-width:30px; width: 30px; text-align: center;">
                                 <input class="checkbox checkft" type="checkbox" name="check"/>
                             </th>
+                            <th></th>
                             <th></th>
                             <th></th>
                             <th></th>

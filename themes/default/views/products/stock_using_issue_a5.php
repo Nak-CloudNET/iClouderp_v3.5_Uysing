@@ -99,7 +99,9 @@
             padding-left: 0 !important;
             margin-left: -5px !important;
         }
-
+        .cus_tb td,.tb_cus th{
+            font-size: 12px!important;
+        }
     }
 
     body {
@@ -184,14 +186,14 @@
                 <th colspan="9"
                     style="border-left:none;border-right: none;border-top:none;border-bottom: 1px solid #000 !important;">
                     <div class="row" style="margin-top: 0px !important;">
-                        <div class="col-sm-3 col-xs-3 " style="margin-top: 0px !important;">
+                        <div class="col-sm-3 col-xs-3 " style="margin-top: 0px !important; ">
                             <?php if (!empty($biller->logo)) { ?>
                                 <img class="img-responsive myhide"
                                      src="<?= base_url() ?>assets/uploads/logos/<?= $biller->logo; ?>" id="hidedlo"
                                      style="width: 140px; margin-left: 25px;margin-top: -10px;"/>
                             <?php } ?>
                         </div>
-                        <div class="col-sm-7 col-xs-7 company_addr " style="margin-top: -20px !important;">
+                        <div class="col-sm-7 col-xs-7 company_addr " style="margin-top: -20px !important;margin-left: -30px;line-height: 14px">
                             <div class="myhide">
                                 <center>
                                     <?php if ($biller->company) { ?>
@@ -204,12 +206,12 @@
                                         <?php } ?>
 
                                         <?php if (!empty($biller->address)) { ?>
-                                            <p style="margin-top:-10px !important;">
+                                            <p style="margin-top:-10px !important;font-size: 13px">
                                                 &nbsp;<?= $biller->address; ?></p>
                                         <?php } ?>
 
                                         <?php if (!empty($biller->phone)) { ?>
-                                            <p style="margin-top:-10px ;">Tel:
+                                            <p style="margin-top:-10px ;font-size: 13px">Tel:
                                                 &nbsp;<?= $biller->phone; ?>
                                             <?php if (!empty($biller->email)) { ?>
                                                 , Email :&nbsp;<?= $biller->email; ?>
@@ -220,10 +222,10 @@
 
                                 </center>
                             </div>
-                            <div class="invoice" style="margin-top:5px;">
+                            <div class="invoice" style="">
                                 <center>
 <!--                                    <h4 class="title">វិក្កយបត្រ</h4>-->
-                                    <h4 class="title" style="margin-top: 3px;">STOCK USING ISSUE FORM</h4>
+                                    <h4 class="title" style="margin-top: 3px;"><b>STOCK USING ISSUE FORM</b></h4>
                                 </center>
 
                             </div>
@@ -251,15 +253,23 @@
                             <table>
                                 <?php
 //                                $this->erp->print_arrays($invs);
+
+//                               $this->erp->print_arrays($getProject);
+                                $proj='';
+                                foreach($getProject as $prj){
+                                    if($prj->company){
+                                        $proj=$prj->company;
+                                    }
+                                }
                                 if (!empty($invs->authorize_name)) {
                                     ?>
                                     <tr>
-                                        <td><h4><b>Information</b></h4><br></td>
+                                        <td><h4><b>Information</b></h4></td>
                                     </tr>
                                     <tr>
                                         <td>Project</td>
                                         <td>:</td>
-                                        <td></td>
+                                        <td><?= $proj  ?></td>
                                     </tr>
                                     <tr>
                                         <td>Authorize Name</td>
@@ -274,17 +284,14 @@
                                         <td> <?= $invs->first_name.' '.$invs->last_name ?></td>
                                     </tr>
 
-                                <tr>
-                                    <td>Project Plan</td>
-                                    <td>:</td>
-                                    <td></td>
-                                </tr>
+
                             </table>
                         </div>
+<!--                        --><?php //$this->erp->print_arrays($invs); ?>
                         <div class="col-sm-5 col-xs-5">
                             <table class="noPadding" >
                                 <tr>
-                                    <td><h4><b>Reference</b></h4><br></td>
+                                    <td><h4><b>Reference</b></h4></td>
                                 </tr>
                                 <tr>
                                     <td style="width: 45%;">Reference No</td>
@@ -317,16 +324,16 @@
                 </th>
             </tr>
 
-            <tr class="border thead print" style="">
+            <tr class="border thead print tb_cus " style="">
                 <th><?= strtoupper(lang('no')) ?></th>
                 <th><?= strtoupper(lang('products_code')) ?></th>
-                <th><?= strtoupper(lang('products_name')) ?></th>
+                <th width="35%"><?= strtoupper(lang('products_name')) ?></th>
                 <th><?= strtoupper(lang('description')) ?></th>
                 <th><?= strtoupper(lang('unit')) ?></th>
                 <th><?= strtoupper(lang('quantity')) ?></th>
             </tr>
             </thead>
-            <tbody class="table-striped">
+            <tbody class="table-striped cus_tb" style="">
             <?php
             $i = 1;
             $erow = 1;
@@ -345,23 +352,24 @@
                 $total += $si->qty_by_unit;
                 $i++;
                 $erow++;
+
             }
             ?>
             <?php
-//            if ($erow < 16) {
-//                $k = 16 - $erow;
-//                for ($j = 1; $j <= $k; $j++) {
-//                    echo '<tr class="border">
-//                            <td height="34px" style="text-align: center; vertical-align: middle">' . $i . '</td>
-//                            <td></td>
-//                            <td></td>
-//                            <td></td>
-//                            <td></td>
-//                            <td></td>
-//                        </tr>';
-//                    $i++;
-//                }
-//            }
+            if ($erow < 7) {
+                $k = 7 - $erow;
+                for ($j = 1; $j <= $k; $j++) {
+                    echo '<tr class="border">
+                            <td style="text-align: center; vertical-align: middle">&nbsp;</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>';
+                    $i++;
+                }
+            }
              $note=str_replace('<p>','',$invs->note);
              $note=str_replace('</p>','',$note);
             ?>

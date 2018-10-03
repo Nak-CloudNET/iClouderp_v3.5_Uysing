@@ -117,42 +117,39 @@ if (!function_exists('getAvgCost2')) {
     }
 }
 if (!function_exists('getAvgCost')) {
-    function getAvgCost($tran_date, $arr_product_id = [])
+    function getAvgCost($arr_product_id = [])
     {   //return false;
         $ci =& get_instance();
 
         $w_product_id = '';
         if (is_array($arr_product_id)) {
-            $w_product_id = count($arr_product_id) > 0 ? " AND st.product_id in(" . implode(",", $arr_product_id) . ") " : "";
+            $w_product_id = count($arr_product_id) > 0 ? " AND pi.product_id in(" . implode(",", $arr_product_id) . ") " : "";
         }
 
         //====================================================
         //====================================================
-        $q_all_purchase_stock_trans = $ci->db->query("SELECT  st.product_id,
-                                    Sum( COALESCE (st.quantity_balance_unit, 0)) AS total_all_qty, 
-                                    Sum( COALESCE ( st.total_cost * st.quantity_balance_unit )) AS total_all_cost 
-                                    FROM erp_stock_trans AS st
-                                    WHERE  st.is_close = 0 AND st.tran_date <= '{$tran_date}' {$w_product_id} AND
-                                    st.tran_type IN ('SALE', 'PURCHASE', 'OPENING QUANTITY', 'ADJUSTMENT', 'CONVERT')  GROUP BY st.product_id ");
+        $q_all_purchase_items = $ci->db->query("SELECT  pi.product_id,
+                                    SUM( ( (COALESCE (pi.subtotal, 0) * (COALESCE (pp.total, 0) + COALESCE (pp.shipping, 0)) ) / COALESCE (pp.total, 0)) )/ Sum( COALESCE (pi.quantity_balance, 0) ) AS avg_cost
+                                    FROM erp_purchase_items AS pi
+                                    INNER JOIN erp_purchases AS pp ON pp.id = pi.purchase_id
+                                    WHERE  pi.date > DATE_ADD(NOW(), INTERVAL - 3 MONTH) {$w_product_id} GROUP BY pi.product_id");
 
-        if ($q_all_purchase_stock_trans->num_rows() > 0) {
-            foreach ($q_all_purchase_stock_trans->result() as $row) {
+        if ($q_all_purchase_items->num_rows() > 0) {
+            foreach ($q_all_purchase_items->result() as $row) {
 
                 if (isset($row->product_id)) {
                     if ($row->product_id) {
 
-                        $avg_cost = $row->total_all_qty == 0 ? 0 : ($row->total_all_cost / $row->total_all_qty);
-
-                        $ci->db->update('erp_products', ['cost' => $avg_cost], ['id' => $row->product_id]);
+                        $ci->db->update('erp_products', ['cost' => $row->avg_cost], ['id' => $row->product_id]);
                         $ci->db->query("UPDATE erp_product_variants SET
-                                    cost = {$avg_cost} * qty_unit WHERE product_id = '{$row->product_id}' ");
+                                    cost = {$row->avg_cost} * qty_unit WHERE product_id = '{$row->product_id}' ");
 
-                        $ci->db->query("UPDATE erp_stock_trans SET
-                                    total_cost = {$avg_cost}, avg_cost = {$avg_cost} WHERE
+                        /*$ci->db->query("UPDATE erp_stock_trans SET
+                                    total_cost = {$row->avg_cost}, avg_cost = {$row->avg_cost} WHERE
                                     (tran_type <> 'PURCHASE' AND tran_type <> 'OPENING QUANTITY') AND
-                                    product_id = '{$row->product_id}' AND tran_date = '{$tran_date}' ;");
+                                    product_id = '{$row->product_id}' ;");*/
 
-                        updateAVGSale($tran_date, $avg_cost, $row->product_id);
+                        //updateAVGSale($tran_date, $avg_cost, $row->product_id);
                     }
                 }
             }
@@ -336,21 +333,22 @@ if (!function_exists('optimizeSaleReturn')) {
                         }
                         $ci->db->insert('stock_trans',
                             [
-                                'biller_id' => $row_return_sale->biller_id,
-                                'purchase_item_id' => 0,
-                                'tran_date' => $row_return_sale->date,
-                                'product_id' => $item->product_id,
-                                'warehouse_id' => $item->warehouse_id,
-                                'option_id' => $item->option_id,
-                                'quantity' => $item->quantity,
+                                'biller_id'             => $row_return_sale->biller_id,
+                                'purchase_item_id'      => 0,
+                                'tran_date'             => $row_return_sale->date,
+                                'reference'             => $row_return_sale->reference_no,
+                                'product_id'            => $item->product_id,
+                                'warehouse_id'          => $item->warehouse_id,
+                                'option_id'             => $item->option_id,
+                                'quantity'              => $item->quantity,
                                 'quantity_balance_unit' => ($option_value * $item->quantity),
-                                'tran_type' => 'SALE RETURN',
-                                'tran_id' => $row_return_sale->id,
-                                'manufacture_cost' => 0,
-                                'freight_cost' => 0,
-                                'total_cost' => $item->unit_cost,
-                                'expired_date' => NULL,
-                                'serial' => $item->serial_no
+                                'tran_type'             => 'SALE RETURN',
+                                'tran_id'               => $row_return_sale->id,
+                                'manufacture_cost'      => 0,
+                                'freight_cost'          => 0,
+                                'total_cost'            => $item->unit_cost,
+                                'expired_date'          => NULL,
+                                'serial'                => $item->serial_no
                             ]);
 
                         //Will use this function in the future
@@ -396,6 +394,7 @@ if (!function_exists('optimizeDelivery')) {
 
                         $option_value = 1;
                         if ($item->warehouse_id > 0 && $item->product_id > 0) {
+
                             if ($item->option_id) {
                                 $q_product_variant = $ci->db->query("SELECT * FROM erp_product_variants
                                 WHERE id = {$item->option_id}");
@@ -403,18 +402,19 @@ if (!function_exists('optimizeDelivery')) {
                                     $option_value = $q_product_variant->row()->qty_unit;
                                 }
                             }
-
+//$this->erp->print_arrays($row_delivery);
                             $ci->db->insert('stock_trans',
                                 [
                                     'biller_id' => $row_delivery->biller_id,
                                     'purchase_item_id' => 0,
                                     'tran_date' => $row_delivery->date,
+                                    'reference' => $row_delivery->do_reference_no,
                                     'product_id' => $item->product_id,
                                     'warehouse_id' => $item->warehouse_id,
                                     'option_id' => $item->option_id,
                                     'quantity' => -$item->quantity,
-                                    'quantity_balance_unit' => -($option_value * $item->quantity),
-                                    'tran_type' => 'SALE',
+                                    'quantity_balance_unit' => -($option_value * $item->quantity_received),
+                                    'tran_type' => 'DELIVERY',
                                     'tran_id' => $row_delivery->id,
                                     'manufacture_cost' => 0,
                                     'freight_cost' => 0,
@@ -481,40 +481,42 @@ if (!function_exists('optimizeUsing')) {
                             if ($row_using->type == 'use') {
                                 $ci->db->insert('stock_trans',
                                     [
-                                        'biller_id' => $row_using->shop,
-                                        'purchase_item_id' => 0,
-                                        'tran_date' => $row_using->date,
-                                        'product_id' => $item->product_id,
-                                        'warehouse_id' => $item->warehouse_id,
-                                        'option_id' => $item->option_id,
-                                        'quantity' => -$item->qty_use,
+                                        'biller_id'             => $row_using->shop,
+                                        'purchase_item_id'      => 0,
+                                        'tran_date'             => $row_using->date,
+                                        'reference'             => $row_using->reference_no,
+                                        'product_id'            => $item->product_id,
+                                        'warehouse_id'          => $item->warehouse_id,
+                                        'option_id'             => $item->option_id,
+                                        'quantity'              => -$item->qty_use,
                                         'quantity_balance_unit' => -($option_value * $item->qty_use),
-                                        'tran_type' => 'USING STOCK',
-                                        'tran_id' => $row_using->id,
-                                        'manufacture_cost' => $item->cost,
-                                        'freight_cost' => 0,
-                                        'total_cost' => $item->cost,
-                                        'expired_date' => $item->expiry,
-                                        'serial' => 0
+                                        'tran_type'             => 'USING STOCK',
+                                        'tran_id'               => $row_using->id,
+                                        'manufacture_cost'      => $item->cost,
+                                        'freight_cost'          => 0,
+                                        'total_cost'            => $item->cost,
+                                        'expired_date'          => $item->expiry,
+                                        'serial'                => 0
                                     ]);
                             } else {
                                 $ci->db->insert('stock_trans',
                                     [
-                                        'biller_id' => $row_using->shop,
-                                        'purchase_item_id' => 0,
-                                        'tran_date' => $row_using->date,
-                                        'product_id' => $item->product_id,
-                                        'warehouse_id' => $item->warehouse_id,
-                                        'option_id' => $item->option_id,
-                                        'quantity' => $item->qty_use,
+                                        'biller_id'             => $row_using->shop,
+                                        'purchase_item_id'      => 0,
+                                        'tran_date'             => $row_using->date,
+                                        'reference'             => $row_using->reference_no,
+                                        'product_id'            => $item->product_id,
+                                        'warehouse_id'          => $item->warehouse_id,
+                                        'option_id'             => $item->option_id,
+                                        'quantity'              => $item->qty_use,
                                         'quantity_balance_unit' => $option_value * $item->qty_use,
-                                        'tran_type' => 'RETURN USING STOCK',
-                                        'tran_id' => $row_using->id,
-                                        'manufacture_cost' => 0,
-                                        'freight_cost' => 0,
-                                        'total_cost' => $item->cost,
-                                        'expired_date' => $item->expiry,
-                                        'serial' => 0
+                                        'tran_type'             => 'RETURN USING STOCK',
+                                        'tran_id'               => $row_using->id,
+                                        'manufacture_cost'      => 0,
+                                        'freight_cost'          => 0,
+                                        'total_cost'            => $item->cost,
+                                        'expired_date'          => $item->expiry,
+                                        'serial'                => 0
                                     ]);
                             }
 

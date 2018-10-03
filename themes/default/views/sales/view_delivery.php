@@ -36,7 +36,7 @@
                         <td><?php echo $this->lang->line("address"); ?></td>
                         <td colspan="3"><?php echo $delivery->address; ?></td>
                     </tr>
-                   
+
                     </tbody>
 
                 </table>
@@ -48,7 +48,7 @@
                     <thead>
 						<tr>
 							<th style="text-align:center; vertical-align:middle;"><?php echo $this->lang->line("no"); ?></th>
-							
+
 							<?php if($setting->show_code == 0){ ?>
 								<th style="vertical-align:middle;"><?php echo $this->lang->line("product_name"); ?></th>
 							<?php }else if($setting->separate_code == 0){ ?>
@@ -57,7 +57,7 @@
 								<th style="vertical-align:middle;"><?php echo $this->lang->line("product_name"); ?></th>
 								<th style="vertical-align:middle;"><?php echo $this->lang->line("product_code"); ?></th>
 							<?php } ?>
-							
+
                             <th style="text-align:center; vertical-align:middle;"><?php echo $this->lang->line("quantity"); ?></th>
 							<th style="text-align:center; vertical-align:middle;"><?php echo $this->lang->line("unit"); ?></th>
 						</tr>
@@ -128,7 +128,12 @@
                     </a>
                 </div>
                -->
-
+                <div class="btn-group">
+                    <a href="<?= site_url('sale_order/sanagro_invoice_a4_r/' . $delivery->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('sanagro_deliveries') ?>">
+                        <i class="fa fa-print"></i>
+                        <span class="hidden-sm hidden-xs"><?= lang('Sanagro_Deliveries') ?></span>
+                    </a>
+                </div>
 				<div class="btn-group">
                     <a href="<?= site_url('sale_order/standard_delivery_invoice/' . $delivery->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('invoice_delivery') ?>">
                         <i class="fa fa-print"></i>

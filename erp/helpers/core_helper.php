@@ -113,3 +113,17 @@ if (!function_exists('getScalarValue')) {
     }
 }
 
+if (!function_exists('isClosedDate')) {
+    function isClosedDate($date)
+    {
+        $ci =& get_instance();
+        $q=$ci->db->query('select* from erp_closing_date where date >=date_format("'.$date.'","%Y-%m-%d")');
+        if ($q->num_rows() > 0) {
+            $ci->session->set_flashdata('error', lang('date_transaction_is_closed'));
+            redirect($_SERVER["HTTP_REFERER"]);
+        }
+        //return false;
+    }
+}
+
+

@@ -3,7 +3,6 @@
 class Account extends MY_Controller
 {
 	//********* Kindly to inform for beautiful code first before coding , invoid from messy coding ******/
-	
 	function __construct()
 	{
 		parent::__construct();
@@ -2620,13 +2619,15 @@ class Account extends MY_Controller
 						LIMIT 0,1
 					), (
 						SELECT
-							erp_companies.company
-						FROM
-							erp_sales
-						INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id
-						WHERE
-							erp_sales.reference_no = gt.reference_no
-						LIMIT 0,1
+                            erp_sales.customer
+                        FROM
+                            erp_sales
+                            
+                            INNER JOIN erp_gl_trans ON erp_sales.reference_no = erp_gl_trans.reference_no 
+                        WHERE
+                            erp_sales.reference_no = erp_gl_trans.reference_no 
+                            LIMIT 0,
+                            1 
 					))
 				WHEN gt.tran_type = 'PURCHASES' OR gt.tran_type = 'PURCHASE EXPENSE' THEN
 					IF(gt.bank = 1, (
@@ -2781,6 +2782,7 @@ class Account extends MY_Controller
 		$date 				= $this->input->post('date');
 		$tran_date 			= strtr($date, '/', '-');
 		$tran_date 			= date('Y-m-d h:m', strtotime($tran_date));
+		isClosedDate($tran_date);
 		$description 		= $this->input->post('description');
 		$note 				= $this->input->post('note');
 		$debit 				= $this->input->post('debit');
@@ -2975,6 +2977,17 @@ class Account extends MY_Controller
 		}
 		echo $data;
 	}
+	public function getCustomerSaleOrderInvoices($customer = null)
+	{
+		if ($rows = $this->site->getCustomerSaleOrderInvoices($customer)) {
+			$none=array('id'=>'','text'=>'None');
+			array_unshift($rows, $none);
+			$data = json_encode($rows);
+		} else {
+			$data = false;
+		}
+		echo $data;
+	}
 	
 	public function add()
 	{
@@ -2989,7 +3002,8 @@ class Account extends MY_Controller
 				'accountname' => $this->input->post('account_name'),
 				'parent_acc' => $this->input->post('sub_account'),
 				'sectionid' => $this->input->post('account_section'),
-				'bank' => $this->input->post('bank_account')
+				'bank' => $this->input->post('bank_account'),
+                'inventory' => $this->input->post('inventory')
 				);
 		}
 
@@ -3017,7 +3031,8 @@ class Account extends MY_Controller
 			'accountname' => $this->input->post('account_name'),
 			'parent_acc' => $parent_account,
 			'sectionid' => $this->input->post('account_section'),
-			'bank' => $this->input->post('bank_account')
+			'bank' => $this->input->post('bank_account'),
+            'inventory' => $this->input->post('inventory')
 			);
 
 		$this->accounts_model->updateChartAccount($acc_code, $data);
@@ -4911,6 +4926,8 @@ class Account extends MY_Controller
 		$meta = array('page_title' => lang('ar_by_customer'), 'bc' => $bc);
 		$this->page_construct('accounts/ar_by_customer', $meta, $this->data);
 	}*/
+
+	/* Old Old Edit By RAVY 
 	function ar_by_customer()
 	{
 		if($this->input->post('start_date')){
@@ -4953,7 +4970,243 @@ class Account extends MY_Controller
 		$meta = array('page_title' => lang('ar_by_customer'), 'bc' => $bc);
 		$this->page_construct('accounts/ar_by_customer', $meta, $this->data);
 	}
-	
+	*/
+	function ar_by_customer()
+	{
+		if($this->input->post('start_date')){
+			$start_date =  $this->erp->fld($this->input->post('start_date'));
+			$this->data['start_date2'] = trim($start_date);
+		}else{
+			$start_date =date('Y-m-d');;
+			$this->data['start_date2'] = date('Y-m-d');
+		}
+
+		if($this->input->post('end_date')){
+			$end_date = $this->erp->fld($this->input->post('end_date'));
+			$this->data['end_date2'] = trim($end_date);
+		}else{
+			$end_date = date('Y/m-d');;
+			$this->data['end_date2'] = date('Y-m-d');
+		}
+
+		if($this->input->post('customer')){
+			$customer = $this->input->post('customer');
+			$this->data['customer2'] = $customer;
+		}else{
+			$customer = null;
+			$this->data['customer2'] = 0;
+		}
+
+		if($this->input->post('balance')){
+			$balance = $this->input->post('balance');
+			$this->data['balance2'] = $balance;
+		}else{
+			$balance = 'all';
+			$this->data['balance2'] = 'all';
+		}
+
+		$cust_data[] = "";
+		$customers = $this->accounts_model->ar_by_customerV3($start_date, $end_date, $customer, $balance);
+
+
+		$this->data['customers'] = $customers;
+        $bc = array( array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('report')) );
+        $meta = array('page_title' => lang('customer_report'), 'bc' => $bc);
+		$this->page_construct('accounts/ar_by_customer', $meta, $this->data);
+	}
+    function customer_balance_ar()
+    {
+        //$this->erp->checkPermissions('customer',NULL,'sale_report');
+        $this->data['error'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('error');
+        $this->data['customers'] = $this->site->getCustomerSale();
+        if ($this->Owner || $this->Admin) {
+            $this->data['warehouses'] = $this->site->getAllWarehouses();
+            $this->data['warehouse_id'] = isset($warehouse_id);
+            $this->data['warehouse'] = isset($warehouse_id) ? $this->site->getWarehouseByID($warehouse_id) : NULL;
+        } else {
+            $this->data['warehouses'] = NULL;
+            $this->data['warehouse_id'] = $this->session->userdata('warehouse_id');
+
+            $this->data['warehouse'] = $this->session->userdata('warehouse_id') ? $this->site->getWarehouseByID($this->session->userdata('warehouse_id')) : NULL;
+        }
+        $bc = array( array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('report')) );
+        $meta = array('page_title' => lang('Customer_Balance_Summary'), 'bc' => $bc);
+        $this->page_construct('accounts/customer_balance_ar', $meta, $this->data);
+    }
+
+    function customer_report_ar()
+    {
+        if($this->input->post('start_date')){
+            $start_date =  $this->erp->fld($this->input->post('start_date'));
+            $this->data['start_date2'] = trim($start_date);
+        }else{
+            $start_date =date('Y-m-d');;
+            $this->data['start_date2'] = date('Y-m-d');
+        }
+
+        if($this->input->post('end_date')){
+            $end_date = $this->erp->fld($this->input->post('end_date'));
+            $this->data['end_date2'] = trim($end_date);
+        }else{
+            $end_date = date('Y/m-d');;
+            $this->data['end_date2'] = date('Y-m-d');
+        }
+
+        if($this->input->post('customer')){
+            $customer = $this->input->post('customer');
+            $this->data['customer2'] = $customer;
+        }else{
+            $customer = null;
+            $this->data['customer2'] = 0;
+        }
+
+        if($this->input->post('balance')){
+            $balance = $this->input->post('balance');
+            $this->data['balance2'] = $balance;
+        }else{
+            $balance = 'all';
+            $this->data['balance2'] = 'all';
+        }
+
+        $cust_data[] = "";
+        $customers = $this->accounts_model->ar_by_customerV3($start_date, $end_date, $customer, $balance);
+
+
+        $this->data['customers'] = $customers;
+        $bc = array( array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('report')) );
+        $meta = array('page_title' => lang('Customer_Balance_Detail'), 'bc' => $bc);
+        $this->page_construct('accounts/ar_by_customer_report', $meta, $this->data);
+    }
+    function customer_balance_by_item()
+    {
+        if($this->input->post('start_date')){
+            $start_date =  $this->erp->fld($this->input->post('start_date'));
+            $this->data['start_date2'] = trim($start_date);
+        }else{
+            $start_date =date('Y-m-d');;
+            $this->data['start_date2'] = date('Y-m-d');
+        }
+
+        if($this->input->post('end_date')){
+            $end_date = $this->erp->fld($this->input->post('end_date'));
+            $this->data['end_date2'] = trim($end_date);
+        }else{
+            $end_date = date('Y/m-d');;
+            $this->data['end_date2'] = date('Y-m-d');
+        }
+
+        if($this->input->post('customer')){
+            $customer = $this->input->post('customer');
+            $this->data['customer2'] = $customer;
+        }else{
+            $customer = null;
+            $this->data['customer2'] = 0;
+        }
+
+        if($this->input->post('balance')){
+            $balance = $this->input->post('balance');
+            $this->data['balance2'] = $balance;
+        }else{
+            $balance = 'all';
+            $this->data['balance2'] = 'all';
+        }
+
+        $cust_data[] = "";
+        $customers = $this->accounts_model->ar_by_customerV3($customer);
+
+
+        $this->data['customers'] = $customers;
+        $bc = array( array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('report')) );
+        $meta = array('page_title' => lang('customer_balance_by_item'), 'bc' => $bc);
+        $this->page_construct('accounts/customer_balance_by_item', $meta, $this->data);
+    }
+    function customer_balance_r()
+    {
+        if($this->input->post('start_date')){
+            $start_date =  $this->erp->fld($this->input->post('start_date'));
+            $this->data['start_date2'] = trim($start_date);
+        }else{
+            $start_date =date('Y-m-d');;
+            $this->data['start_date2'] = date('Y-m-d');
+        }
+
+        if($this->input->post('end_date')){
+            $end_date = $this->erp->fld($this->input->post('end_date'));
+            $this->data['end_date2'] = trim($end_date);
+        }else{
+            $end_date = date('Y/m-d');;
+            $this->data['end_date2'] = date('Y-m-d');
+        }
+
+        if($this->input->post('customer')){
+            $customer = $this->input->post('customer');
+            $this->data['customer2'] = $customer;
+        }else{
+            $customer = null;
+            $this->data['customer2'] = 0;
+        }
+
+        if($this->input->post('balance')){
+            $balance = $this->input->post('balance');
+            $this->data['balance2'] = $balance;
+        }else{
+            $balance = 'all';
+            $this->data['balance2'] = 'all';
+        }
+
+        $cust_data[] = "";
+        $customers = $this->accounts_model->ar_by_customerV3($start_date, $end_date, $customer, $balance);
+
+
+        $this->data['customers'] = $customers;
+        $bc = array( array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('report')) );
+        $meta = array('page_title' => lang('Collection Report'), 'bc' => $bc);
+        $this->page_construct('accounts/customer_balance_r', $meta, $this->data);
+    }
+    function customer_balance_detail($customer_id=null)
+    {
+        if($this->input->post('start_date')){
+            $start_date =  $this->erp->fld($this->input->post('start_date'));
+            $this->data['start_date2'] = trim($start_date);
+        }else{
+            $start_date =date('Y-m-d');;
+            $this->data['start_date2'] = date('Y-m-d');
+        }
+
+        if($this->input->post('end_date')){
+            $end_date = $this->erp->fld($this->input->post('end_date'));
+            $this->data['end_date2'] = trim($end_date);
+        }else{
+            $end_date = date('Y/m-d');;
+            $this->data['end_date2'] = date('Y-m-d');
+        }
+
+        if($customer_id){
+            $customer = $customer_id;
+            $this->data['customer2'] = $customer;
+        }else{
+            $customer = null;
+            $this->data['customer2'] = 0;
+        }
+
+        if($this->input->post('balance')){
+            $balance = $this->input->post('balance');
+            $this->data['balance2'] = $balance;
+        }else{
+            $balance = 'all';
+            $this->data['balance2'] = 'all';
+        }
+
+        $cust_data[] = "";
+        $customers = $this->accounts_model->ar_by_customerV3($start_date, $end_date, $customer, $balance);
+
+
+        $this->data['customers'] = $customers;
+        $bc = array( array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('accounts')) );
+        $meta = array('page_title' => lang('ar_by_customer_report'), 'bc' => $bc);
+        $this->page_construct('accounts/customer_balance_detail', $meta, $this->data);
+    }
+	/* Edit By Ravy
 	function ap_by_supplier()
 	{
 		if($this->input->post('start_date')){
@@ -5019,7 +5272,50 @@ class Account extends MY_Controller
 		$meta = array('page_title' => lang('ap_by_supplier'), 'bc' => $bc);
 		$this->page_construct('accounts/ap_by_supplier', $meta, $this->data);
 	}
-	
+	*/
+    function ap_by_supplier()
+    {
+        if($this->input->post('start_date')){
+            $start_date =  $this->erp->fld($this->input->post('start_date'));
+            $this->data['start_date2'] = trim($start_date);
+        }else{
+            $start_date =null;
+            $this->data['start_date2'] = date('Y-m-d');;
+        }
+
+        if($this->input->post('end_date')){
+            $end_date = $this->erp->fld($this->input->post('end_date'));
+            $this->data['end_date2'] = trim($end_date);
+        }else{
+            $end_date = null;
+            $this->data['end_date2'] = date('Y-m-d');;
+        }
+
+        if($this->input->post('supplier')){
+            $supplier = $this->input->post('supplier');
+            $this->data['supplier2'] = $supplier;
+        }else{
+            $supplier = null;
+            $this->data['supplier2'] = 0;
+        }
+
+        if($this->input->post('balance')){
+            $balance = $this->input->post('balance');
+            $this->data['balance2'] = $balance;
+        }else{
+            $balance = 'all';
+            $this->data['balance2'] = 'all';
+        }
+
+
+        //$suppliers = $this->accounts_model->getApBySupplier('',$start_date, $end_date);
+        $suppliers = $this->companies_model->getAllSupplierCompanies();
+        //$this->erp->print_arrays($suppliers);
+        $this->data['suppliers'] = $suppliers;
+        $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => '#', 'page' => lang('accounts')));
+        $meta = array('page_title' => lang('ap_by_supplier'), 'bc' => $bc);
+        $this->page_construct('accounts/ap_by_supplier', $meta, $this->data);
+    }
 	public function checkrefer()
 	{
 		if($this->input->get('items')){

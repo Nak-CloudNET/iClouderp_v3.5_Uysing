@@ -54,7 +54,10 @@
 					<div class="form-group">
 						<input type="checkbox" id="bank_account" class="form-control" name="bank_account" value="1" <?php echo set_checkbox('bank_account', '1', $supplier->bank==1?TRUE:FALSE); ?>>
 						<?= lang("bank_account", "bank_account"); ?>
+                        <input type="checkbox" id="inventory" class="form-control" name="inventory" value="1" <?php  echo set_checkbox('inventory', '1', $supplier->inventory==1?TRUE:FALSE); ?>>
+                        <?= lang("inventory", "inventory"); ?>
                     </div>
+
 				</div>
 			</div>
         <div class="modal-footer">

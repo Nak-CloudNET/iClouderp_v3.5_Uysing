@@ -299,10 +299,10 @@ body:before, body:after {
 .btn-prni {
     border: 1px solid #eee;
     cursor: pointer;
-    height: 115px;
+    height: 120px;
     margin: 0 0 3px 2px;
     padding: 2px;
-    width: 10.5%;
+    width: 16.3%;
     min-width: 100px;
     overflow: hidden;
     display: inline-block;

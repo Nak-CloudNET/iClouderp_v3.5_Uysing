@@ -1,3 +1,4 @@
+
 <div class="modal-dialog">
     <div class="modal-content">
         <div class="modal-header">
@@ -23,10 +24,17 @@
 
                 <?php if ($this->Settings->system_management == 'biller') { ?>
                     <div class="col-sm-6 col-xs-6">
-                        <?= get_dropdown_project('biller', 'posbiller'); ?>
+                        <div class="form-group">
+                            <?= get_dropdown_project('biller', 'posbiller'); ?>
+                        </div>
                     </div>
                 <?php } ?>
-
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <?= lang("discount_date", "discount_date"); ?>
+                        <?= form_input('discount_date', $inv->payment_term?date('d/m/Y', strtotime($inv->date."+{$inv->payment_term_due_day_for_discount} days")):"", 'class="form-control date" readonly id="date_discount"'); ?>
+                    </div>
+                </div>
                 <div class="col-sm-6">
                     <div class="form-group">
                         <?= lang("reference_no", "slref"); ?>
@@ -51,11 +59,41 @@
                 <div class="well well-sm well_1">
                     <div class="col-md-12">
                         <div class="row">
+                            <!--
                             <div class="col-sm-6">
                                 <div class="payment">
                                     <div class="form-group">
                                         <?= lang("discount", "discount"); ?>
                                         <input name="discount" value="0.00" type="text" class="form-control" id="discount"/>
+                                    </div>
+                                </div>
+                            </div>
+                            -->
+                            <div class="col-sm-6">
+                                <div class="payment">
+                                    <div class="form-group">
+                                        <?= lang("discount", "discount"); ?>
+                                        <!--
+                                        <input name="discount" value="{$inv->payment_term?1:''}" type="text" class="form-control" id="discount"/>
+                                        -->
+                                        <?php
+                                            if($inv->payment_term)
+                                            {
+                                                if(strtotime($inv->date."+{$inv->payment_term_due_day_for_discount} days")>=strtotime("now"))
+                                                {
+                                                    $discount=$inv->payment_term_discount;
+                                                    $dpos = strpos($discount, '%');
+                                                    if ($dpos !== false) {
+                                                        $pds = explode("%", $discount);
+                                                        $pm_discount = (($inv->grand_total * (Float) ($pds[0])) / 100);
+                                                    } else {
+                                                        $pm_discount = $discount;
+                                                    }  
+                                                }
+                                               
+                                            }
+                                        ?>
+                                        <?= form_input('discount',$pm_discount?$pm_discount:'0.00', 'class="form-control"  id="discount"'); ?>
                                     </div>
                                 </div>
                             </div>
@@ -211,7 +249,6 @@
 <?= $modal_js ?>
 <script type="text/javascript" charset="UTF-8">
     $(document).ready(function () {
-
         $("#slref").attr('readonly', 'readonly');
         $('#ref_st').on('ifChanged', function () {
             if ($(this).is(':checked')) {
@@ -451,7 +488,7 @@
                 $('#amount_1').trigger('change');
             }
         });
-
+        $('#discount').trigger('change');
         /*$(document).on('keyup', '#amount_1', function () {
             var deposit_balance = 0;
             var us_paid = $('#amount_1').val()-0;

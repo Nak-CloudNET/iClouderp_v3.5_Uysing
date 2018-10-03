@@ -382,7 +382,7 @@
 							<?php if ($invs->order_discount != 0) : ?>
 							<tr>
 								<td colspan="<?= $col; ?>" style="text-align: right; font-weight: bold;">បញ្ចុះតម្លៃលើការបញ្ជាទិញ / <?= strtoupper(lang('order_discount')) ?></td>
-								<td align="right">$<?php echo $this->erp->formatQuantity($invs->order_discount).' $'; ?></td>
+								<td align="right">$<?php echo $this->erp->formatQuantity($invs->order_discount); ?></td>
 							</tr>
 							<?php endif; ?>
 							

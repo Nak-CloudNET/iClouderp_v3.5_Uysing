@@ -189,10 +189,10 @@ if (!function_exists('optimizePurchases')) {
     {
         $ci =& get_instance();
 
-        $arr_product_id = [];
+        $arr_product_id     = [];
 
-        $q_all_purchases = $ci->db->query("SELECT * FROM erp_purchases 
-                            WHERE DATE(`date`) >= DATE('{$tran_date}') ORDER BY `date` ASC; ");
+        $q_all_purchases    = $ci->db->query("SELECT * FROM erp_purchases 
+                            WHERE DATE(`date`) >= DATE('{$tran_date}') ORDER BY `date` ASC");
 
         if ($q_all_purchases->num_rows() > 0) {
             foreach ($q_all_purchases->result() as $row_purchase) {
@@ -221,8 +221,6 @@ if (!function_exists('optimizePurchases')) {
                         }
                     }
 
-                    $ci->db->query("DELETE FROM erp_stock_trans WHERE tran_type = 'PURCHASE' AND tran_id = '{$row_purchase->id}'");
-
                     foreach ($items as $item) {
                         $percentage_item    = ($item->subtotal / $total_item_cost);
                         $product_cost_ship  = $percentage_item * $total_services;
@@ -234,6 +232,7 @@ if (!function_exists('optimizePurchases')) {
                         }
 
                         $ci->db->update('purchase_items', ['real_unit_cost' => $product_unit_cost], ['id' => $item->id]);
+                        $ci->db->query("DELETE FROM erp_stock_trans WHERE tran_type = 'PURCHASE' AND tran_id = '{$row_purchase->id}'");
 
                         $ci->db->insert('stock_trans',
                             [
@@ -260,10 +259,11 @@ if (!function_exists('optimizePurchases')) {
                         $arr_product_id[$item->product_id] = $item->product_id;
 
                     }
+
                 }
             }
             //Will use this function in the future
-            //getAvgCost($tran_date, $arr_product_id);
+            getAvgCost($arr_product_id);
 
         }
     }

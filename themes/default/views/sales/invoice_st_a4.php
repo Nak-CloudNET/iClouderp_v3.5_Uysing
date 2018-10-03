@@ -263,12 +263,17 @@
                                             <td>:</td>
                                             <td><?= $invs->saleman; ?></td>
                                         </tr>
+                                        <tr>
+                                            <td>លេខបញ្ជាទិញ/PO</td>
+                                            <td>:</td>
+                                            <td><?= $invs->po; ?></td>
+                                        </tr>
 
                                         <?php if ($invs->payment_term) { ?>
                                             <tr>
                                                 <td>រយៈពេលបង់ប្រាក់ </td>
                                                 <td>:</td>
-                                                <td><?= $invs->payment_term ?></td>
+                                                <td><?= $invs->payment_term_due_day ?></td>
                                             </tr>
                                             <tr>
                                                 <td style="width: 30% !important">កាលបរិច្ឆេទនៃការបង់ប្រាក់ </td>
@@ -281,7 +286,15 @@
                             </div>
                         </th>
                     </tr>
-                    <tr class="border thead print" style="background-color: #444 !important; color: #FFF !important;">
+					<?php 
+					$pro_dis=0;
+					$pro_tax=0;
+					foreach ($rows as $row) {
+						$pro_dis += $row->item_discount;
+						$pro_tax += $row->item_tax;
+					}
+					?>
+                    <tr class="border thead print" style="background-color:black;color:#fff">
                         <th>ល.រ<br /><?= strtoupper(lang('no')) ?></th>
                         <th>បរិយាយមុខទំនិញ<br /><?= strtoupper(lang('description')) ?></th>
                         <th>ការបញ្ជាក់<br /><?= strtoupper(lang('specification')) ?></th>
@@ -289,10 +302,10 @@
                         <th>ចំនួន<br /><?= strtoupper(lang('qty')) ?></th>
                         <th>តម្លៃ<br /><?= strtoupper(lang('price')) ?></th>
 
-                        <?php if ($Settings->product_discount) { ?>
+                        <?php if ($pro_dis) { ?>
                             <th>បញ្ចុះតម្លៃ<br /><?= strtoupper(lang('discount')) ?></th>
                         <?php } ?>
-                        <?php if ($Settings->tax1) { ?>
+                        <?php if ($pro_tax) { ?>
                             <th style="width: 10%">ពន្ធទំនិញ<br /><?= strtoupper(lang('tax')) ?></th>
                         <?php } ?>
                         <th>តម្លៃសរុប<br /><?= strtoupper(lang('subtotal')) ?></th>
@@ -348,7 +361,7 @@
                                 }
                             ?>
                         </td>
-                        <?php if ($row->item_discount) {?>
+                        <?php if ($pro_dis) {?>
                             <td style="vertical-align: middle; text-align: center">
 
                                 <?php
@@ -359,7 +372,7 @@
                                 ?>
                             </td>
                         <?php } ?>
-                        <?php if ($row->item_tax) {?>
+                        <?php if ($pro_tax) {?>
                             <td style="vertical-align: middle; text-align: center">
                                 <?=$this->erp->formatMoney($row->item_tax);?></td>
                         <?php } ?>
@@ -387,7 +400,7 @@
                 if($erow<16){
                     $k=16 - $erow;
                     for($j=1;$j<=$k;$j++) {
-                        if($discount != 0) {
+                        if($pro_dis > 0 && $pro_tax >0) {
                             echo  '<tr class="border">
                                     <td height="34px" style="text-align: center; vertical-align: middle">'.$no.'</td>
                                     <td></td>
@@ -398,20 +411,32 @@
                                     <td></td>
                                     <td></td>
                                     <td></td>
-                                    <td></td>
+                                    
                                 </tr>';
+								
                         }else {
-                            echo  '<tr class="border">
-                                    <td height="34px" style="text-align: center; vertical-align: middle">'.$no.'</td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                </tr>';
+							if($pro_dis > 0 || $pro_tax >0 ) {
+								echo  '<tr class="border">
+										<td height="34px" style="text-align: center; vertical-align: middle">'.$no.'</td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+									</tr>';
+                            }else {
+								echo  '<tr class="border">
+										<td height="34px" style="text-align: center; vertical-align: middle">'.$no.'</td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+									</tr>';
+							}
         }
                         $no++;
                     }
@@ -419,24 +444,29 @@
                 ?>
                 <?php
                 $row = 1;
-                $col =5;
-                if ($discount != 0) {
-                    $col = 4;
+                $col =3;
+
+				if ($pro_dis > 0) {
+                    $col+=1;
                 }
+				if ($pro_tax >0) {
+                    $col += 1;
+                }
+
                 if ($invs->grand_total != $invs->total) {
                     $row++;
                 }
                 if ($invs->order_discount != 0) {
                     $row++;
-                    $col =5;
+                    //$col =5;
                 }
                 if ($invs->shipping != 0) {
                     $row++;
-                    $col =5;
+                    //$col =5;
                 }
                 if ($invs->order_tax != 0) {
                     $row++;
-                    $col =5;
+                  //  $col =3;
                 }
                 if($invs->paid != 0 && $invs->deposit != 0) {
                     $row += 3;
@@ -466,7 +496,7 @@
                 <?php if ($invs->order_discount != 0) : ?>
                     <tr class="border-foot">
                         <td colspan="<?= $col; ?>" style="text-align: right; font-weight: bold;">បញ្ចុះតម្លៃ / <?= strtoupper(lang('order_discount')) ?></td>
-                        <td align="right"><small style='font-size:10px;'>(<?php echo $invs->order_discount_id; ?>%)</small>&nbsp;<?php echo $this->erp->formatMoney($invs->order_discount); ?></td>
+                        <td align="right"><small style='font-size:10px;'>(<?php echo $invs->order_discount_id; ?>)</small>&nbsp;<?php echo $this->erp->formatMoney($invs->order_discount); ?></td>
                     </tr>
                 <?php endif; ?>
 
@@ -575,12 +605,31 @@
 
 
 
+<div class="row">
+    <div style="margin-left: 20px;margin-top: 20px;" class="col-md-2">
+        <a class="btn btn-warning no-print" href="<?= site_url('sales'); ?>" style="border-radius: 0">
+            <i class="fa fa-hand-o-left" aria-hidden="true"></i>&nbsp;<?= lang("back"); ?>
+        </a>
+    </div>
+    <div style="margin-top: 20px;margin-bottom: 20px;" class="col-md-3">
+        <a class="btn btn-primary no-print" href="<?= site_url('sales/print_st_commerial/'.$invs->id); ?>" style="border-radius: 0">
+         <?= lang("Commercial Invoice"); ?>
+        </a>
+    </div>
+    <div style="margin-top: 20px;margin-bottom: 20px;" class="col-md-3">
+        <a class="btn btn-primary no-print" href="<?= site_url('sales/print_sela_tax_invoice/'.$invs->id); ?>" style="border-radius: 0">
+            <?= lang("Tax Invoice"); ?>
+        </a>
+    </div>
+    <div style="margin-top: 20px;margin-bottom: 20px;" class="col-md-3">
+        <a class="btn btn-primary no-print" href="<?= site_url('sales/print_consignment_note_invoice/'.$invs->id); ?>" style="border-radius: 0">
+            <?= lang("Consignment Note"); ?>
+        </a>
+    </div>
 
-        <div style="width: 821px;margin: 20px">
-            <a class="btn btn-warning no-print" href="<?= site_url('sales'); ?>" style="border-radius: 0">
-                <i class="fa fa-hand-o-left" aria-hidden="true"></i>&nbsp;<?= lang("back"); ?>
-            </a>
-        </div>
+
+</div>
+
     </div>
 
 </body>

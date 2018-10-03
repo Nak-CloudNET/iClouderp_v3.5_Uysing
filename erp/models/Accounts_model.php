@@ -295,7 +295,7 @@ class Accounts_model extends CI_Model
 	
 	public function getChartAccountByID($id)
 	{
-		$this->db->select('gl_charts.accountcode,gl_charts.accountname,gl_charts.parent_acc,gl_charts.sectionid,gl_sections.sectionname, bank ');
+		$this->db->select('gl_charts.accountcode,gl_charts.accountname,gl_charts.parent_acc,gl_charts.sectionid,gl_sections.sectionname, bank,inventory ');
 		$this->db->from('gl_charts');
 		$this->db->join('gl_sections', 'gl_sections.sectionid=gl_charts.sectionid','INNER');
 		$this->db->where('gl_charts.accountcode' , $id);
@@ -1185,109 +1185,138 @@ class Accounts_model extends CI_Model
 			$where_date = " AND date(erp_gl_trans.tran_date) BETWEEN '$from_date'
 			AND '$to_date' ";
 		}
-		$query = $this->db->query("SELECT
-			erp_gl_trans.tran_type,
-			erp_gl_trans.tran_date,
-			erp_gl_trans.reference_no,
-			(
-				CASE
-				WHEN erp_gl_trans.tran_type = 'SALES' THEN
-					IF(erp_gl_trans.bank = '1', (
-						SELECT
-							erp_companies.company
-						FROM
-							erp_payments
-						INNER JOIN erp_sales ON erp_sales.id = erp_payments.sale_id
-						INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id
-						WHERE
-							erp_payments.reference_no = erp_gl_trans.reference_no
-						LIMIT 0,1
-					), (
-						SELECT
-							erp_companies.company
-						FROM
-							erp_sales
-						INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id
-						WHERE
-							erp_sales.reference_no = erp_gl_trans.reference_no
-						LIMIT 0,1
-					))
-				WHEN erp_gl_trans.tran_type = 'PURCHASES' OR erp_gl_trans.tran_type = 'PURCHASE EXPENSE' THEN
-					IF(erp_gl_trans.bank = 1, (
-						SELECT
-							erp_companies.company
-						FROM
-							erp_payments
-						INNER JOIN erp_purchases ON erp_purchases.id = erp_payments.purchase_id
-						INNER JOIN erp_companies ON erp_companies.id = erp_purchases.supplier_id
-						WHERE
-							erp_payments.reference_no = erp_gl_trans.reference_no
-						LIMIT 0,1
-					), (
-						SELECT
-							erp_companies.company
-						FROM
-							erp_purchases
-						INNER JOIN erp_companies ON erp_companies.id = erp_purchases.supplier_id
-						WHERE
-							erp_purchases.reference_no = erp_gl_trans.reference_no
-						LIMIT 0,1
-					))
-				WHEN erp_gl_trans.tran_type = 'SALES-RETURN' THEN
-					(
-						SELECT
-							erp_return_sales.customer
-						FROM
-							erp_return_sales
-						WHERE
-							erp_return_sales.reference_no = erp_gl_trans.reference_no
-						LIMIT 0,1
-					)
-				WHEN erp_gl_trans.tran_type = 'PURCHASES-RETURN' THEN
-					(
-						SELECT
-							erp_return_purchases.supplier
-						FROM
-							erp_return_purchases
-						WHERE
-							erp_return_purchases.reference_no = erp_gl_trans.reference_no
-						LIMIT 0,1
-					)
-				WHEN erp_gl_trans.tran_type = 'DELIVERY' THEN
-					(
-						SELECT
-							erp_companies.company as customer
-						FROM
-							erp_deliveries
-						INNER JOIN erp_companies ON erp_companies.id = erp_deliveries.customer_id
-						WHERE
-							erp_deliveries.do_reference_no = erp_gl_trans.reference_no
-						LIMIT 0,1
-					)
-				WHEN erp_gl_trans.tran_type = 'PRINCIPLE' THEN
-					(
-						SELECT
-							erp_companies.company
-						FROM
-							erp_payments
-						LEFT JOIN erp_loans ON erp_loans.id = erp_payments.loan_id
-						INNER JOIN erp_sales ON erp_loans.sale_id = erp_sales.id
-						INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id
-						WHERE
-							erp_payments.reference_no = erp_gl_trans.reference_no
-						LIMIT 0,1
-					)
-				ELSE
-					created_name
-				END
-			) AS customer,
-			erp_gl_trans.description AS note,
-			erp_gl_trans.account_code,
-			erp_gl_charts.accountname,
-			erp_gl_trans.amount,
-			erp_gl_trans.biller_id
-		FROM
-			erp_gl_trans
+        $query = $this->db->query("SELECT
+                                        erp_gl_trans.tran_type,
+                                        erp_gl_trans.tran_date,
+                                        erp_gl_trans.reference_no,
+                                        (
+                                        CASE
+                                            
+                                            WHEN erp_gl_trans.tran_type = 'SALES' THEN
+                                        IF
+                                            (
+                                            erp_gl_trans.bank = '1',
+                                        (
+                                        SELECT
+                                        ( CASE WHEN erp_companies.company != '' THEN ( erp_companies.company ) ELSE erp_companies.`name` END ) AS customer 
+                                        FROM
+                                            erp_payments
+                                            INNER JOIN erp_sales ON erp_sales.id = erp_payments.sale_id
+                                            INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id 
+                                            LIMIT 0,
+                                            1 
+                                            ),
+                                            ( SELECT erp_companies.company FROM erp_sales INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id LIMIT 0, 1 ) 
+                                            ) 
+                                            WHEN erp_gl_trans.tran_type = 'PURCHASES' 
+                                            OR erp_gl_trans.tran_type = 'PURCHASE EXPENSE' THEN
+                                            IF
+                                                (
+                                                    erp_gl_trans.bank = 1,
+                                                    (
+                                                    SELECT
+                                                        erp_purchases.supplier 
+                                                    FROM
+                                                        erp_payments
+                                                        INNER JOIN erp_purchases ON erp_purchases.id = erp_payments.purchase_id
+                                                        INNER JOIN erp_companies ON erp_companies.id = erp_purchases.supplier_id 
+                                                        LIMIT 0,
+                                                        1 
+                                                    ),
+                                                    ( SELECT erp_companies.company FROM erp_purchases INNER JOIN erp_companies ON erp_companies.id = erp_purchases.supplier_id LIMIT 0, 1 ) 
+                                                ) 
+                                                WHEN erp_gl_trans.tran_type = 'SALES-RETURN' THEN
+                                                ( 
+                                                    SELECT erp_return_sales.customer 
+                                                    FROM erp_return_sales LIMIT 0, 1
+                                                ) 
+                                                    WHEN erp_gl_trans.tran_type = 'PURCHASES-RETURN' THEN
+                                                (
+                                                    SELECT erp_return_purchases.supplier 
+                                                    FROM erp_return_purchases LIMIT 0, 1 
+                                                ) 
+                                                WHEN erp_gl_trans.tran_type = 'DELIVERY' THEN
+                                                (
+                                                SELECT
+                                                    ( CASE WHEN erp_companies.company != '' THEN ( erp_companies.company ) ELSE erp_companies.`name` END ) AS customer 
+                                                FROM
+                                                    erp_deliveries
+                                                    INNER JOIN erp_companies ON erp_companies.id = erp_deliveries.customer_id 
+                                                WHERE
+                                                    erp_gl_trans.reference_no = erp_deliveries.do_reference_no 
+                                                    LIMIT 0,
+                                                    1 
+                                                ) 
+                                                WHEN erp_gl_trans.tran_type = 'USING STOCK' THEN
+                                                (
+                                                SELECT
+                                                    erp_users.username 
+                                                FROM
+                                                    erp_enter_using_stock
+                                                    INNER JOIN erp_users ON erp_users.id = erp_enter_using_stock.employee_id 
+                                                WHERE
+                                                    erp_gl_trans.reference_no = erp_enter_using_stock.reference_no 
+                                                    LIMIT 0,
+                                                    1 
+                                                ) 
+                                                WHEN erp_gl_trans.tran_type = 'RETURN USING STOCK' THEN
+                                                (
+                                                SELECT
+                                                    erp_users.username 
+                                                FROM
+                                                    erp_enter_using_stock
+                                                    INNER JOIN erp_users ON erp_users.id = erp_enter_using_stock.employee_id 
+                                                WHERE
+                                                    erp_gl_trans.reference_no = erp_enter_using_stock.reference_no 
+                                                    LIMIT 0,
+                                                    1 
+                                                ) 
+                                                WHEN erp_gl_trans.tran_type = 'CONVERT' THEN
+                                                (
+                                                SELECT
+                                                    erp_users.username 
+                                                FROM
+                                                    erp_convert
+                                                    INNER JOIN erp_users ON erp_users.id = erp_convert.created_by 
+                                                WHERE
+                                                    erp_gl_trans.reference_no = erp_convert.reference_no 
+                                                    LIMIT 0,
+                                                    1 
+                                                ) 
+                                                WHEN erp_gl_trans.tran_type = 'STOCK_ADJUST' THEN
+                                                (
+                                                SELECT
+                                                    erp_users.username 
+                                                FROM
+                                                    erp_adjustments
+                                                    INNER JOIN erp_users ON erp_users.id = erp_adjustments.created_by 
+                                                WHERE
+                                                    erp_gl_trans.reference_no = erp_adjustments.reference_no 
+                                                    LIMIT 0,
+                                                    1 
+                                                ) 
+                                                WHEN erp_gl_trans.tran_type = 'PRINCIPLE' THEN
+                                                (
+                                                SELECT
+                                                    erp_companies.company 
+                                                FROM
+                                                    erp_payments
+                                                    LEFT JOIN erp_loans ON erp_loans.id = erp_payments.loan_id
+                                                    INNER JOIN erp_sales ON erp_loans.sale_id = erp_sales.id
+                                                    INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id 
+                                                    LIMIT 0,
+                                                    1 
+                                                ) ELSE created_name 
+                                            END 
+                                            ) AS customer,
+                                            erp_gl_trans.description AS note,
+                                            erp_gl_trans.account_code,
+                                            erp_gl_charts.accountname,
+                                            erp_gl_trans.amount,
+                                            erp_gl_trans.biller_id 
+                                        FROM
+                                            erp_gl_trans
+
 		INNER JOIN erp_gl_charts ON erp_gl_charts.accountcode = erp_gl_trans.account_code
 		WHERE
 			erp_gl_trans.account_code = '$code'
@@ -1298,8 +1327,189 @@ class Accounts_model extends CI_Model
 		");
 		return $query;
 	}
-	
-	function getBalanceSheetDetailPurByAccCode($code = NULL, $section = NULL,$from_date= NULL,$to_date = NULL,$biller_id = NULL) {
+
+    function getBalanceSheetDetailByAccCodess($code = NULL, $section = NULL,$from_date= NULL,$biller_id = NULL) {
+        $where_biller = '';
+        if($biller_id != NULL){
+            $where_biller = " AND erp_gl_trans.biller_id IN ($biller_id) ";
+        }
+        $where_date = '';
+        if($from_date){
+            $where_date = " AND date(erp_gl_trans.tran_date) <= '$from_date'
+			 ";
+        }
+        $query = $this->db->query("SELECT
+                                        erp_gl_trans.tran_type,
+                                        erp_gl_trans.tran_date,
+                                        erp_gl_trans.reference_no,
+                                        (
+                                            CASE
+                                                
+                                                WHEN erp_gl_trans.tran_type = 'SALES' THEN
+                                            IF
+                                                (
+                                                erp_gl_trans.bank = '1',
+                                            (
+                                            SELECT
+                                            ( CASE WHEN erp_companies.company != '' THEN ( erp_companies.company ) ELSE erp_companies.`name` END ) AS customer 
+                                            FROM
+                                                erp_payments
+                                                INNER JOIN erp_sales ON erp_sales.id = erp_payments.sale_id
+                                                INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id 
+                                                LIMIT 0,
+                                                1 
+                                                ),
+                                                ( SELECT erp_companies.company FROM erp_sales INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id LIMIT 0, 1 ) 
+                                                ) 
+                                                WHEN erp_gl_trans.tran_type = 'PURCHASES' 
+                                                OR erp_gl_trans.tran_type = 'PURCHASE EXPENSE' THEN
+                                                IF
+                                                    (
+                                                        erp_gl_trans.bank = 1,
+                                                        (
+                                                        SELECT
+                                                            erp_purchases.supplier 
+                                                        FROM
+                                                            erp_payments
+                                                            INNER JOIN erp_purchases ON erp_purchases.id = erp_payments.purchase_id
+                                                            INNER JOIN erp_companies ON erp_companies.id = erp_purchases.supplier_id 
+                                                            LIMIT 0,
+                                                            1 
+                                                        ),
+                                                        ( SELECT erp_companies.company FROM erp_purchases INNER JOIN erp_companies ON erp_companies.id = erp_purchases.supplier_id LIMIT 0, 1 ) 
+                                                    ) 
+                                                    WHEN erp_gl_trans.tran_type = 'SALES-RETURN' THEN
+                                                    ( SELECT erp_return_sales.customer FROM erp_return_sales LIMIT 0, 1 ) 
+                                                    WHEN erp_gl_trans.tran_type = 'PURCHASES-RETURN' THEN
+                                                    ( SELECT erp_return_purchases.supplier FROM erp_return_purchases LIMIT 0, 1 ) 
+                                                    WHEN erp_gl_trans.tran_type = 'DELIVERY' THEN
+                                                    (
+                                                    SELECT
+                                                        ( CASE WHEN erp_companies.company != '' THEN ( erp_companies.company ) ELSE erp_companies.`name` END ) AS customer 
+                                                    FROM
+                                                        erp_deliveries
+                                                        INNER JOIN erp_companies ON erp_companies.id = erp_deliveries.customer_id 
+                                                    WHERE
+                                                        erp_gl_trans.reference_no = erp_deliveries.do_reference_no 
+                                                        LIMIT 0,
+                                                        1 
+                                                    )
+                                                    WHEN erp_gl_trans.tran_type = 'DEPOSITS' THEN
+                                                    (
+                                                    SELECT
+                                                        erp_users.username
+                                                    FROM
+                                                        erp_deposits
+                                                        INNER JOIN erp_users ON erp_users.id = erp_deposits.company_id 
+                                                    WHERE
+                                                        erp_gl_trans.reference_no = erp_deposits.reference
+                                                        LIMIT 0,
+                                                        1 
+                                                    )  
+                                                    WHEN erp_gl_trans.tran_type = 'USING STOCK' THEN
+                                                    (
+                                                    SELECT
+                                                        erp_users.username 
+                                                    FROM
+                                                        erp_enter_using_stock
+                                                        INNER JOIN erp_users ON erp_users.id = erp_enter_using_stock.employee_id 
+                                                    WHERE
+                                                        erp_gl_trans.reference_no = erp_enter_using_stock.reference_no 
+                                                        LIMIT 0,
+                                                        1 
+                                                    ) 
+                                                    WHEN erp_gl_trans.tran_type = 'RETURN USING STOCK' THEN
+                                                    (
+                                                    SELECT
+                                                        erp_users.username 
+                                                    FROM
+                                                        erp_enter_using_stock
+                                                        INNER JOIN erp_users ON erp_users.id = erp_enter_using_stock.employee_id 
+                                                    WHERE
+                                                        erp_gl_trans.reference_no = erp_enter_using_stock.reference_no 
+                                                        LIMIT 0,
+                                                        1 
+                                                    ) 
+                                                    WHEN erp_gl_trans.tran_type = 'CONVERT' THEN
+                                                    (
+                                                    SELECT
+                                                        erp_users.username 
+                                                    FROM
+                                                        erp_convert
+                                                        INNER JOIN erp_users ON erp_users.id = erp_convert.created_by 
+                                                    WHERE
+                                                        erp_gl_trans.reference_no = erp_convert.reference_no 
+                                                        LIMIT 0,
+                                                        1 
+                                                    )
+                                                    
+                                                    WHEN erp_gl_trans.tran_type = 'STOCK_ADJUST' THEN
+                                                    (
+                                                    SELECT
+                                                        erp_users.username 
+                                                    FROM
+                                                        erp_adjustments
+                                                        INNER JOIN erp_users ON erp_users.id = erp_adjustments.created_by 
+                                                    WHERE
+                                                        erp_gl_trans.reference_no = erp_adjustments.reference_no 
+                                                        LIMIT 0,
+                                                        1 
+                                                    ) 
+                                                    WHEN erp_gl_trans.tran_type = 'PRINCIPLE' THEN
+                                                    (
+                                                    SELECT
+                                                        erp_companies.company 
+                                                    FROM
+                                                        erp_payments
+                                                        LEFT JOIN erp_loans ON erp_loans.id = erp_payments.loan_id
+                                                        INNER JOIN erp_sales ON erp_loans.sale_id = erp_sales.id
+                                                        INNER JOIN erp_companies ON erp_companies.id = erp_sales.customer_id 
+                                                        LIMIT 0,
+                                                        1 
+                                                    ) ELSE erp_gl_trans.created_name
+                                                END 
+                                                ) AS customer,
+                                                (
+                                                CASE
+                                                
+                                                WHEN erp_gl_trans.tran_type = 'SALES' THEN
+                                                ( SELECT erp_sales.note FROM erp_sales WHERE erp_gl_trans.reference_no = erp_sales.reference_no LIMIT 0, 1 ) 
+                                                WHEN erp_gl_trans.tran_type = 'PURCHASES' 
+                                                OR erp_gl_trans.tran_type = 'PURCHASE EXPENSE' THEN
+                                                    ( SELECT erp_purchases.note FROM erp_purchases WHERE erp_gl_trans.reference_no = erp_purchases.reference_no LIMIT 0, 1 ) 
+                                                    WHEN erp_gl_trans.tran_type = 'SALES-RETURN' THEN
+                                                    ( SELECT erp_return_sales.note FROM erp_return_sales WHERE erp_return_sales.reference_no = erp_gl_trans.reference_no LIMIT 0, 1 ) 
+                                                    WHEN erp_gl_trans.tran_type = 'PURCHASES-RETURN' THEN
+                                                    ( SELECT erp_return_purchases.note FROM erp_return_purchases WHERE erp_return_purchases.reference_no = erp_gl_trans.reference_no LIMIT 0, 1 ) 
+                                                    WHEN erp_gl_trans.tran_type = 'DELIVERY' THEN
+                                                    ( SELECT erp_deliveries.note FROM erp_deliveries WHERE erp_deliveries.do_reference_no = erp_gl_trans.reference_no LIMIT 0, 1 ) 
+                                                    WHEN erp_gl_trans.tran_type = 'USING STOCK' THEN
+                                                    ( SELECT erp_enter_using_stock.note FROM erp_enter_using_stock WHERE erp_enter_using_stock.reference_no = erp_gl_trans.reference_no LIMIT 0, 1 ) 
+                                                    WHEN erp_gl_trans.tran_type = 'STOCK_ADJUST' THEN
+                                                    ( SELECT erp_adjustments.note FROM erp_adjustments WHERE erp_adjustments.id = erp_gl_trans.reference_no LIMIT 0, 1 ) ELSE erp_gl_trans.description 
+                                                END 
+                                                ) AS note,
+                                                erp_gl_trans.account_code,
+                                                erp_gl_charts.accountname,
+                                                erp_gl_trans.amount,
+                                                erp_gl_trans.biller_id 
+                                            FROM
+                                                erp_gl_trans
+
+		INNER JOIN erp_gl_charts ON erp_gl_charts.accountcode = erp_gl_trans.account_code
+		WHERE
+			erp_gl_trans.account_code = '$code'
+			AND	erp_gl_trans.sectionid IN ($section)
+			$where_biller 
+			$where_date
+		HAVING amount <> 0
+		");
+        return $query;
+    }
+
+
+
+    function getBalanceSheetDetailPurByAccCode($code = NULL, $section = NULL,$from_date= NULL,$to_date = NULL,$biller_id = NULL) {
         $where_biller = '';
 		if($biller_id != NULL){
 			$where_biller = " AND erp_gl_trans.biller_id IN($biller_id) "; 
@@ -1483,16 +1693,199 @@ class Accounts_model extends CI_Model
 		return $query;
 	}
 
-    public function getStatementByBalaneSheetDate($section = NULL, $from_date = NULL, $to_date = NULL, $biller_id = NULL)
+    function getBalanceSheetDetailPurByAccCodes($code = NULL, $section = NULL,$from_date= NULL,$biller_id = NULL) {
+        $where_biller = '';
+		if($biller_id != NULL){
+			$where_biller = " AND erp_gl_trans.biller_id IN($biller_id) ";
+		}
+		$where_date = '';
+		if($from_date){
+			$where_date = " AND date(erp_gl_trans.tran_date) <= '$from_date'";
+		}
+		$query = $this->db->query("SELECT
+			erp_gl_trans.tran_type,
+			erp_gl_trans.tran_date,
+			erp_gl_trans.reference_no,
+			(
+				CASE
+				WHEN erp_gl_trans.tran_type = 'SALES' THEN
+					(
+						SELECT
+							erp_sales.customer
+						FROM
+							erp_sales
+						WHERE
+							erp_gl_trans.reference_no = erp_sales.reference_no
+						LIMIT 0,1
+					)
+				WHEN erp_gl_trans.tran_type = 'PURCHASES' OR erp_gl_trans.tran_type = 'PURCHASE EXPENSE' THEN
+					(
+						SELECT
+							erp_purchases.supplier
+						FROM
+							erp_purchases
+						WHERE
+							erp_gl_trans.reference_no = erp_purchases.reference_no
+						LIMIT 0,1
+					)
+				WHEN erp_gl_trans.tran_type = 'SALES-RETURN' THEN
+					(
+						SELECT
+							erp_return_sales.customer
+						FROM
+							erp_return_sales
+						WHERE
+							erp_return_sales.reference_no = erp_gl_trans.reference_no
+						LIMIT 0,1
+					)
+				WHEN erp_gl_trans.tran_type = 'PURCHASES-RETURN' THEN
+					(
+						SELECT
+							erp_return_purchases.supplier
+						FROM
+							erp_return_purchases
+						WHERE
+							erp_return_purchases.reference_no = erp_gl_trans.reference_no
+						LIMIT 0,1
+					)
+				WHEN erp_gl_trans.tran_type = 'DELIVERY' THEN
+					(
+						SELECT
+							erp_deliveries.customer
+						FROM
+							erp_deliveries
+						WHERE
+							erp_deliveries.do_reference_no = erp_gl_trans.reference_no
+						LIMIT 0,1
+					)
+				WHEN erp_gl_trans.tran_type = 'USING STOCK' THEN
+					(
+						SELECT
+							erp_companies.name
+						FROM
+							erp_enter_using_stock
+						INNER JOIN erp_companies ON erp_companies.id = erp_enter_using_stock.employee_id
+						WHERE
+							erp_enter_using_stock.reference_no = erp_gl_trans.reference_no
+						LIMIT 0,1
+					)
+				WHEN erp_gl_trans.tran_type = 'STOCK_ADJUST' THEN
+					(
+						SELECT
+							'' AS customer
+						FROM
+							erp_adjustments
+						WHERE
+							erp_adjustments.id = erp_gl_trans.reference_no
+						LIMIT 0,1
+					)
+				ELSE
+					''
+				END
+			) AS customer,
+			(
+				CASE
+				WHEN erp_gl_trans.tran_type = 'SALES' THEN
+					(
+						SELECT
+							erp_sales.note
+						FROM
+							erp_sales
+						WHERE
+							erp_gl_trans.reference_no = erp_sales.reference_no
+						LIMIT 0,1
+					)
+				WHEN erp_gl_trans.tran_type = 'PURCHASES' OR erp_gl_trans.tran_type = 'PURCHASE EXPENSE' THEN
+					(
+						SELECT
+							erp_purchases.note
+						FROM
+							erp_purchases
+						WHERE
+							erp_gl_trans.reference_no = erp_purchases.reference_no
+						LIMIT 0,1
+					)
+				WHEN erp_gl_trans.tran_type = 'SALES-RETURN' THEN
+					(
+						SELECT
+							erp_return_sales.note
+						FROM
+							erp_return_sales
+						WHERE
+							erp_return_sales.reference_no = erp_gl_trans.reference_no
+						LIMIT 0,1
+					)
+				WHEN erp_gl_trans.tran_type = 'PURCHASES-RETURN' THEN
+					(
+						SELECT
+							erp_return_purchases.note
+						FROM
+							erp_return_purchases
+						WHERE
+							erp_return_purchases.reference_no = erp_gl_trans.reference_no
+						LIMIT 0,1
+					)
+				WHEN erp_gl_trans.tran_type = 'DELIVERY' THEN
+					(
+						SELECT
+							erp_deliveries.note
+						FROM
+							erp_deliveries
+						WHERE
+							erp_deliveries.do_reference_no = erp_gl_trans.reference_no
+						LIMIT 0,1
+					)
+				WHEN erp_gl_trans.tran_type = 'USING STOCK' THEN
+					(
+						SELECT
+							erp_enter_using_stock.note
+						FROM
+							erp_enter_using_stock
+						WHERE
+							erp_enter_using_stock.reference_no = erp_gl_trans.reference_no
+						LIMIT 0,1
+					)
+				WHEN erp_gl_trans.tran_type = 'STOCK_ADJUST' THEN
+					(
+						SELECT
+							erp_adjustments.note
+						FROM
+							erp_adjustments
+						WHERE
+							erp_adjustments.id = erp_gl_trans.reference_no
+						LIMIT 0,1
+					)
+				ELSE
+					''
+				END
+			) AS note,
+			erp_gl_trans.account_code,
+			erp_gl_charts.accountname,
+			erp_gl_trans.amount,
+			erp_gl_trans.biller_id
+		FROM
+			erp_gl_trans
+		INNER JOIN erp_gl_charts ON erp_gl_charts.accountcode = erp_gl_trans.account_code
+		WHERE
+			erp_gl_trans.account_code = '$code'
+			AND	erp_gl_trans.sectionid IN ($section)
+			$where_biller 
+			$where_date
+		HAVING amount <> 0
+		");
+		return $query;
+	}
+
+    public function getStatementByBalaneSheetDate($section = NULL, $from_date = NULL, $biller_id = NULL)
     {
 		$where_biller = '';
 		if($biller_id != NULL){
 			$where_biller = " AND erp_gl_trans.biller_id IN($biller_id) ";
 		}
 		$where_date = '';
-		if($from_date && $to_date){
-            $where_date = " AND date(erp_gl_trans.tran_date) BETWEEN '$from_date 00:00:00'
-			AND '$to_date 11:59:00' ";
+		if($from_date){
+            $where_date = " AND date(erp_gl_trans.tran_date) <= '$from_date 00:00:00'
+			 ";
 		}
 		$this->db->query('SET SQL_BIG_SELECTS=1');
 		$query = $this->db->query("SELECT
@@ -1514,7 +1907,71 @@ class Accounts_model extends CI_Model
 
 		return $query;
 	}
-	public function getStatementByBalaneSheetDateByCustomer($section = NULL,$from_date= NULL,$to_date = NULL,$customer_id = NULL){
+    public function getStatementByBalaneSheetDated($section = NULL, $from_date = NULL,$to_date = NULL, $biller_id = NULL)
+    {
+		$where_biller = '';
+		if($biller_id != NULL){
+			$where_biller = " AND erp_gl_trans.biller_id IN($biller_id) ";
+		}
+		$where_date = '';
+		if($from_date && $to_date){
+            $where_date = " AND date(erp_gl_trans.tran_date) BETWEEN '$from_date' AND '$to_date'
+			 ";
+		}
+		$this->db->query('SET SQL_BIG_SELECTS=1');
+		$query = $this->db->query("SELECT
+			erp_gl_trans.account_code,
+			erp_gl_trans.sectionid,
+			erp_gl_charts.accountname,
+			erp_gl_charts.parent_acc,
+			sum(erp_gl_trans.amount) AS amount,
+			erp_gl_trans.biller_id
+		FROM
+			erp_gl_trans
+		INNER JOIN erp_gl_charts ON erp_gl_charts.accountcode = erp_gl_trans.account_code
+		WHERE 
+			erp_gl_trans.sectionid IN ($section)
+			$where_date
+		GROUP BY
+			erp_gl_trans.account_code
+		");
+
+		return $query;
+	}
+
+    public function getStatementByBalaneSheetDates($section = NULL, $from_date = NULL,  $biller_id = NULL)
+    {
+        $where_biller = '';
+        if($biller_id != NULL){
+            $where_biller = " AND erp_gl_trans.biller_id IN($biller_id) ";
+        }
+        $where_date = '';
+        if($from_date){
+            $where_date = " AND date(erp_gl_trans.tran_date) <= '$from_date 00:00:00' ";
+        }
+        $this->db->query('SET SQL_BIG_SELECTS=1');
+        $query = $this->db->query("SELECT
+			erp_gl_trans.account_code,
+			erp_gl_trans.sectionid,
+			erp_gl_charts.accountname,
+			erp_gl_charts.parent_acc,
+			sum(erp_gl_trans.amount) AS amount,
+			erp_gl_trans.biller_id
+		FROM
+			erp_gl_trans
+		INNER JOIN erp_gl_charts ON erp_gl_charts.accountcode = erp_gl_trans.account_code
+		WHERE 
+			erp_gl_trans.sectionid IN ($section)
+			$where_date
+		GROUP BY
+			erp_gl_trans.account_code
+		");
+
+        return $query;
+    }
+
+
+    public function getStatementByBalaneSheetDateByCustomer($section = NULL,$from_date= NULL,$to_date = NULL,$customer_id = NULL){
 		$where_customer = '';
 		if($customer_id != NULL){
 			$where_customer = " AND erp_gl_trans.customer_id IN($customer_id) "; 
@@ -1576,16 +2033,80 @@ class Accounts_model extends CI_Model
 
 		return $query;
 	}
-	
-	public function getStatementBalaneSheetByDateBill($section = NULL,$from_date= NULL,$to_date = NULL,$biller_id = NULL){
+
+	public function getStatementByDated($section = NULL,$from_date= NULL,$biller_id = NULL){
+		$where_biller = '';
+		if($biller_id != NULL){
+			$where_biller = " AND erp_gl_trans.biller_id IN($biller_id) ";
+		}
+		$where_date = '';
+		if($from_date){
+			$where_date = " AND date(erp_gl_trans.tran_date) <= '$from_date'
+			";
+		}
+		$this->db->query('SET SQL_BIG_SELECTS=1');
+		$query = $this->db->query("SELECT
+			erp_gl_trans.account_code,
+			erp_gl_trans.sectionid,
+			erp_gl_charts.accountname,
+			erp_gl_charts.parent_acc,
+			sum(erp_gl_trans.amount) AS amount,
+			erp_gl_trans.biller_id
+		FROM
+			erp_gl_trans
+		INNER JOIN erp_gl_charts ON erp_gl_charts.accountcode = erp_gl_trans.account_code
+		WHERE
+			erp_gl_trans.sectionid IN ($section)
+			$where_biller
+			$where_date
+		GROUP BY
+			erp_gl_trans.account_code
+		");
+
+		return $query;
+	}
+
+    public function getStatementByDatess($section = NULL,$from_date= NULL,$biller_id = NULL){
+        $where_biller = '';
+        if($biller_id != NULL){
+            $where_biller = " AND erp_gl_trans.biller_id IN($biller_id) ";
+        }
+        $where_date = '';
+        if($from_date){
+            $where_date = " AND date(erp_gl_trans.tran_date) <= '$from_date'";
+        }
+        $this->db->query('SET SQL_BIG_SELECTS=1');
+        $query = $this->db->query("SELECT
+			erp_gl_trans.account_code,
+			erp_gl_trans.sectionid,
+			erp_gl_charts.accountname,
+			erp_gl_charts.parent_acc,
+			sum(erp_gl_trans.amount) AS amount,
+			erp_gl_trans.biller_id
+		FROM
+			erp_gl_trans
+		INNER JOIN erp_gl_charts ON erp_gl_charts.accountcode = erp_gl_trans.account_code
+		WHERE
+			erp_gl_trans.sectionid IN ($section)
+			$where_biller
+			$where_date
+		GROUP BY
+			erp_gl_trans.account_code
+		");
+
+        return $query;
+    }
+
+
+    public function getStatementBalaneSheetByDateBill($section = NULL,$from_date= NULL,$biller_id = NULL){
 		$where_biller = '';
 		if($biller_id != NULL){
 			$where_biller = " AND erp_gl_trans.biller_id IN($biller_id) "; 
 		}
 		$where_date = '';
-		if($from_date && $to_date){
-			$where_date = " AND date(erp_gl_trans.tran_date) BETWEEN '$from_date'
-			AND '$to_date' "; 
+		if($from_date){
+			$where_date = " AND date(erp_gl_trans.tran_date) <= '$from_date'
+			 ";
 		}
 		$this->db->query('SET SQL_BIG_SELECTS=1');
 		$query = $this->db->query("SELECT
@@ -1610,7 +2131,7 @@ class Accounts_model extends CI_Model
 		return $query;
 	}
 	
-	public function getStatementByDateBill($section = NULL,$from_date= NULL,$to_date = NULL,$biller_id = NULL){
+	public function getStatementByDateBilled($section = NULL,$from_date= NULL,$to_date = NULL,$biller_id = NULL){
 		$where_biller = '';
 		if($biller_id != NULL){
 			$where_biller = " AND erp_gl_trans.biller_id IN($biller_id) "; 
@@ -1618,7 +2139,7 @@ class Accounts_model extends CI_Model
 		$where_date = '';
 		if($from_date && $to_date){
 			$where_date = " AND erp_gl_trans.tran_date BETWEEN '$from_date'
-			AND '$to_date' "; 
+			AND '$to_date' ";
 		}
 		$this->db->query('SET SQL_BIG_SELECTS=1');
 		$query = $this->db->query("SELECT
@@ -1643,7 +2164,41 @@ class Accounts_model extends CI_Model
 		return $query;
 	}
 
-	function getStatementDetailByAccCode($code = NULL, $section = NULL,$from_date= NULL,$to_date = NULL,$biller_id = NULL) {
+    public function getStatementByDateBill($section = NULL,$from_date= NULL,$biller_id = NULL){
+        $where_biller = '';
+        if($biller_id != NULL){
+            $where_biller = " AND erp_gl_trans.biller_id IN($biller_id) ";
+        }
+        $where_date = '';
+        if($from_date){
+            $where_date = " AND erp_gl_trans.tran_date <= '$from_date'
+			 ";
+        }
+        $this->db->query('SET SQL_BIG_SELECTS=1');
+        $query = $this->db->query("SELECT
+			erp_gl_trans.account_code,
+			erp_gl_trans.sectionid,
+			erp_gl_charts.accountname,
+			erp_gl_charts.parent_acc,
+			sum(erp_gl_trans.amount) AS amount,
+			erp_gl_trans.biller_id
+		FROM
+			erp_gl_trans
+		INNER JOIN erp_gl_charts ON erp_gl_charts.accountcode = erp_gl_trans.account_code
+		WHERE
+			erp_gl_trans.sectionid IN ($section)
+			$where_biller
+			$where_date
+		GROUP BY
+			erp_gl_trans.account_code,
+			biller_id
+		");
+
+        return $query;
+    }
+
+
+    function getStatementDetailByAccCode($code = NULL, $section = NULL,$from_date= NULL,$to_date = NULL,$biller_id = NULL) {
         $where_biller = '';
 		if($biller_id != NULL){
 			$where_biller = " AND erp_gl_trans.biller_id IN($biller_id) "; 
@@ -2103,8 +2658,556 @@ class Accounts_model extends CI_Model
             return false;
         }
     }
-	
-	public function ap_by_supplier($start_date=null, $end_date=null, $supplier2=null, $balance2=null, $condition=null, $purchase_id=null)
+    public function getArByCustomer_ar($cus_id,$start_date=NULL,$end_date=NULL){
+        if($cus_id)
+        {
+            $sql=" where customer={$cus_id}";
+        }else{
+            $sql="";
+        }
+        if($start_date){
+            if($cus_id)
+            {
+                $sql.=" AND date_format(date,'%Y-%m-%d') BETWEEN '{$start_date}' AND '{$end_date}'";
+            }else{
+                $sql.=" WHERE date_format(date,'%Y-%m-%d')  BETWEEN '{$start_date}' AND '{$end_date}'";
+            }
+        }
+        $q=$this->db->query("select* from(
+            select 
+                erp_payments.sale_id as id, 
+                erp_sales.pos,
+                concat(erp_users.first_name,'-',erp_users.last_name) as saleman, 
+                erp_sales.customer_id as customer,erp_payments.biller_id,
+                (select company from erp_companies where id=erp_payments.biller_id) as biller,
+                'Payment' as type, 
+                erp_payments.date, 
+                erp_payments.reference_no, 
+                0 as amount, 
+                0 as return_amount, 
+                (
+				CASE
+				WHEN erp_payments.type = 'returned' THEN
+					(- 1) * amount
+				ELSE
+					amount
+				END
+			) AS paid, 
+                0 as deposit,
+                discount ,
+                erp_sales.due_date,
+                 DATEDIFF( '$start_date', date( erp_payments.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+                from erp_payments
+            left join erp_users on erp_payments.created_by=erp_users.id
+            left join erp_sales on erp_sales.id=erp_payments.sale_id
+            WHERE erp_payments.paid_by='cash'
+            
+            union all
+            select 
+                erp_payments.sale_id as id, 
+                erp_sales.pos,
+                concat(erp_users.first_name,'-',erp_users.last_name) as saleman, 
+                erp_sales.customer_id as customer,erp_payments.biller_id,
+                (select company from erp_companies where id=erp_payments.biller_id) as biller,
+                'Deposit' as type, 
+                erp_payments.date, 
+                erp_payments.reference_no, 
+                0 as amount, 
+                0 as return_amount, 
+                0 as paid, 
+                amount as deposit,
+                discount,erp_sales.due_date,
+                 DATEDIFF( '$start_date', date( erp_payments.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+                 from erp_payments
+            left join erp_users on erp_payments.created_by=erp_users.id
+            left join erp_sales on erp_sales.id=erp_payments.sale_id
+            WHERE erp_payments.paid_by='deposit'
+            union all
+            select erp_sales.id,erp_sales.pos, concat(erp_users.first_name,'-',erp_users.last_name) as saleman, customer_id as customer, erp_sales.biller_id,biller,'Invoice' as type, date, reference_no, grand_total as amount, 0 as return_amount, 0 as paid, 0 as deposit,0 as discount,erp_sales.due_date,
+             DATEDIFF( '$start_date', date( erp_sales.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+             from erp_sales
+            left join erp_users on erp_sales.saleman_by=erp_users.id
+           
+            UNION ALL
+            
+            SELECT
+                erp_return_sales.id,
+                erp_sales.pos,
+                concat( erp_users.first_name, '-', erp_users.last_name ) AS saleman,
+                erp_return_sales.customer_id AS customer,
+                erp_return_sales.biller_id,
+                erp_return_sales.biller,
+                'Return' AS type,
+                erp_return_sales.date,
+                erp_return_sales.reference_no,
+                0 AS amount,
+                erp_return_sales.grand_total AS return_amount,
+                0 AS paid,
+                0 AS deposit,
+                0 AS discount,
+                erp_sales.due_date ,
+                 DATEDIFF( '$start_date', date( erp_return_sales.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+        FROM
+            erp_return_sales
+            LEFT JOIN erp_sales ON erp_sales.id = erp_return_sales.sale_id
+            LEFT JOIN erp_users ON erp_sales.saleman_by = erp_users.id 
+            ) ar {$sql} AND pos <>1 order by date asc");
+        if($q->num_rows() > 0){
+            return $q->result();
+        }
+        return false;
+    }
+    public function getArByCustomer_ar_collection($cus_id,$start_date=NULL,$end_date=NULL){
+        if($cus_id)
+        {
+            $sql=" where customer={$cus_id}";
+        }else{
+            $sql="";
+        }
+        if($start_date){
+            if($cus_id)
+            {
+                $sql.=" AND date_format(date,'%Y-%m-%d') <= '{$start_date}'";
+            }else{
+                $sql.=" WHERE date_format(date,'%Y-%m-%d')  <= '{$start_date}'";
+            }
+        }
+        $q=$this->db->query("select* from(
+            select 
+                erp_payments.sale_id as id, 
+                erp_sales.pos,
+                concat(erp_users.first_name,'-',erp_users.last_name) as saleman, 
+                erp_sales.customer_id as customer,erp_payments.biller_id,
+                (select company from erp_companies where id=erp_payments.biller_id) as biller,
+                'Payment' as type, 
+                erp_payments.date, 
+                erp_payments.reference_no, 
+                0 as amount, 
+                0 as return_amount, 
+                (
+				CASE
+				WHEN erp_payments.type = 'returned' THEN
+					(- 1) * amount
+				ELSE
+					amount
+				END
+			) AS paid, 
+                0 as deposit,
+                discount ,
+                erp_sales.due_date,
+                 DATEDIFF( '$start_date', date( erp_payments.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+                from erp_payments
+            left join erp_users on erp_payments.created_by=erp_users.id
+            left join erp_sales on erp_sales.id=erp_payments.sale_id
+            WHERE erp_payments.paid_by='cash'
+            
+            union all
+            select 
+                erp_payments.sale_id as id, 
+                erp_sales.pos,
+                concat(erp_users.first_name,'-',erp_users.last_name) as saleman, 
+                erp_sales.customer_id as customer,erp_payments.biller_id,
+                (select company from erp_companies where id=erp_payments.biller_id) as biller,
+                'Deposit' as type, 
+                erp_payments.date, 
+                erp_payments.reference_no, 
+                0 as amount, 
+                0 as return_amount, 
+                0 as paid, 
+                amount as deposit,
+                discount,erp_sales.due_date,
+                 DATEDIFF( '$start_date', date( erp_payments.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+                 from erp_payments
+            left join erp_users on erp_payments.created_by=erp_users.id
+            left join erp_sales on erp_sales.id=erp_payments.sale_id
+            WHERE erp_payments.paid_by='deposit'
+            union all
+            select erp_sales.id,erp_sales.pos, concat(erp_users.first_name,'-',erp_users.last_name) as saleman, customer_id as customer, erp_sales.biller_id,biller,'Invoice' as type, date, reference_no, grand_total as amount, 0 as return_amount, 0 as paid, 0 as deposit,0 as discount,erp_sales.due_date,
+             DATEDIFF( '$start_date', date( erp_sales.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+             from erp_sales
+            left join erp_users on erp_sales.saleman_by=erp_users.id
+           
+            UNION ALL
+            
+            SELECT
+                erp_return_sales.id,
+                erp_sales.pos,
+                concat( erp_users.first_name, '-', erp_users.last_name ) AS saleman,
+                erp_return_sales.customer_id AS customer,
+                erp_return_sales.biller_id,
+                erp_return_sales.biller,
+                'Return' AS type,
+                erp_return_sales.date,
+                erp_return_sales.reference_no,
+                0 AS amount,
+                erp_return_sales.grand_total AS return_amount,
+                0 AS paid,
+                0 AS deposit,
+                0 AS discount,
+                erp_sales.due_date ,
+                 DATEDIFF( '$start_date', date( erp_return_sales.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+        FROM
+            erp_return_sales
+            LEFT JOIN erp_sales ON erp_sales.id = erp_return_sales.sale_id
+            LEFT JOIN erp_users ON erp_sales.saleman_by = erp_users.id 
+            ) ar {$sql} AND pos <>1 order by date asc");
+        if($q->num_rows() > 0){
+            return $q->result();
+        }
+        return false;
+    }
+
+    public function getArByCustomer_ar_item($cus_id,$start_date=NULL,$end_date=NULL){
+        if($cus_id)
+        {
+            $sql=" where customer={$cus_id}";
+        }else{
+            $sql="";
+        }
+        if($start_date){
+            if($cus_id)
+            {
+                $sql.=" AND date_format(date,'%Y-%m-%d') BETWEEN '{$start_date}' AND '{$end_date}'";
+            }else{
+                $sql.=" WHERE date_format(date,'%Y-%m-%d')  BETWEEN '{$start_date}' AND '{$end_date}'";
+            }
+        }
+        $q=$this->db->query("select* from(
+            select 
+                erp_payments.sale_id as id, 
+                erp_sales.pos,
+                concat(erp_users.first_name,'-',erp_users.last_name) as saleman, 
+                erp_sales.customer_id as customer,erp_payments.biller_id,
+                (select company from erp_companies where id=erp_payments.biller_id) as biller,
+                'Payment' as type, 
+                erp_payments.date, 
+                erp_payments.reference_no, 
+                0 as payment_term,
+                0 as amount, 
+                0 as return_amount, 
+                (
+				CASE
+				WHEN erp_payments.type = 'returned' THEN
+					(- 1) * amount
+				ELSE
+					amount
+				END
+			) AS paid, 
+                0 as deposit,
+                discount ,
+                erp_sales.due_date,
+                 DATEDIFF( '$start_date', date( erp_payments.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+                from erp_payments
+            left join erp_users on erp_payments.created_by=erp_users.id
+            left join erp_sales on erp_sales.id=erp_payments.sale_id
+            WHERE erp_payments.paid_by='cash'
+            
+            union all
+            select 
+                erp_payments.sale_id as id, 
+                erp_sales.pos,
+                concat(erp_users.first_name,'-',erp_users.last_name) as saleman, 
+                erp_sales.customer_id as customer,erp_payments.biller_id,
+                (select company from erp_companies where id=erp_payments.biller_id) as biller,
+                'Deposit' as type, 
+                erp_payments.date, 
+                erp_payments.reference_no, 
+                0 as payment_term,
+                0 as amount, 
+                0 as return_amount, 
+                0 as paid, 
+                amount as deposit,
+                discount,erp_sales.due_date,
+                 DATEDIFF( '$start_date', date( erp_payments.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+                 from erp_payments
+            left join erp_users on erp_payments.created_by=erp_users.id
+            left join erp_sales on erp_sales.id=erp_payments.sale_id
+            WHERE erp_payments.paid_by='deposit'
+            union all
+            select erp_sales.id,erp_sales.pos, concat(erp_users.first_name,'-',erp_users.last_name) as saleman, customer_id as customer, erp_sales.biller_id,biller,'Invoice' as type, date, reference_no,	erp_payment_term.description AS payment_term, grand_total as amount, 0 as return_amount, 0 as paid, 0 as deposit,0 as discount, erp_sales.due_date,
+             DATEDIFF( '$start_date', date( erp_sales.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+             from erp_sales
+            left join erp_users on erp_sales.saleman_by=erp_users.id
+           LEFT JOIN erp_payment_term ON erp_sales.payment_term = erp_payment_term.id
+            UNION ALL
+            
+            SELECT
+                erp_return_sales.id,
+                erp_sales.pos,
+                concat( erp_users.first_name, '-', erp_users.last_name ) AS saleman,
+                erp_return_sales.customer_id AS customer,
+                erp_return_sales.biller_id,
+                erp_return_sales.biller,
+                'Return' AS type,
+                erp_return_sales.date,
+                erp_return_sales.reference_no,
+                0 as payment_term,
+                0 AS amount,
+                erp_return_sales.grand_total AS return_amount,
+                0 AS paid,
+                0 AS deposit,
+                0 AS discount,
+                erp_sales.due_date ,
+                 DATEDIFF( '$start_date', date( erp_return_sales.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+        FROM
+            erp_return_sales
+            LEFT JOIN erp_sales ON erp_sales.id = erp_return_sales.sale_id
+            LEFT JOIN erp_users ON erp_sales.saleman_by = erp_users.id 
+            ) ar {$sql} AND pos <>1 order by date asc");
+        if($q->num_rows() > 0){
+            return $q->result();
+        }
+        return false;
+    }
+    public function getArByCustomer_ar_get_item($reference_no= null, $cus_id,$start_date=NULL,$end_date=NULL){
+        if($cus_id)
+        {
+            $sql=" where customer={$cus_id}";
+        }else{
+            $sql="";
+        }
+        if($reference_no){
+            $sql=" where reference_no='{$reference_no}'";
+        }
+        if($start_date){
+            if($cus_id)
+            {
+                $sql.=" AND date_format(date,'%Y-%m-%d') BETWEEN '{$start_date}' AND '{$end_date}'";
+            }else{
+                $sql.=" WHERE date_format(date,'%Y-%m-%d')  BETWEEN '{$start_date}' AND '{$end_date}'";
+            }
+        }
+
+        $q=$this->db->query("select* from(
+            select 
+                erp_payments.sale_id , 
+                erp_sales.pos,
+                concat(erp_users.first_name,'-',erp_users.last_name) as saleman, 
+                erp_sales.customer_id as customer,erp_payments.biller_id,
+                (select company from erp_companies where id=erp_payments.biller_id) as biller,
+                'Payment' as type, 
+                erp_payments.date, 
+                erp_payments.reference_no, 
+                0 as amount, 
+                0 as return_amount, 
+                (
+				CASE
+				WHEN erp_payments.type = 'returned' THEN
+					(- 1) * amount
+				ELSE
+					amount
+				END
+			) AS paid, 
+                0 as deposit,
+                erp_payments.discount,
+                erp_sales.due_date,
+                 DATEDIFF( '$start_date', date( erp_payments.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd,
+                erp_sale_items.product_code,
+                erp_sale_items.quantity,
+                erp_sale_items.wpiece,
+                erp_sale_items.unit_price,
+                '' as price
+                
+                from erp_payments
+            left join erp_users on erp_payments.created_by=erp_users.id
+            left join erp_sales on erp_sales.id=erp_payments.sale_id
+            LEFT JOIN erp_sale_items ON erp_payments.sale_id = erp_sale_items.sale_id   
+            WHERE erp_payments.paid_by='cash'
+            
+            union all
+            select 
+                erp_payments.sale_id as id, 
+                erp_sales.pos,
+                concat(erp_users.first_name,'-',erp_users.last_name) as saleman, 
+                erp_sales.customer_id as customer,erp_payments.biller_id,
+                (select company from erp_companies where id=erp_payments.biller_id) as biller,
+                'Deposit' as type, 
+                erp_payments.date, 
+                erp_payments.reference_no, 
+                0 as amount, 
+                0 as return_amount, 
+                0 as paid, 
+                amount as deposit,
+                erp_payments.discount,
+                erp_sales.due_date,
+                 erp_sale_items.product_code,
+                  erp_sale_items.quantity,
+                  erp_sale_items.wpiece,
+                  erp_sale_items.unit_price,
+                 DATEDIFF( '$start_date', date( erp_payments.date ) ) AS dd ,
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd,
+                 '' as price
+                 from erp_payments
+            left join erp_users on erp_payments.created_by=erp_users.id
+            left join erp_sales on erp_sales.id=erp_payments.sale_id
+            LEFT JOIN erp_sale_items ON erp_sale_items.sale_id = erp_payments.sale_id 
+            WHERE erp_payments.paid_by='deposit'
+            union all
+            select erp_sales.id,erp_sales.pos, concat(erp_users.first_name,'-',erp_users.last_name) as saleman, customer_id as customer, erp_sales.biller_id,biller,'Invoice' as type, date, reference_no, grand_total as amount, 0 as return_amount, 0 as paid, 0 as deposit,0 as discount,erp_sales.due_date,
+             DATEDIFF( '$start_date', date( erp_sales.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd,
+                erp_sale_items.product_code,
+                 erp_sale_items.quantity,
+                 erp_sale_items.wpiece,
+                 erp_sale_items.unit_price,
+                 (erp_sale_items.unit_price* erp_sale_items.quantity) as price
+             from erp_sales
+            left join erp_users on erp_sales.saleman_by=erp_users.id
+            LEFT JOIN erp_sale_items ON erp_sale_items.sale_id = erp_sales.id
+           
+            UNION ALL
+            
+            SELECT
+                erp_return_sales.id,
+                erp_sales.pos,
+                concat( erp_users.first_name, '-', erp_users.last_name ) AS saleman,
+                erp_return_sales.customer_id AS customer,
+                erp_return_sales.biller_id,
+                erp_return_sales.biller,
+                'Return' AS type,
+                erp_return_sales.date,
+                erp_return_sales.reference_no,
+                0 AS amount,
+                erp_return_sales.grand_total AS return_amount,
+                0 AS paid,
+                0 AS deposit,
+                0 AS discount,
+                erp_sales.due_date ,
+                 DATEDIFF( '$start_date', date( erp_return_sales.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd,
+                erp_sale_items.product_code,
+                 erp_sale_items.quantity,
+                 erp_sale_items.wpiece,
+                 erp_sale_items.unit_price,
+                 (erp_sale_items.unit_price* erp_sale_items.quantity) as price
+        FROM
+            erp_return_sales
+            LEFT JOIN erp_sales ON erp_sales.id = erp_return_sales.sale_id
+            LEFT JOIN erp_users ON erp_sales.saleman_by = erp_users.id 
+            LEFT JOIN erp_sale_items ON erp_sale_items.sale_id = erp_return_sales.sale_id
+            ) ar {$sql} AND pos <>1 order by date asc");
+        if($q->num_rows() > 0){
+            return $q->result();
+        }
+        return false;
+    }
+    public function getArByCustomer_balance($cus_id,$start_date=NULL,$end_date=NULL){
+        if($cus_id)
+        {
+            $sql=" where customer={$cus_id}";
+        }else{
+            $sql="";
+        }
+        if($start_date && $end_date){
+            if($cus_id)
+            {
+                $sql.=" AND date_format(date,'%Y-%m-%d') BETWEEN '{$start_date}' AND '{$end_date}'";
+            }else{
+                $sql.=" WHERE date_format(date,'%Y-%m-%d') BETWEEN '{$start_date}' AND '{$end_date}'";
+            }
+
+        }
+        $q=$this->db->query("select* from(
+            select 
+                erp_payments.sale_id as id, 
+                concat(erp_users.first_name,'-',erp_users.last_name) as saleman, 
+                erp_sales.customer_id as customer,erp_payments.biller_id,
+                (select company from erp_companies where id=erp_payments.biller_id) as biller,
+                'Payment' as type, 
+                erp_payments.date, 
+                erp_payments.reference_no, 
+                0 as amount, 
+                0 as return_amount, 
+                (
+				CASE
+				WHEN erp_payments.type = 'returned' THEN
+					(- 1) * amount
+				ELSE
+					amount
+				END
+			) AS paid, 
+                0 as deposit,
+                discount from erp_payments
+            left join erp_users on erp_payments.created_by=erp_users.id
+            left join erp_sales on erp_sales.id=erp_payments.sale_id
+            WHERE erp_payments.paid_by='cash'
+            
+            union all
+            select 
+                erp_payments.sale_id as id, 
+                concat(erp_users.first_name,'-',erp_users.last_name) as saleman, 
+                erp_sales.customer_id as customer,erp_payments.biller_id,
+                (select company from erp_companies where id=erp_payments.biller_id) as biller,
+                'Deposit' as type, 
+                erp_payments.date, 
+                erp_payments.reference_no, 
+                0 as amount, 
+                0 as return_amount, 
+                0 as paid, 
+                amount as deposit,
+                discount from erp_payments
+            left join erp_users on erp_payments.created_by=erp_users.id
+            left join erp_sales on erp_sales.id=erp_payments.sale_id
+            WHERE erp_payments.paid_by='deposit'
+
+            union all
+            select erp_sales.id, concat(erp_users.first_name,'-',erp_users.last_name) as saleman, customer_id as customer, erp_sales.biller_id,biller,'Invoice' as type, date, reference_no, grand_total as amount, 0 as return_amount, 0 as paid, 0 as deposit,0 as discount from erp_sales
+            left join erp_users on erp_sales.saleman_by=erp_users.id
+            UNION ALL
+            
+            SELECT
+                erp_return_sales.id,
+                concat( erp_users.first_name, '-', erp_users.last_name ) AS saleman,
+                erp_return_sales.customer_id AS customer,
+                erp_return_sales.biller_id,
+                erp_return_sales.biller,
+                'Return' AS type,
+                erp_return_sales.date,
+                erp_return_sales.reference_no,
+                0 AS amount,
+                erp_return_sales.grand_total AS return_amount,
+                0 AS paid,
+                0 AS deposit,
+                0 AS discount 
+        FROM
+            erp_return_sales
+            LEFT JOIN erp_sales ON erp_sales.id = erp_return_sales.sale_id
+            LEFT JOIN erp_users ON erp_sales.saleman_by = erp_users.id 
+            ) ar {$sql} order by date asc");
+        if($q->num_rows() > 0){
+            return $q->result();
+        }
+        return false;
+    }
+    public function ap_by_supplier($start_date=null, $end_date=null, $supplier2=null, $balance2=null, $condition=null, $purchase_id=null)
     {
         $w = '';
         if($start_date){
@@ -2314,4 +3417,423 @@ class Accounts_model extends CI_Model
             }
             return false;
 	}
+    public function ar_by_customerV3($start_date=null, $end_date=null, $customer=null, $balance=null){
+//    if($customer)
+//    {
+//        $sql="where customer_id={$customer}";
+//    }else{
+//        $sql="";
+//    }
+//    if($start_date && $end_date){
+//
+//        if(!$customer)
+//        {
+//            $sql.=" WHERE date_format(date,'%Y-%m-%d') BETWEEN '{$start_date}' AND '{$end_date}'";
+//        }else{
+//            $sql.=" AND date_format(date,'%Y-%m-%d') BETWEEN '{$start_date}' AND '{$end_date}'";
+//        }
+//
+//    }
+    $q=$this->db->query("select* from(
+            select 
+                (select customer_id from erp_sales where id=erp_payments.sale_id) as customer_id,
+                (select customer from erp_sales where id=erp_payments.sale_id ) as customer,
+               date(date )as date
+            from erp_payments
+            union all
+            select 
+            customer_id,
+             customer,date(date )as date
+            from erp_sales
+            UNION ALL
+            SELECT
+               customer_id,
+               customer,
+               date(date )as date
+                FROM
+            erp_return_sales
+            ) ar  WHERE customer_id IS NOT NULL group by customer_id order by customer asc ");
+    if($q->num_rows() > 0){
+        return $q->result();
+    }
+    return false;
+}
+    public function ar_by_invoice($customer=null){
+
+        /*if($start_date && $end_date){
+
+            if(!$customer)
+            {
+                $sql.=" WHERE date_format(date,'%Y-%m-%d') BETWEEN '{$start_date}' AND '{$end_date}'";
+            }else{
+                $sql.=" AND date_format(date,'%Y-%m-%d') BETWEEN '{$start_date}' AND '{$end_date}'";
+            }
+
+        }*/
+        $q=$this->db->query("select reference_no,date(date)  as dd
+FROM
+	erp_sales
+	WHERE customer_id = {$customer}
+
+ORDER BY
+	customer ASC");
+        if($q->num_rows() > 0){
+            return $q->result();
+        }
+        return false;
+    }
+	public function getArByCustomer($cus_id,$start_date=NULL,$end_date=NULL){
+        if($cus_id)
+        {
+            $sql=" where customer={$cus_id}";
+        }else{
+            $sql="";
+        }
+
+        if($start_date ){
+            if($cus_id)
+            {
+                $sql.=" AND date_format(date,'%Y-%m-%d') BETWEEN '{$start_date}' AND '{$end_date}'";
+          }else{
+                $sql.=" AND date_format(date,'%Y-%m-%d') BETWEEN '{$start_date}' AND '{$end_date}'";
+          }
+
+        }
+        //    if($start_date && $end_date){
+//
+//        if(!$customer)
+//        {
+//            $sql.=" WHERE date_format(date,'%Y-%m-%d') BETWEEN '{$start_date}' AND '{$end_date}'";
+//        }else{
+//            $sql.=" AND date_format(date,'%Y-%m-%d') BETWEEN '{$start_date}' AND '{$end_date}'";
+//        }
+//
+//    }
+
+
+
+
+        $q=$this->db->query("select* from(
+            select 
+                 erp_payments.id as pay_id,
+                 erp_sales.pos,
+                erp_payments.sale_id as id, 
+                concat(erp_users.first_name,'-',erp_users.last_name) as saleman, 
+                erp_sales.customer_id as customer,erp_payments.biller_id,
+                (select company from erp_companies where id=erp_payments.biller_id) as biller,
+                'Payment' as type, 
+                erp_payments.date, 
+                erp_payments.reference_no, 
+                0 as payment_term,
+                0 as amount, 
+                0 as return_amount, 
+                (
+				CASE
+				WHEN erp_payments.type = 'returned' THEN
+					(- 1) * amount
+				ELSE
+					amount
+				END
+			) AS paid, 
+                0 as deposit,
+                discount ,
+                erp_sales.due_date,
+                DATEDIFF( '$start_date', date( erp_payments.date ) ) AS dd ,
+                
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+            from erp_payments
+            left join erp_users on erp_payments.created_by=erp_users.id
+            left join erp_sales on erp_sales.id=erp_payments.sale_id
+            WHERE erp_payments.paid_by='cash'
+            
+            UNION ALL
+
+            select 
+                 erp_payments.id as pay_id,
+                 erp_sales.pos,
+                erp_payments.sale_id as id, 
+                concat(erp_users.first_name,'-',erp_users.last_name) as saleman, 
+                erp_sales.customer_id as customer,erp_payments.biller_id,
+                (select company from erp_companies where id=erp_payments.biller_id) as biller,
+                'Deposit' as type, 
+                erp_payments.date, 
+                erp_payments.reference_no, 
+                0 as payment_term,
+                0 as amount, 
+                0 as return_amount, 
+                0 as paid, 
+                amount as deposit,
+                discount,erp_sales.due_date,
+               DATEDIFF( '$start_date', date( erp_payments.date ) ) AS dd ,
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+                 from erp_payments
+            left join erp_users on erp_payments.created_by=erp_users.id
+            left join erp_sales on erp_sales.id=erp_payments.sale_id
+            WHERE erp_payments.paid_by='deposit'
+
+            UNION ALL
+            
+            select 
+                 0 as pay_id,
+                 erp_sales.pos,
+                erp_sales.id, 
+                concat(erp_users.first_name,'-',erp_users.last_name) as saleman, 
+                customer_id as customer, 
+                erp_sales.biller_id,biller,
+                'Invoice' as type, 
+                date, 
+                reference_no,
+                erp_payment_term.description as payment_term, 
+                grand_total as amount,
+                0 as return_amount, 
+                0 as paid, 
+                0 as deposit,
+                0 as discount ,erp_sales.due_date,
+                DATEDIFF( '$start_date', date( erp_sales.date ) ) AS dd ,
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+            from erp_sales
+            left join erp_users on erp_sales.saleman_by=erp_users.id
+            left join erp_payment_term on erp_sales.payment_term=erp_payment_term.id
+
+            UNION ALL
+            
+            SELECT
+                0 as pay_id,
+                erp_sales.pos,
+                erp_return_sales.id,
+                concat( erp_users.first_name, '-', erp_users.last_name ) AS saleman,
+                erp_return_sales.customer_id AS customer,
+                erp_return_sales.biller_id,
+                erp_return_sales.biller,
+                'Return' AS type,
+                erp_return_sales.date,
+                erp_return_sales.reference_no,
+                0 as payment_term,
+                0 AS amount,
+                erp_return_sales.grand_total AS return_amount,
+                0 AS paid,
+                0 AS deposit,
+                0 AS discount ,erp_sales.due_date,
+                 DATEDIFF( '$start_date', date( erp_return_sales.date ) ) AS dd ,
+                DATEDIFF('$start_date',date(erp_sales.due_date)) as ddd
+        FROM
+            erp_return_sales
+            LEFT JOIN erp_sales ON erp_sales.id = erp_return_sales.sale_id
+            LEFT JOIN erp_users ON erp_sales.saleman_by = erp_users.id 
+            ) ar {$sql} AND pos <> 1 order by date asc");
+            if($q->num_rows() > 0){
+                return $q->result();
+            }
+            return false;
+    }
+    public function getPaymentByDate($cus_id,$start_date=NULL){
+        $this->db->select("erp_payments.*", false)
+            ->from("payments");
+            $this->db->where('customer_id',$cus_id);
+            if($start_date)
+            {
+                $this->db->where('date_format(erp_payments.date,"%Y-%m-%d")',date_format('.$start_date.',"%Y-%m-%d"));
+            }
+            $q = $this->db->get();
+            if($q->num_rows() > 0){
+                return $q->result();
+            }
+            return false;
+    }
+    public function getSaleOldBalance($cus_id,$start_date=NULL,$end_date=NULL){
+        $this->db->select('sum(grand_total) as grand_total')
+        ->from('erp_sales');
+        if($cus_id)
+        {
+            $this->db->where('customer_id',$cus_id);
+        }
+        if($start_date && $end_date)
+        {
+            $this->db->where("date < '".$start_date. "'");
+        }
+        $q=$this->db->get();
+        if($q->num_rows() > 0){
+            return $q->result();
+        }
+        return false;
+    }
+    public function getReturnSaleOldBalance($cus_id,$start_date=NULL,$end_date=NULL){
+        $this->db->select('sum(grand_total) as return_grand_total')
+        ->from('erp_return_sales');
+        if($cus_id)
+        {
+            $this->db->where('customer_id',$cus_id);
+        }
+        if($start_date && $end_date)
+        {
+            $this->db->where("date < '".$start_date. "'");
+        }
+        $q=$this->db->get();
+        if($q->num_rows() > 0){
+            return $q->result();
+        }
+        return false;
+    }
+    public function getPaymentOldBalance($cus_id,$start_date=NULL,$end_date=NULL){
+        $this->db->select('sum(amount) as paid,sum(discount) as discount')
+        ->from('erp_payments')
+        ->join('erp_sales','erp_sales.id=erp_payments.sale_id','LEF')
+        ->where('paid_by !=','deposit')
+        ->where('erp_payments.type !=','returned');;
+        if($cus_id)
+        {
+            $this->db->where('erp_sales.customer_id',$cus_id);
+        }
+        if($start_date && $end_date)
+        {
+            $this->db->where("erp_payments.date < '".$start_date. "'");
+        }
+        $q=$this->db->get();
+        if($q->num_rows() > 0){
+            return $q->result();
+        }
+        return false;
+    }
+    public function getPaymentReturnOldBalance($cus_id,$start_date=NULL,$end_date=NULL){
+        $this->db->select('sum(amount) as return_paid')
+        ->from('erp_payments')
+        ->join('erp_sales','erp_sales.id=erp_payments.sale_id','LEF')
+        ->where('paid_by !=','deposit')
+        ->where('erp_payments.type =','returned');
+        if($cus_id)
+        {
+            $this->db->where('erp_sales.customer_id',$cus_id);
+        }
+        if($start_date && $end_date)
+        {
+            $this->db->where("erp_payments.date < '".$start_date. "'");
+        }
+        $q=$this->db->get();
+        if($q->num_rows() > 0){
+            return $q->row();
+        }
+        return false;
+    }
+    public function getDepositOldBalance($cus_id,$start_date=NULL,$end_date=NULL){
+        $this->db->select('sum(amount) as deposit')
+        ->from('erp_payments')
+        ->join('erp_sales','erp_sales.id=erp_payments.sale_id','LEF')
+        ->where('paid_by','deposit');
+        if($cus_id)
+        {
+            $this->db->where('erp_sales.customer_id',$cus_id);
+        }
+        if($start_date && $end_date)
+        {
+            $this->db->where("erp_payments.date < '".$start_date. "'");
+        }
+        $q=$this->db->get();
+        if($q->num_rows() > 0){
+            return $q->result();
+        }
+        return false;
+    }
+
+    public function getApBySupplier($supplier_id=NULL,$start_date=NULL,$end_date=NULL)
+    {
+        if($supplier_id)
+        {
+            $sql=" where supplier_id={$supplier_id}";
+        }else{
+            $sql="";
+        }
+        if($start_date && $end_date){
+            if($supplier_id)
+            {
+                $sql.=" AND date_format(date,'%Y-%m-%d') BETWEEN '{$start_date}' AND '{$end_date}'";
+            }else{
+                $sql.=" WHERE date_format(date,'%Y-%m-%d') BETWEEN '{$start_date}' AND '{$end_date}'";
+            }
+
+        }
+        $q=$this->db->query("select* from(
+        select
+            erp_purchases.supplier_id,
+            reference_no,
+            date,
+            'Purchase' as type,
+            grand_total as amount,
+            0 as return_amount,
+            0 as paid,
+            0 as deposit,
+            0 as discount
+        from erp_purchases
+        union all
+        select 
+            erp_purchases.supplier_id,
+            erp_payments.reference_no,
+            erp_payments.date, 
+            'Payment' as type, 
+            0 as amount,    
+            0 as return_amount, 
+            amount as paid, 
+            0 as deposit,
+            discount 
+        from erp_payments
+            left join erp_purchases on erp_purchases.id=erp_payments.purchase_id
+        WHERE erp_payments.paid_by='cash'
+            ) ar {$sql} order by date asc");
+        if($q->num_rows() > 0){
+            return $q->result();
+        }
+        return false;
+    }
+
+    public function getSuppilerOldAmount($supplier_id=NULL,$start_date=NULL,$end_date=NULL)
+    {
+        $this->db->select('sum(grand_total) as amount')
+            ->from('erp_purchases');
+        if($supplier_id)
+        {
+            $this->db->where('erp_purchases.supplier_id',$supplier_id);
+        }
+        if($start_date)
+        {
+            $this->db->where('erp_purchases.date <',$start_date);
+        }
+        $q=$this->db->get();
+        if($q->num_rows() > 0){
+            return $q->result();
+        }
+        return false;
+    }
+    public function getSuppilerOldPayment($supplier_id=NULL,$start_date=NULL,$end_date=NULL)
+    {
+        $this->db->select('sum(amount) as paid, sum(discount) as discount')
+            ->from('erp_payments')
+            ->join('erp_purchases','erp_purchases.id=erp_payments.purchase_id','LEFT');
+        if($supplier_id)
+        {
+            $this->db->where('erp_purchases.supplier_id',$supplier_id);
+        }
+        if($start_date)
+        {
+            $this->db->where('erp_payments.date <',$start_date);
+        }
+        $q=$this->db->get();
+        if($q->num_rows() > 0){
+            return $q->result();
+        }
+        return false;
+    }
+
+    public function getTotalSupplierBalance($supplier_id=NULL)
+    {
+        $this->db->select('sum(grand_total) as amount')
+            ->from('erp_purchases');
+        if($supplier_id)
+        {
+            $this->db->where('erp_purchases.supplier_id',$supplier_id);
+        }
+        $q=$this->db->get();
+        if($q->num_rows() > 0){
+            return $q->result();
+        }
+        return false;
+    }
 }

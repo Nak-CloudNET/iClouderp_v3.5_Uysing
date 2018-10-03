@@ -1,4 +1,5 @@
 <style type="text/css">
+<style type="text/css">
     @media print {
         .modal {
             position: relative;
@@ -13,7 +14,7 @@
     }
     hr{
     border-color:#333;
-    
+
     }
 </style>
 <div class="modal-dialog modal-lg no-modal-header">
@@ -48,7 +49,7 @@
 						<?php if($inv->due_date) { ?>
 							<?= lang("due_date"); ?>: <?= $inv->due_date; ?><br>
 						<?php  } ?>
-                        
+
                         <?= lang("sale_status"); ?>:
                         <?php if ($inv->sale_status == 'completed') { ?>
                             <span class="label label-success" ><?= lang($inv->sale_status); ?></span>
@@ -117,6 +118,7 @@
                 </div>
                 <div class="col-xs-6">
                     <table>
+
                         <tr>
                             <td><?= $this->lang->line("to"); ?></td>
                             <td>&nbsp;&nbsp;:&nbsp;&nbsp;</td>
@@ -130,7 +132,7 @@
                         <tr>
                             <td>Attn</td>
                             <td>&nbsp;&nbsp;:&nbsp;&nbsp;</td>
-                            <td><?= $customer->names; ?></td>
+                            <td><?= $customer->name?></td>
                         </tr>
                         <?php if ($customer->phone != '' || $customer->email != ''): ?>
                             <tr>
@@ -182,7 +184,7 @@
 						$free = lang('free');
 						$product_unit = '';
 						$total = 0;
-						
+
 						if($row->variant){
 							$product_unit = $row->variant;
 						}else{
@@ -224,7 +226,7 @@
 									echo '<td style="width: 100px; text-align:right; vertical-align:middle;">' . ($row->discount != 0 ? '<small>(' . $row->discount . ')</small> ' : '') . $this->erp->formatMoney($row->item_discount) . '</td>';
 								}
 								?>
-								<td style="text-align:right; width:120px;"><?= $row->subtotal!=0?$this->erp->formatMoney($row->subtotal):$free; 
+								<td style="text-align:right; width:120px;"><?= $row->subtotal!=0?$this->erp->formatMoney($row->subtotal):$free;
 									$total += $row->subtotal;
 									?></td>
 							</tr>
@@ -280,7 +282,8 @@
                     }
                     ?>
                     <?php if ($inv->order_discount != 0) {
-                        echo '<tr><td></td><td colspan="' . $col . '" style="text-align:right; padding-right:10px;;">' . lang("order_discount") . ' (' . $default_currency->code . ')</td><td style="text-align:right; padding-right:10px;">' . $this->erp->formatMoney($inv->order_discount) . '</td></tr>';
+                        echo '<tr>
+                               <td></td><td colspan="' . $col . '" style="text-align:right; padding-right:10px;;">' . lang("order_discount") . ' (' . $default_currency->code . ')</td><td style="text-align:right; padding-right:10px;">'.'('.$inv->order_discount_id.')'." ".  $this->erp->formatMoney($inv->order_discount) . '</td></tr>';
                     }
                     ?>
                     <?php if ($Settings->tax2 && $inv->order_tax != 0) {
@@ -291,7 +294,7 @@
                         echo '<tr><td></td><td colspan="' . $col . '" style="text-align:right; padding-right:10px;;">' . lang("shipping") . ' (' . $default_currency->code . ')</td><td style="text-align:right; padding-right:10px;">' . $this->erp->formatMoney($inv->shipping) . '</td></tr>';
                     }
                     ?>
-					
+
                     <tr>
                         <td></td>
                         <td colspan="<?= $col; ?>"
@@ -350,7 +353,7 @@
                         <?php } ?>
                 </div>
 				<br/>
-				
+
 				<br/>
 				<div class="row">
 					<div class="clearfix"></div>
@@ -395,9 +398,10 @@
                 </div>
             </div>
             <?php if (!$Supplier || !$Customer) { ?>
-							 
+
                 <div class="buttons">
                     <div class="btn-group btn-group-justified">
+
 						<!--
 						<div class="btn-group">
                             <a href="<?= site_url('sales/tax_invoice/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('tax_invoice') ?>">
@@ -449,64 +453,16 @@
                                 <span class="hidden-sm hidden-xs"><?= lang('invoice_st_a5') ?></span>
                             </a>
                         </div>
-						<!--<div class="btn-group">
-                            <a href="<?= site_url('sales/print_iphoto_invoice/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('st_invoice') ?>">
-                                <i class="fa fa-print"></i>
-                                <span class="hidden-sm hidden-xs"><?= lang('iphoto_invoice') ?></span>
-                            </a>
-                        </div>
-                        <div class="btn-group">
-                            <a href="<?= site_url('sales/invoice_camera_city/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('invoice_camera_city') ?>">
-                                <i class="fa fa-print"></i>
-                                <span class="hidden-sm hidden-xs"><?= lang('invoice_camera_city') ?></span>
-                            </a>
-                        </div>-->
 						
+
 						<div class="btn-group">
                             <a href="<?= site_url('sales/tax_invoice/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('tax_invoice') ?>">
                                 <i class="fa fa-download"></i>
                                 <span class="hidden-sm hidden-xs"><?= lang('tax_invoice') ?></span>
                             </a>
                         </div>
-                        <!--
-                        <div class="btn-group">
-                            <a href="<?= site_url('sales/primo_invoice/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('print') ?>">
-                                <i class="fa fa-print"></i>
-                                <span class="hidden-sm hidden-xs"><?= lang('primo') ?></span>
-                            </a>
-                        </div>
-						<div class="btn-group">
-                            <a href="<?= site_url('sales/invoice/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('invoice') ?>">
-                                <i class="fa fa-print"></i>
-                                <span class="hidden-sm hidden-xs"><?= lang('invoice') ?></span>
-                            </a>
-                        </div>
-						<div class="btn-group">
-							<a href="<?=base_url()?>sales/cabon_print/<?=$inv->id?>" target="_blank" class="tip btn btn-primary" title="<?= lang('print_cabon') ?>">
-								<i class="fa fa-print"></i>
-								<span class="hidden-sm hidden-xs"><?= lang('print_cabon') ?></span>
-                            </a>
-                        </div>
-
-                        <div class="btn-group">
-                            <a href="<?= site_url('sales/view/' . $inv->id) ?>" class="tip btn btn-primary" title="<?= lang('view') ?>">
-                                <i class="fa fa-file-text-o"></i>
-                                <span class="hidden-sm hidden-xs"><?= lang('view') ?></span>
-                            </a>
-                        </div>
-						<!--
-						<div class="btn-group">
-                            <a href="<?= site_url('sales/contrast_sale/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('flora') ?>">
-                                <i class="fa fa-download"></i>
-                                <span class="hidden-sm hidden-xs"><?= lang('flora') ?></span>
-                            </a>
-                        </div>
-                        <div class="btn-group">
-                            <a href="<?= site_url('sales/knk_group/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('flora') ?>">
-                                <i class="fa fa-download"></i>
-                                <span class="hidden-sm hidden-xs"><?= lang('knk_group') ?></span>
-                            </a>
-                        </div>-->
+                       
+                       
                         <?php if ($inv->attachment) { ?>
                             <div class="btn-group">
                                 <a href="<?= site_url('welcome/download/' . $inv->attachment) ?>" class="tip btn btn-primary" title="<?= lang('attachment') ?>">
@@ -544,7 +500,7 @@
                                 <span class="hidden-sm hidden-xs"><?= lang('sales_invoice') ?></span>
                             </a>
                         </div>
-						
+
                         <?php if ($inv->sale_status != 'completed') { ?>
 						<?php if ($GP['sales-edit']) { ?>
                         <div class="btn-group">
@@ -605,8 +561,8 @@
                                 <span class="hidden-sm hidden-xs"><?= lang('invoice_dragon_fly') ?></span>
                             </a>
                         </div>
-                     
-						
+
+
 						<!--<div class="btn-group">
                             <a href="<?= site_url('sales/print_st_invoice_uy_sing/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('print') ?>">
                                 <i class="fa fa-print"></i>
@@ -755,7 +711,7 @@
                         </a>
                     </div>
 					<div class="btn-group">
-					
+
                         <a href="<?= site_url('sales/invoice_chim_socheat/' . $inv->id) ?>" target="_blank" class="tip btn btn-primary" title="<?= lang('Chim Socheat') ?>">
                             <i class="fa fa-print"></i>
                             <span class="hidden-sm hidden-xs"><?= lang('Chim Socheat') ?></span>
@@ -801,12 +757,15 @@
                             <span class="hidden-sm hidden-xs"><?= lang('Ly_Huy_Khim') ?></span>
                         </a>
                     </div>
-					
+
                 </div>-->
 
             <?php } ?>
+           
         </div>
+
     </div>
+
 </div>
 <script type="text/javascript">
     $(document).ready( function() {

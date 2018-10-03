@@ -19,13 +19,19 @@
 	.disabled i{
 		 color:gray;
 	}
-	.table { white-space: nowrap !important; }
+	.table {
+        /*white-space: nowrap ;*/
+    }
 	.table {
 		width: 100%;
 		display: block;
-		overflow-y: scroll;
-		white-space: nowrap;
+
 	}
+    .table td:nth-child(10){
+        word-break:break-all;
+        min-width: 150px!important;
+    }
+
 </style>
 <script>
     $(document).ready(function () {
@@ -235,7 +241,7 @@
                             <th style="min-width:5%; width: 5%; text-align: center;">
                                 <input class="checkbox checkth" type="checkbox" name="check"/>
                             </th>
-							<th style='width:5%'><?= lang("no"); ?></th>
+							<th><?= lang("no"); ?></th>
 							<th><?= lang("type"); ?></th>
                             <th><?= lang("date"); ?></th>
                             <th><?= lang("reference_no"); ?></th>

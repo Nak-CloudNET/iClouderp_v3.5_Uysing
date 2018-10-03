@@ -4,7 +4,10 @@
 		$v .= "&reference_no=" . $this->input->post('reference_no');
 	}
 	if ($this->input->post('supplier')) {
-		$v .= "&supplier=" . $this->input->post('supplier');
+        $v .= "&supplier=" . $this->input->post('supplier');
+    }
+    if ($this->input->post('project')) {
+		$v .= "&project=" . $this->input->post('project');
 	}
 	if ($this->input->post('warehouse')) {
 		$v .= "&warehouse=" . $this->input->post('warehouse');
@@ -276,9 +279,9 @@
                             <li class="divider"></li>
                             <?php
                             	foreach ($warehouses as $warehouse) {
-                            	        echo '<li ' . ($warehouse_id && $warehouse_id == $warehouse->id ? 'class="active"' : '') . '><a href="' . site_url('purchases/purchase_order/' . $warehouse->id) . '"><i class="fa fa-building"></i>' . $warehouse->name . '</a></li>';
-                            	    }
-                                ?>
+                        	        echo '<li ' . ($warehouse_id && $warehouse_id == $warehouse->id ? 'class="active"' : '') . '><a href="' . site_url('purchases/purchase_order/' . $warehouse->id) . '"><i class="fa fa-building"></i>' . $warehouse->name . '</a></li>';
+                        	    }
+                            ?>
                         </ul>
                     </li>
                 <?php }

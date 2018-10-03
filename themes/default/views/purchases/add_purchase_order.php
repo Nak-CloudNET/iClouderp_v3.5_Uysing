@@ -608,7 +608,7 @@
                                             <?php if($Owner || $Admin || $GP['purchase_order-cost']) {?>
                                                 <th class="col-md-1"><?= lang("unit_cost"); ?></th>
                                             <?php } ?>
-                                            <th class="col-md-1"><?= lang("quantity"); ?></th>
+                                            <th class="col-md-1"><?= lang("Piece"); ?></th>
                                             <th class="col-md-1"><?= lang("stock_in_hand"); ?></th>
                                             <?php
                                             if ($Settings->product_discount) {
@@ -681,12 +681,12 @@
                                     <div class="form-group">
                                         <?= lang("payment_term", "slpayment_term"); ?>
                                         <?php
-                                        $ptr[""] = "";
-                                        foreach ($payment_term as $term) {
-                                            $ptr[$term->id] = $term->description;
-                                        }
-                                        echo form_dropdown('payment_term', $ptr, isset($sale_order->payment_term) ? $sale_order->payment_term :"", 'id="slpayment_term" data-placeholder="' . lang("payment_term_tip") .  '" class="form-control input-tip select" style="width:100%;"');
-                                        ?>
+                                $ptr[""] = "";
+                                foreach ($payment_term as $term) {
+                                    $ptr[$term->id] = $term->description;
+                                }
+                                echo form_dropdown('payment_term', $ptr, isset($sale_order->payment_term) ? $sale_order->payment_term :"", 'id="slpayment_term" data-placeholder="' . lang("payment_term_tip") .  '" class="form-control input-tip select" style="width:100%;"');
+                                ?>
                                     </div>
                                 </div>
                                 -->

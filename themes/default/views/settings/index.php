@@ -821,6 +821,18 @@ $ps = array('0' => lang("disable"), '1' => lang("enable"));
 									</div>
 								</div>
 							</div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="control-label" for="mcx"><?= lang("alert_price_less_than_cost"); ?></label>
+                                    <div class="controls">
+                                        <?php
+                                        $mcx = array(1 => lang('yes'), 0 => lang('no'));
+                                        echo form_dropdown('alert_price_less_than_cost', $mcx, $Settings->alert_price_less_than_cost, 'class="form-control tip" id="alert_price_less_than_cost" style="width:100%;"');
+                                        ?>
+                                    </div>
+                                </div>
+                            </div>
+
 						</fieldset>
 
 						<fieldset class="scheduler-border">

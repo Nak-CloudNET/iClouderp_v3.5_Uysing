@@ -614,16 +614,14 @@ class Pos extends MY_Controller
                 $opos = strpos($order_discount_id, $percentage);
                 if ($opos !== false) {
                     $ods = explode("%", $order_discount_id);
-                    $order_discount = $this->erp->formatDecimal((($total) * (Float)($ods[0])) / 100);
-				 
+                    $order_discount = $this->erp->formatDecimal(((($total) * (Float) ($ods[0])) / 100), 4);
                 } else {
-                    $order_discount = $this->erp->formatDecimal(($total * $order_discount_id)/100);
-					
+                    $order_discount = $this->erp->formatDecimal($order_discount_id);
                 }
             } else {
-                $order_discount_id = NULL;
+                $order_discount_id = null;
             }
-            
+
             $total_discount = $this->erp->formatDecimal($order_discount + $product_discount);
             
             if ($this->Settings->tax2) {
@@ -1507,7 +1505,6 @@ class Pos extends MY_Controller
             $this->data['chsales']          = $this->pos_model->getRegisterChSales($register_open_time, $user_register->user_id, $register_close_time);
             $this->data['memsales']         = $this->pos_model->getRegisterMemSales($register_open_time, $user_register->user_id, $register_close_time);
             $this->data['vouchersales']     = $this->pos_model->getRegisterVoucherSales($register_open_time, $user_register->user_id, $register_close_time);
-            
             $this->data['pppsales']         = $this->pos_model->getRegisterPPPSales($register_open_time, $user_register->user_id, $register_close_time);
             $this->data['stripesales']      = $this->pos_model->getRegisterStripeSales($register_open_time, $user_register->user_id, $register_close_time);
             $this->data['totalsales']       = $this->pos_model->getRegisterSales($register_open_time, $user_register->user_id, $register_close_time);
@@ -1533,7 +1530,7 @@ class Pos extends MY_Controller
         $this->form_validation->set_rules('total_cc_slips', lang("total_cc_slips"), 'trim|required|numeric');
 
         if ($this->form_validation->run() == true) {
-            
+
             if ($this->Owner || $this->Admin) {
                 $user_register = $user_id ? $this->pos_model->registerDataPopUp($user_id) : NULL;
                 $rid = $user_register ? $user_register->id : $this->session->userdata('register_id');
@@ -1546,24 +1543,24 @@ class Pos extends MY_Controller
 				'cash_out_kh' => $this->input->post('cur_kh') ? $this->input->post('cur_kh') : 0,
 				'cash_out_us' => $this->input->post('cur_us') ? $this->input->post('cur_us') : 0
 			);
-			
+
             $data = array(
 				'closed_at'						=> date('Y-m-d H:i:s'),
                 'total_cash' 					=> $this->input->post('total_cash'),
                 'total_cash_submitted' 			=> str_replace(',' , '', $this->input->post('total_cash_submitted')),
-                
+
                 'total_cheques' 				=> $this->input->post('total_cheques'),
                 'total_cheques_submitted' 		=> $this->input->post('total_cheques_submitted'),
-                
+
                 'total_cc_slips' 				=> $this->input->post('total_cc_slips'),
                 'total_cc_slips_submitted' 		=> $this->input->post('total_cc_slips_submitted'),
-                
+
                 'total_member_slips' 			=> $this->input->post('total_member_slips'),
                 'total_member_slips_submitted' 	=> $this->input->post('total_member_slips_submitted'),
-                
+
                 'total_voucher_slips' 			=> $this->input->post('total_voucher_slips'),
                 'total_voucher_slips_submitted' => $this->input->post('total_voucher_slips_submitted'),
-                
+
                 'note' 							=> $this->input->post('note'),
                 'cash_out' 						=> json_encode($cash_out),
                 'status' 						=> 'close',
@@ -1593,7 +1590,7 @@ class Pos extends MY_Controller
                 $this->data['register_open_time']   = $user_register ? $register_open_time : NULL;
                 $this->data['register_close_time']  = $register_close_time ? $register_close_time : NULL;
                 $this->data['user_register']        = $user_register;
-                
+
             } else {
                 $register_open_time                 = $this->session->userdata('register_open_time');
 				$user_register          			= $this->pos_model->registerDataPopUp($id);
@@ -1615,7 +1612,7 @@ class Pos extends MY_Controller
             $this->data['totalsales']       = $this->pos_model->getRegisterSales($register_open_time, $user_register->user_id, $register_close_time);
             $this->data['refunds']          = $this->pos_model->getRegisterRefunds($register_open_time, $register_close_time);
             $this->data['cashrefunds']      = $this->pos_model->getRegisterCashRefunds($register_open_time, $register_close_time);
-            //$this->data['expenses']         = $this->pos_model->getRegisterExpenses($register_open_time);
+            $this->data['expenses']         = $this->pos_model->getRegisterExpenses($register_open_time);
             $this->data['users']            = $this->pos_model->getUsers($user_register->user_id);
             $this->data['suspended_bills']  = $this->pos_model->getSuspendedsales($user_register->user_id);
 			$this->data['exchange_rate'] 	= $this->pos_model->getExchange_rate('KHM');
@@ -1625,7 +1622,7 @@ class Pos extends MY_Controller
             $this->load->view($this->theme . 'pos/close_register', $this->data);
         }
     }
-    
+
 	function updateQty($suspend_id = null, $item_code = null, $quantity = null, $ruprice = null)
 	{
         $suspend_id         = $this->input->get('suspend_id', TRUE);
@@ -1856,7 +1853,8 @@ class Pos extends MY_Controller
 	
 		$orderqty           = $this->pos_model->getQtyOrder($row->product_id);
 		$w_piece            = $this->sales_model->getProductVariantByOptionID($row->id);
-		$group_prices       = $this->sales_model->getProductPriceGroup($row->id,$customer->price_group_id);
+        $group_prices       = $this->sales_model->getProductPriceGroup($row->id,$customer->price_group_id);
+
         $option             = '';
 		$expiry_status      = 0;
 		if($this->site->get_setting()->product_expiry == 1){
@@ -1991,9 +1989,10 @@ class Pos extends MY_Controller
 			$row->digital_code	    = '';
 			$row->digital_name	    = '';
 			$row->w_piece           = $row->cf1;
-			$row->printed           = 0;
+            $row->printed           = 0;
             $combo_items            = FALSE;
 			$customer_percent       = $customer_group ? $customer_group->percent : 0;
+
             if ($row->tax_rate){
                 $tax_rate = $this->site->getTaxRateByID($row->tax_rate);
                 if ($row->type == 'combo') {
@@ -3605,8 +3604,8 @@ class Pos extends MY_Controller
 		echo json_encode(false);
 		
 	}
-	
-	public function updated_print ()
+
+    public function updated_print ()
 	{
 		$sus_id  = $this->input->get('suspend_id');
 		$item_id = $this->input->get('item_id'); 

@@ -214,6 +214,19 @@ class Site extends CI_Model
         }
         return FALSE;
     }
+
+    public function getProducts_r()
+    {
+        $this->db->select('id, code, name');
+        $q = $this->db->get('products');
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return FALSE;
+    }
 	
 	public function get_customer_alerts()
 	{
@@ -368,8 +381,33 @@ class Site extends CI_Model
         }
         return FALSE;
     }
-	
-	public function getSupplierByArray($array)
+
+    public function getAllCompanies_r($group_name, $biller_id = NULL, $xls = NULL)
+    {
+        $this->db->select("*,IF(erp_companies.company = '',erp_companies.name,erp_companies.company) as username")
+            ->where('erp_companies.group_name',$group_name);
+
+        if ($biller_id) {
+            if($xls) {
+                $arr_biller = explode('_',$biller_id);
+            } else {
+                //$arr_biller = explode(',',$biller_id);
+                $arr_biller = $biller_id;
+            }
+            $this->db->where_in('erp_companies.id', $arr_biller);
+        }
+
+        $q = $this->db->get('companies');
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return FALSE;
+    }
+
+    public function getSupplierByArray($array)
 	{
 		$this->db->select("id, CONCAT(company, ' (', name, ')') as text", FALSE)
 				->from("erp_companies")
@@ -574,6 +612,7 @@ class Site extends CI_Model
 	{
 		$this->db->select("customer_id as id, customer as name");
 		$this->db->where('sales.payment_status <>', 'paid');
+        $this->db->group_by('name');
 		$q = $this->db->get('sales');
         if ($q->num_rows() > 0) {
             foreach (($q->result()) as $row) {
@@ -583,6 +622,21 @@ class Site extends CI_Model
         }
         return FALSE;
 	}
+
+    public function getCustomerSale_r()
+    {
+        $this->db->select("customer_id as id, customer as name");
+        $this->db->where('sales.payment_status <>', 'paid');
+        $this->db->group_by('name');
+        $q = $this->db->get('sales');
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return FALSE;
+    }
     
     function getSupplierNameByID($sup_id = null)
 	{
@@ -1287,7 +1341,16 @@ class Site extends CI_Model
         }
         return FALSE;
     }
-	
+    public function getAllCategories_r() {
+        $q = $this->db->order_by('name')->get('categories');
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return FALSE;
+    }
 	
 	public function getAllSuppliers() {
         $q = $this->db->get_where('companies', array('group_name' => 'supplier'));
@@ -4559,17 +4622,44 @@ class Site extends CI_Model
 	{
 		
 		if($customer){
-			$this->db->select("id as id, reference_no as text");
-			$q = $this->db->get_where("sales", array('customer_id' => $customer));
+			$q=$this->db->query("
+				select customer_id,id as id, 
+				reference_no as text 
+				from erp_sales where customer_id={$customer}
+				");
 		}else{
-			$this->db->select("id as id, reference_no as text");
-			$q = $this->db->get("sales");
+			$q=$this->db->query("
+				select id as id, 
+				reference_no as text 
+				from erp_sales");
 		}
 		
 		return $q->result();
 
         return FALSE;
 	}
+
+	public function getCustomerSaleOrderInvoices($customer = NULL)
+	{
+		
+		if($customer){
+			$q=$this->db->query("
+				select customer_id,id as id, 
+				reference_no as text 
+				from erp_sale_order where customer_id={$customer}
+				");
+		}else{
+			$q=$this->db->query("
+				select id as id, 
+				reference_no as text 
+				from erp_sale_order");
+		}
+		
+		return $q->result();
+
+        return FALSE;
+	}
+	
 	
 	public function getProductOptions($pid)
     {
@@ -4945,5 +5035,25 @@ class Site extends CI_Model
         }
         return FALSE;
     }
-	
+   public function getClosingDateByID($id)
+    {
+        $q = $this->db->get_where("closing_date", array('id' => $id), 1);
+        if ($q->num_rows() > 0) {
+            return $q->row();
+        }
+        return FALSE;
+    }
+    public function getDueAmountByID($id){
+        $this->db->select("sum(grand_total - COALESCE(paid,0) ) as bal");
+        $this->db->from("sales");
+        $this->db->where(array('customer_id'=>$id, 'payment_status <>' => 'paid'));
+        $q = $this->db->get();
+
+        if ($q->num_rows() > 0) {
+            return $q->row();
+        }
+
+        return FALSE;
+
+    }
 }

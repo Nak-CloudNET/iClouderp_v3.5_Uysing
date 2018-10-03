@@ -256,7 +256,7 @@
                                         <tbody>
                                             <?php
                                             $tQTY = 0;
-										
+
                                                 foreach ($ordered_products_qty as $ordered_product_qty) {
                                             ?>
 											

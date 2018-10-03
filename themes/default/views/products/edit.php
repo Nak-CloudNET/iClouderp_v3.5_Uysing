@@ -262,14 +262,14 @@ foreach ($warehouses_products as $warehouses_product) {
                     }
                     ?>
                     <?php  if(empty($product_item)){ ?>
-                        <div class="form-group standard">
+                        <div class="form-group standard cost">
                             <?= lang("product_cost", "cost") ?>
-                            <?= form_input('cost', (isset($_POST['cost']) ? $_POST['cost'] : ($product ? $this->erp->formatDecimal($product->cost) : '')), 'class="form-control tip" id="costs" required="required"') ?>
+                            <?= form_input('cost', (isset($_POST['cost']) ? $_POST['cost'] : ($product ? $this->erp->formatDecimal($product->cost) : '')), 'class="form-control tip number_only" id="cost" required="required"') ?>
                         </div>
                     <?php }else{ ?>
-                        <div class="form-group standard">
+                        <div class="form-group standard cost">
                             <?= lang("product_cost", "cost") ?>
-                            <?= form_input('cost', (isset($_POST['cost']) ? $_POST['cost'] : ($product ? $this->erp->formatDecimal($product->cost) : '')), 'class="form-control tip pcost" id="costs" required="required"') ?>
+                            <?= form_input('cost', (isset($_POST['cost']) ? $_POST['cost'] : ($product ? $this->erp->formatDecimal($product->cost) : '')), 'class="form-control tip number_only" id="cost" required="required"') ?>
                         </div>
                     <?php  } ?>
                     

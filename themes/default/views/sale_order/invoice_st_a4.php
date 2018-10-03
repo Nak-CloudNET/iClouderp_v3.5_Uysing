@@ -270,7 +270,7 @@
                                             <tr>
                                                 <td>រយៈពេលបង់ប្រាក់ </td>
                                                 <td>:</td>
-                                                <td><?= $invs->payment_term ?></td>
+                                                <td><?= $invs->due_day ?> Days</td>
                                             </tr>
                                             <tr>
                                                 <td style="width: 30% !important">កាលបរិច្ឆេទនៃការបង់ប្រាក់ </td>
@@ -283,6 +283,14 @@
                             </div>
                         </th>
                     </tr>
+					<?php 
+					$pro_dis=0;
+					$pro_tax=0;
+					foreach ($rows as $row) {
+						$pro_dis += $row->item_discount;
+						$pro_tax += $row->item_tax;
+					}
+					?>
                     <tr class="border thead print" style="background-color: #444 !important; color: #FFF !important;">
                         <th>ល.រ<br /><?= strtoupper(lang('no')) ?></th>
                         <th>បរិយាយមុខទំនិញ<br /><?= strtoupper(lang('description')) ?></th>
@@ -291,10 +299,10 @@
                         <th>ចំនួន<br /><?= strtoupper(lang('qty')) ?></th>
                         <th>តម្លៃ<br /><?= strtoupper(lang('price')) ?></th>
 
-                        <?php if ($Settings->product_discount) { ?>
+                        <?php if ($pro_dis) { ?>
                             <th>បញ្ចុះតម្លៃ<br /><?= strtoupper(lang('discount')) ?></th>
                         <?php } ?>
-                        <?php if ($Settings->tax1) { ?>
+                        <?php if ($pro_tax) { ?>
                             <th style="width: 10%">ពន្ធទំនិញ<br /><?= strtoupper(lang('tax')) ?></th>
                         <?php } ?>
                         <th>តម្លៃសរុប<br /><?= strtoupper(lang('subtotal')) ?></th>
@@ -307,6 +315,7 @@
                 $no = 1;
                 $erow = 1;
                 $totalRow = 0;
+				
                 foreach ($rows as $row) {
                     $free = lang('free');
                     $product_unit = '';
@@ -350,11 +359,11 @@
                                 }
                             ?>
                         </td>
-                        <?php if ($row->item_discount) {?>
+                        <?php if ($pro_dis) {?>
                             <td style="vertical-align: middle; text-align: center">
                                 <?=$this->erp->formatMoney($row->item_discount);?></td>
                         <?php } ?>
-                        <?php if ($row->item_tax) {?>
+                        <?php if ($pro_tax) {?>
                             <td style="vertical-align: middle; text-align: center">
                                 <?=$this->erp->formatMoney($row->item_tax);?></td>
                         <?php } ?>
@@ -378,14 +387,14 @@
 
                 }
                 ?>
+				
                 <?php
                 if($erow<16){
                     $k=16 - $erow;
                     for($j=1;$j<=$k;$j++) {
-                        if($discount != 0) {
+                        if($pro_dis > 0 && $pro_tax >0 ) {
                             echo  '<tr class="border">
                                     <td height="34px" style="text-align: center; vertical-align: middle">'.$no.'</td>
-                                    <td></td>
                                     <td></td>
                                     <td></td>
                                     <td></td>
@@ -396,27 +405,45 @@
                                     <td></td>
                                 </tr>';
                         }else {
-                            echo  '<tr class="border">
-                                    <td height="34px" style="text-align: center; vertical-align: middle">'.$no.'</td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                </tr>';
-        }
+                            if($pro_dis > 0 || $pro_tax >0 ) {
+								echo  '<tr class="border">
+										<td height="34px" style="text-align: center; vertical-align: middle">'.$no.'</td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+									</tr>';
+							}else {
+								echo  '<tr class="border">
+										<td height="34px" style="text-align: center; vertical-align: middle">'.$no.'</td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+									</tr>';
+							}
+						}
                         $no++;
                     }
                 }
                 ?>
                 <?php
                 $row = 1;
-                $col =5;
-                if ($discount != 0) {
+                $col =3;
+				
+                if ($pro_dis != 0) {
                     $col = 4;
+                }
+				if ($pro_tax !=0) {
+                    $col = 4;
+                }
+				if ($pro_dis != 0 && $pro_tax !=0) {
+                    $col = 5;
                 }
                 if ($invs->grand_total != $invs->total) {
                     $row++;

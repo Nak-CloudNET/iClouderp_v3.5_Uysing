@@ -27,6 +27,7 @@
 		}
 
 	</style>
+	
 </head>
 <body>
 <div class="container">
@@ -44,11 +45,21 @@
 				<div class="col-sm-4 col-xs-4">
 					<img src="<?= base_url() ?>assets/uploads/logos/<?= $biller->logo; ?>" style="width: 220px; margin-top: 20px; margin-bottom: 20px;" />
 				</div>
-				<div class="col-sm-8 col-xs-8">
-					<h1 style="margin-top: 20px;"><?= $biller->company ?></h1>
+				<div class="col-sm-5 col-xs-5">
+					<h2 style="margin-top: 20px;"><?= $biller->company ?></h2>
+				</div>
+				<div class="col-sm-3 col-xs-3 pull-right">
+					<div class="row">
+						<button type="button" class="btn btn-xs btn-default no-print pull-right"
+								style="margin-right:15px;margin-top: 25px;" onclick="window.print();">
+							<i class="fa fa-print"></i> <?= lang('print'); ?>
+						</button>
+					</div>
 				</div>
 			</div>
 	<?php } ?>
+	
+	
 
 	<table class="table table-bordered table-hover table-condensed">
 		<tbody>
@@ -76,11 +87,12 @@
 				$tQty = 0;
 			?>
 			<?php foreach ($rows as $row){ 
+			//$this->erp->print_arrays($row);
 				$product_unit = '';
                 if($row->variant){
                     $product_unit = $row->variant;
                 }else{
-                    $product_unit = $row->unit;
+                    $product_unit = $row->name;
                 }
 			?>
 				<tr>
@@ -97,8 +109,8 @@
 			?>
 			<?php } ?>
 			<?php
-				if ($empty_row < 12) {
-					$k=12 - $empty_row;
+				if ($empty_row < 9) {
+					$k=9 - $empty_row;
 					for ($j = 1; $j <= $k; $j++) {
 						echo  '<tr >
 								<td class="text-center" height="15px">'.$row_number.'</td>
@@ -119,12 +131,20 @@
 			</tr>
 		</tbody>
 	</table>
-	
-	<div class="row" style="margin-top: 80px !important">
+    <style>
+
+        @media print {
+            .border_r{
+                width: 100%;
+                border-top: 1px solid black;
+            }
+        }
+    </style>
+	<div class="row" style="margin-top: 40px !important">
 		<div class="col-sm-3 col-xs-3">
 			<center>
 				<hr style="border-color: #999 !important; width: 80%">
-				<p style="margin-top: -20px !important">
+				<p  class="border_r" style="margin-top: -20px !important">
 					ស្នើរសុំដោយ <br>
 					Requested by
 				</p>
@@ -133,16 +153,16 @@
 		<div class="col-sm-3 col-xs-3">
 			<center>
 				<hr style="border-color: #999 !important; width: 80%">
-				<p style="margin-top: -20px !important">
+				<p class="border_r" style="margin-top: -20px !important">
 					អ្នកដឹកជញ្ជូនទំនិញ<br>
 					Delivery by
 				</p>
 			</center>
 		</div>
-		<div class="col-sm-3 col-xs-3">
+		<div   class="col-sm-3 col-xs-3">
 			<center>
 				<hr style="border-color: #999 !important; width: 80%">
-				<p style="margin-top: -20px !important">
+				<p  class="border_r" style="margin-top: -20px !important">
 					អ្នកទទួលទំនិញ<br>
 					Recieved by
 				</p>
@@ -151,7 +171,7 @@
 		<div class="col-sm-3 col-xs-3">
 			<center>
 				<hr style="border-color: #999 !important; width: 80%">
-				<p style="margin-top: -20px !important">
+				<p  class="border_r" style="margin-top: -20px !important">
 					អនុញ្ញាតិដោយ<br>
 					Authorized
 				</p>

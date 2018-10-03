@@ -21,7 +21,7 @@
             'fnRowCallback': function (nRow, aData, iDisplayIndex) {
                 var oSettings = oTable.fnSettings();
                 nRow.id = aData[0];
-                nRow.className = "";
+                nRow.className = "sale_order_add_delivery_link1";
                 return nRow;
             },
             "aoColumns": [{
@@ -43,7 +43,7 @@
 				nCells[8].innerHTML = currencyFormat(parseFloat(total_balance));
             }
         }).fnSetFilteringDelay().dtFilter([
-			
+
 			{column_number: 1, filter_default_label: "[<?=lang('date');?>]", filter_type: "text", data: []},
 			{column_number: 2, filter_default_label: "[<?=lang('sale_reference_no');?>]", filter_type: "text", data: []},
             {column_number: 3, filter_default_label: "[<?=lang('project');?>]", filter_type: "text", data: []},
@@ -51,8 +51,8 @@
 			{column_number: 5, filter_default_label: "[<?=lang('saleman');?>]", filter_type: "text", data: []},
 			{column_number: 9, filter_default_label: "[<?=lang('status');?>]", filter_type: "text", data: []},
         ], "footer");
-		
-		
+
+
 		var oTable = $('#Sale_Order').dataTable({
             "aaSorting": [[1, "desc"]],
             "aLengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "<?= lang('all') ?>"]],
@@ -91,7 +91,7 @@
 				nCells[8].innerHTML = formatQuantity(parseFloat(total_balance));
             }
         }).fnSetFilteringDelay().dtFilter([
-			
+
 			{column_number: 1, filter_default_label: "[<?=lang('date');?>]", filter_type: "text", data: []},
 			{column_number: 2, filter_default_label: "[<?=lang('sale_reference_no');?>]", filter_type: "text", data: []},
             {column_number: 3, filter_default_label: "[<?=lang('project');?>]", filter_type: "text", data: []},
@@ -99,11 +99,11 @@
 			{column_number: 5, filter_default_label: "[<?=lang('saleman');?>]", filter_type: "text", data: []},
 			{column_number: 9, filter_default_label: "[<?=lang('status');?>]", filter_type: "text", data: []},
         ], "footer");
-		
-		
-		
+
+
+
     });
-	
+
 </script>
 
 <div class="row" style="margin-bottom: 15px;">
@@ -188,7 +188,7 @@
 															<th style="min-width:30px; width: 30px; text-align: center;">
 																<input class="checkbox checkft" type="checkbox" name="check"/>
 															</th>
-															
+
 															<th><?php echo $this->lang->line("date"); ?></th>
 															<th><?php echo $this->lang->line("Sale Order Reference No."); ?></th>
 															<th><?php echo $this->lang->line("project"); ?></th>
@@ -226,7 +226,6 @@
 											</div>
 										</div>
 									</div>
-									
 									<?php } ?>
 						</div>
 					</div>
@@ -236,3 +235,10 @@
     </div>
 </div>
 
+<script >
+    $(document).ready(function () {
+        $('tr ').click(function () {
+
+        });
+    });
+</script>

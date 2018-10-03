@@ -129,11 +129,8 @@ class Quotes extends MY_Controller
         $edit_link = anchor('quotes/edit/$1', '<i class="fa fa-edit"></i> ' . lang('edit_quote'));
 		$add_sale_order = anchor('sale_order/add_sale_order/$1', '<i class="fa fa-heart"></i> ' . lang('add_sale_order'));
         $add_sale = anchor('sales/add/0/0/$1', '<i class="fa fa-heart"></i> ' . lang('add_sale'));
-        //$pc_link = anchor('purchases/add/0/$1', '<i class="fa fa-star"></i> ' . lang('create_purchase'));
         $pdf_link = anchor('quotes/eang_tay_pdf/$1', '<i class="fa fa-file-pdf-o"></i> ' . lang('download_pdf'));
-        //$pdf_link = anchor('sales/pdf/$1', '<i class="fa fa-file-pdf-o"></i> ' . lang('download_pdf'));
 		$approve = anchor('quotes/getAuthorization/$1', '<i class="fa fa-check"></i> ' . lang('approve'), '');
-		//$unapprove = anchor('quotes/getunapprove/$1', '<i class="fa fa-check"></i> ' . lang('unapprove'), '');
 
         $ordered_link = anchor('quotes/update_quotes/$1', '<i class="fa fa-check"></i> ' . lang('approve'), '');
 		$unordered_link = anchor('quotes/Unapproved/$1', '<i class="fa fa-angle-double-left"></i> ' . lang('unapprove'), '');
@@ -578,6 +575,12 @@ class Quotes extends MY_Controller
             } else {
                 $date = date('Y-m-d H:i:s');
             }
+            isClosedDate($date);
+            // Payment term
+            $payment_term = $this->input->post('payment_term');
+            $payment_term_details   = $this->site->getAllPaymentTermByID($payment_term);
+            $due_date           = (isset($payment_term_details[0]->id)? date('Y-m-d', strtotime($date . '+' . $payment_term_details[0]->due_day . ' days')) : NULL);
+                        
             $warehouse_id = $this->input->post('warehouse');
             $customer_id = $this->input->post('customer_1');
             $status = $this->input->post('status');
@@ -721,7 +724,7 @@ class Quotes extends MY_Controller
                     $order_discount = ((($total) * (Float) ($ods[0])) / 100);
 
                 } else {
-                    $order_discount = (($total * $order_discount_id) / 100);
+                    $order_discount = $order_discount_id;
                 }
             } else {
                 $order_discount_id = null;
@@ -769,7 +772,9 @@ class Quotes extends MY_Controller
                 'status' => $this->Settings->authorization=='auto'?'approved':'pending',
                 'created_by' => $this->session->userdata('user_id'),
 				'saleman' => $saleman,
-                'issue_invoice' => 'pending'
+                'issue_invoice' => 'pending',
+                'payment_term' => $payment_term,
+                'due_date' => $due_date
             );
 			
             if ($_FILES['document']['size'] > 0) {
@@ -802,7 +807,8 @@ class Quotes extends MY_Controller
 					'biller_id'	=> $this->input->post('biller')
 				);
 			}
-           
+
+			//$this->erp->print_arrays($data, $products);
         }
 
         if ($this->form_validation->run() == true && ($quote_id = $this->quotes_model->addQuote($data, $products, $payment))) {
@@ -1217,16 +1223,18 @@ class Quotes extends MY_Controller
             } else {
                 $date = date('Y-m-d H:i:s');
             }
-            $warehouse_id = $this->input->post('warehouse');
-            $customer_id = $this->input->post('customer');
-            $biller_id = $this->input->post('biller');
-            $status = $this->input->post('status');
-            $shipping = $this->input->post('shipping') ? $this->input->post('shipping') : 0;
-            $customer_details = $this->site->getCompanyByID($customer_id);
-            $customer = $customer_details->name ? $customer_details->name : $customer_details->company;
-            $biller_details = $this->site->getCompanyByID($biller_id);
-            $biller = $biller_details->company != '-' ? $biller_details->company : $biller_details->name;
-            $note = $this->input->post('note');
+            isClosedDate($date);
+            $warehouse_id       = $this->input->post('warehouse');
+            $customer_id        = $this->input->post('customer');
+            $biller_id          = $this->input->post('biller');
+            $status             = $this->input->post('status');
+            $shipping           = $this->input->post('shipping') ? $this->input->post('shipping') : 0;
+            $customer_details   = $this->site->getCompanyByID($customer_id);
+            $customer           = $customer_details->name ? $customer_details->name : $customer_details->company;
+            $biller_details     = $this->site->getCompanyByID($biller_id);
+            $biller             = $biller_details->company != '-' ? $biller_details->company : $biller_details->name;
+            $note               = $this->input->post('note');
+            $payment_term       = $this->input->post('payment_term');
 
             $total = 0;
             $product_tax = 0;
@@ -1361,7 +1369,7 @@ class Quotes extends MY_Controller
                     $order_discount = (($total) * (Float) ($ods[0])) / 100;
 
                 } else {
-                    $order_discount = (($order_discount_id * $total) / 100);
+                    $order_discount = ($order_discount_id);
                 }
             } else {
                 $order_discount_id = null;
@@ -1405,6 +1413,7 @@ class Quotes extends MY_Controller
                 'total_tax' => $total_tax,
                 'shipping' => $shipping,
                 'grand_total' => $grand_total,
+                'payment_term' => $payment_term,
                 'status' => 'pending',
                 'updated_by' => $this->session->userdata('user_id'),
                 'updated_at' => date('Y-m-d H:i:s'),
@@ -1455,16 +1464,16 @@ class Quotes extends MY_Controller
             $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
             $inv 							= $this->quotes_model->getQuoteByID($id);
 			$this->data['inv'] 				= $inv;
+            $this->data['payment_term']     = $this->site->getAllPaymentTerm();
             $inv_items 						= $this->quotes_model->getAllQuoteItems($id);
 			$this->data['payment'] 			= $this->quotes_model->getPaymentByQuoteID($id);
             $c 								= rand(100000, 9999999);
 			$customer 						= $this->site->getCompanyByID($inv->customer_id);
             $customer_group = $this->site->getCustomerGroupByID($customer->customer_group_id);
             foreach ($inv_items as $item) {
-				
+                //$this->erp->print_arrays($item);
                 $row = $this->site->getProductByIDWh($item->product_id,$item->warehouse_id);
 				$dig = $this->site->getProductByID($item->digital_id);
-				
                 if (!$row) {
                     $row = json_decode('{}');
                     $row->tax_method = 0;
@@ -1498,13 +1507,13 @@ class Quotes extends MY_Controller
 				
                 $row->discount = $item->discount ? $item->discount : '0';
                 $row->price = $this->erp->formatDecimal($item->net_unit_price + $this->erp->formatDecimal($item->item_discount / $item->quantity));
+                $row->cost = $this->products_model->getProductCostByVariantName($item->product_id,$item->variant);
                 $row->unit_price = $row->tax_method ? $item->unit_price + $this->erp->formatDecimal($item->item_discount / $item->quantity) + $this->erp->formatDecimal($item->item_tax / $item->quantity) : $item->unit_price + ($item->item_discount / $item->quantity);
                 $row->real_unit_price = $item->unit_price;
                 $row->tax_rate = $item->tax_rate_id;
                 $row->option = $item->option_id;
 				$row->product_noted = $item->product_noted;
                 $options = $this->quotes_model->getProductOptions($row->id, $item->warehouse_id);
-				
 				if($expiry_status = 1){
 					$row->expdate = $item->expiry_id;
 				}
@@ -1546,6 +1555,7 @@ class Quotes extends MY_Controller
 				$row->item_edit       = 1;
 
                 $ri = $this->Settings->item_addition ? $c : $c;
+
                 if ($row->tax_rate) {
                     $tax_rate = $this->site->getTaxRateByID($row->tax_rate);
                     $pr[$ri] = array('id' => $c, 'item_id' => $row->id, 'label' => $row->name . " (" . $row->code . ")", 'row' => $row, 'combo_items' => $combo_items, 'tax_rate' => $tax_rate, 'options' => $options,'group_prices' => $group_prices, 'all_group_prices' => $all_group_prices, 'dropdown_group_prices' => $dropdown_group_prices,'customer_percent' => $customer_percent);
@@ -1558,15 +1568,15 @@ class Quotes extends MY_Controller
 			$this->load->model('purchases_model');
             $this->data['inv_items'] 		= json_encode($pr);
             $this->data['id'] 				= $id;
-			$this->data['categories'] = $this->site->getAllCategories();
-		
-			$this->data['unit'] = $this->purchases_model->getUnits();
+			$this->data['categories']       = $this->site->getAllCategories();
+			$this->data['unit']             = $this->purchases_model->getUnits();
 			$this->data['payment_deposit'] 	= $this->quotes_model->getPaymentByQuoteID($id);
             $this->data['billers'] 			= ($this->Owner || $this->Admin || !$this->session->userdata('biller_id')) ? $this->site->getAllCompanies('biller') : null;
             $this->data['tax_rates'] 		= $this->site->getAllTaxRates();
-            $this->data['warehouses'] = $this->site->getAllWarehouses();
+            $this->data['warehouses']       = $this->site->getAllWarehouses();
 			$this->data['agencies'] 		= $this->site->getAllUsers();
 			$this->data['areas'] 			= $this->site->getArea();
+            $this->data['setting']          = $this->site->get_setting();
 			$this->session->set_userdata('remove_q2', '1');
             $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('quotes'), 'page' => lang('quotes')), array('link' => '#', 'page' => lang('edit_quote')));
             $meta = array('page_title' => lang('edit_quote'), 'bc' => $bc);

@@ -1,6 +1,3 @@
-<?php
-	// $this->erp->print_arrays($inv);
-?>
 <script type="text/javascript">
     var count = 1, an = 1, product_variant = 0, DT = <?= $Settings->default_tax_rate ?>,
         product_tax = 0, invoice_tax = 0, total_discount = 0, total = 0, allow_discount = <?= ($Owner || $Admin || $this->session->userdata('allow_discount')) ? 1 : 0; ?>,
@@ -511,7 +508,7 @@
 
                             </div>
                         </div>-->
-					<!--
+
 						<div class="col-sm-4">
                             <div class="form-group">
                                 <?= lang("payment_term", "slpayment_term"); ?>
@@ -524,6 +521,7 @@
 									//echo form_input('payment_term',$ptr,'11', 'class="form-control tip" data-trigger="focus" data-placement="top" title="' . lang('payment_term_tip') . '" id="slpayment_term"'); ?>
                             </div>
                         </div>
+                        <!--
 						<div class="col-sm-4">
                             <div class="form-group">
                                 <?= lang("payment_status", "slpayment_status"); ?>
@@ -532,7 +530,7 @@
                                 ?>
                             </div>
                         </div>
-					-->
+					    -->
 						<div class="row">
 							<div class="col-md-12">
 								<div class="col-md-4">
@@ -644,8 +642,9 @@
                         </div>
                         <div class="col-md-12">
                             <div
-                                class="fprom-group"><?php // echo form_submit('edit_sale', lang("submit"), 'id="edit_sale" class="btn btn-primary" style="padding: 6px 15px; margin:15px 0;"'); ?>
-							   <button type="submit"  id="edit_sale" class="btn btn-primary" style="padding: 6px 15px; margin:15px 0;" ><?= lang('submit') ?></button>
+                                class="fprom-group">
+                                <button type="submit" class="btn btn-primary" style="padding: 6px 15px; margin:15px 0;display:none" id="edit_sale"><?= lang('submit') ?></button>
+                                <button type="submit" class="btn btn-primary" id="before_sub"><?= lang('submit') ?></button>
 							   <button type="button" class="btn btn-danger" id="reset"><?= lang('reset') ?></button>
                             </div>
                         </div>
@@ -775,6 +774,7 @@
 
                         <div class="col-sm-8">
                             <input type="text" class="form-control" id="pprice">
+                            <input type="hidden" class="form-control" id="pcost">
                         </div>
                     </div>
 					<div class="form-group">
@@ -873,8 +873,145 @@
             }
             $('#modal-loading').hide();
         });
-		
+        $('#before_sub').click(function (e) {
+           e.preventDefault();
+           var message = '';
+           var help = false;
+           var alert_price= <?= $setting->alert_price_less_than_cost ?>;
+           if(alert_price)
+           {
+               $('.ruprice').each(function() {
+                   var tr = $(this).closest('tr');
+                   var price = $(this).val() - 0;
+                   var cost = tr.find('.rucost').val() - 0;
+                   if(price <= cost) {
+                       var product_name = $(this).parent().parent().closest('tr').find('.rname').val();
+                       message += 'Some products price is less than cost )!\n';
+                       help = true;
+                   }
+               });
+           }
 
+           /*  if (help) {
+                 message += "\n Do you want to continue your sale order? \n";
+                 message += "Press \"OK\" is continue and \"Cancel\" is recheck!!!";
+                 var result = confirm(message);
+                 if (result) {
+                     //return false;
+                 } else {
+                     return false;
+                 }
+             }*/
+           if(help == false){
+               $('#edit_sale').trigger('click');
+           }else{
+               bootbox.prompt({
+                   title: message + "Please enter password to continue",
+                   inputType: 'password',
+                   className: "medium",
+                   callback: function (result) {
+                       $.ajax({
+                           type: 'get',
+                           url: '<?= site_url('auth/checkPassDiscount'); ?>',
+                           dataType: "json",
+                           data: {
+                               password: result
+                           },
+                           success: function (data) {
+                               if(data == 1){
+                                   $('#edit_sale').trigger('click');
+                               }else{
+                                   bootbox.alert({
+                                       message: "Incorrect password!",
+                                       size: 'small'
+                                   });
+                               }
+                           }
+                       });
+                   }
+               });
+               return false;
+           }
+           /*var message = '';
+           var help = false;
+           $('.qty_rec').each(function() {
+               var tr = $(this).closest('tr');
+               var order_qty = tr.find('.psoqty').val() - 0;
+               var received_qty = $(this).val() - 0;
+               var oh_qty = tr.find('.qty_oh').val() - 0;
+               var qty_balance = oh_qty - (received_qty + order_qty);
+               if(qty_balance < 0) {
+                   var product_name = $(this).parent().parent().closest('tr').find('.rname').val();
+                   if(order_qty > 0) {
+                       message += '- ' + product_name +' : Order = ' + formatDecimal(received_qty) + ', Ordered = ' + formatDecimal(order_qty) + ', QOH = ' + formatDecimal(oh_qty) + ' !\n';
+                       help = true;
+                   }else {
+                       message += '- ' + product_name +' : Order = ' + formatDecimal(received_qty) + ', QOH = ' + formatDecimal(oh_qty) + ' !\n';
+                       help = true;
+                   }
+               }
+           });
+           if(help) {
+               message += "\n Do you want to continue your sale order? \n";
+               message += "Press \"OK\" is continue and \"Cancel\" is recheck!!!";
+               var result = confirm(message);
+                   if (result) {
+                       //return false;
+                   }else {
+                       return false;
+                   }
+           }*/
+
+           //============credit limit===============//
+           var customer_id = $('#slcustomer2').val();
+           var grand_total = $('#hide_grand').val()-0;
+           var credit_limit = $('#credit_limit').val()-0;
+           var cust_balance = $('#cust_balance').val()-0;
+           if(credit_limit > 0 && credit_limit < (cust_balance+grand_total)){
+               alert('This customer has over credit limit');
+               return false;
+           }
+
+           //============end credit limit===============//
+           var GP = '<?= $GP['sales-discount'];?>';
+           var Owner = '<?= $Owner?>';
+           var Admin = '<?= $Admin?>';
+           var user_log = '<?= $this->session->userdata('user_id');?>';
+           if(Owner || Admin || (GP == 1)){
+               $('#add_sale').trigger('click');
+           }else{
+               var val = '';
+               $('.sdiscount').each(function(){
+                   var parent = $(this).parent().parent();
+                   var value  = parent.find('.sdiscount').text();
+                   if(value != 0){
+                       val = value;
+                   }
+               });
+               if(val == ''){
+                   $('#add_sale').trigger('click');
+               }else{
+                   bootbox.prompt("Please insert password", function(result){
+                       $.ajax({
+                           type: 'get',
+                           url: '<?= site_url('auth/checkPassDiscount'); ?>',
+                           dataType: "json",
+                           data: {
+                               password: result
+                           },
+                           success: function (data) {
+                               if(data == 1){
+                                   $('#add_sale').trigger('click');
+                               }else{
+                                   alert('Incorrect passord');
+                               }
+                           }
+                       });
+                   });
+               }
+           }
+
+       });
         $("#slcustomer").select2("destroy").empty().attr("placeholder", "<?= lang('select_customer_to_load') ?>").select2({
             placeholder: "<?= lang('select_area_to_load') ?>", data: [
                 {id: '', text: '<?= lang('select_area_to_load') ?>'}

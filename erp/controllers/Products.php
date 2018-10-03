@@ -687,7 +687,7 @@ class Products extends MY_Controller
         if ($this->form_validation->run() == true) {
 
             $style = $this->input->post('style');
-            $bci_size = ($style == 111 || $style == 10 || $style == 12 || $style == 90 || $style == 6 ? 50 : ($style == 14 || $style == 16 || $style == 18 ? 30 : 20));
+            $bci_size = ($style == 111 || $style == 119|| $style == 120 || $style == 10 || $style == 12 || $style == 90 || $style == 6 ? 50 : ($style == 14 || $style == 16 || $style == 18 ? 30 : 20));
             
             $currencies = $this->site->getAllCurrencies();
             $s = isset($_POST['product_id']) ? sizeof($_POST['product_id']) : 0;
@@ -1363,6 +1363,7 @@ class Products extends MY_Controller
         }
 
     }
+
     function deleteProductVariant($product_id=null,$variants_id=null){
         $this->erp->checkPermissions('edit',null,'products');
         $row=$this->db->get_where('erp_product_variants',array('id'=>$variants_id));
@@ -1380,6 +1381,7 @@ class Products extends MY_Controller
         }
        
     }
+
     function edit($id = NULL)
     {
         $this->erp->checkPermissions('edit',null,'products');
@@ -1955,7 +1957,6 @@ class Products extends MY_Controller
         $this->erp->checkPermissions('import_quantity', NULL, 'products');
         $this->load->helper('security');
         $this->form_validation->set_rules('userfile', lang("upload_file"), 'xss_clean');
-
         if ($this->form_validation->run() == true) {
             isCloseDate(date('Y-m-d'));
             if (DEMO) {
@@ -1984,7 +1985,7 @@ class Products extends MY_Controller
                 
                 $arrResult = array();
                 $handle = fopen($this->digital_upload_path . $csv, "r");
-                
+
                 if ($handle) {
                     while (($row = fgetcsv($handle, 1000, ",")) !== FALSE) {
                         $arrResult[] = $row;
@@ -1992,13 +1993,13 @@ class Products extends MY_Controller
                     fclose($handle);
                 }
                 $titles = array_shift($arrResult);
-                
+
                 $keys           = array('code', 'quantity', 'opening_stock', 'cost');
                 $keys_warehouse = array('quantity', 'warehouse_id');
                 $keys_var_value = array('code', 'option_id', 'cost');
                 $keys_var       = array('quantity', 'option_id','warehouse_id');
-                $keys_purchase  = array('product_code', 'quantity_balance','option_id','warehouse_id','opening_stock', 'expiry', 'serial');
-                
+                $keys_purchase  = array('product_code', 'quantity_balance','option_id','warehouse_id','project_id','opening_stock', 'expiry', 'serial');
+
                 $final                  = array();
                 $final_ware_product     = array();
                 $final_var              = array();
@@ -2019,15 +2020,17 @@ class Products extends MY_Controller
                     unset($var_value[1]);
                     unset($var_value[3]);
                     unset($var_value[4]);
-                    unset($var_value[6]);
+                    unset($var_value[5]);
                     unset($var_value[7]);
+                    unset($var_value[8]);
                     
                     $final_var_value[] = array_combine($keys_var_value, $var_value);
                     
                     unset($temp_product[2]);
                     unset($temp_product[3]);
-                    unset($temp_product[6]);
+                    unset($temp_product[4]);
                     unset($temp_product[7]);
+                    unset($temp_product[8]);
                     
 
                     unset($temp_warehouse[0]);
@@ -2036,28 +2039,33 @@ class Products extends MY_Controller
                     unset($temp_warehouse[5]);
                     unset($temp_warehouse[6]);
                     unset($temp_warehouse[7]);
+                    unset($temp_warehouse[8]);
                     
                     unset($temp_var[0]);
                     unset($temp_var[4]);
                     unset($temp_var[5]);
                     unset($temp_var[6]);
                     unset($temp_var[7]);
-                    unset($value[5]);
+                    unset($temp_var[8]);
+                    unset($value[6]);
 
                     $final[]                = array_combine($keys, $temp_product);
                     $final_ware_product[]   = array_combine($keys_warehouse, $temp_warehouse);
                     $final_var[]            = array_combine($keys_var, $temp_var);
                     $final_purchase_item[]  = array_combine($keys_purchase, $value);
+
                     $implode[]              = implode(',', $value);
                 }
                 
                 $rw = 2;
                 $i =0;
-
+                //$this->erp->print_arrays();
                 foreach ($final as $csv_pr)
                 {
                     if (trim($csv_pr['code'])) {
+
                         $query_product = $this->products_model->getProductByCode(trim($csv_pr['code']));
+                        //$this->erp->print_arrays($final_ware_product);
                         if ($query_product->type == 'service') {
                             $this->session->set_flashdata('error', lang("check_product") . " (" . $csv_pr['code'] . "). " . lang("product_service_cannot_import") . " " . lang("line_no") . " " . $rw);
                             redirect("products/update_quantity");
@@ -2091,16 +2099,27 @@ class Products extends MY_Controller
                 }
 
                 $total_cost = 0;
-                
                 foreach ($final as $csvpr) {
+
                     $cost = $csvpr['quantity'] * $csvpr['cost'];
                     $total_cost += $cost;
                 }
+
+                foreach ($final_purchase_item as $fpi){
+                    $warehouses=$this->products_model->getWarehostId($fpi['project_id']);
+                    $wh=explode(',',$warehouses[0]->cf5);
+                    //$this->erp->print_arrays();
+                   if(!in_array($fpi['warehouse_id'],$wh)){
+                       $this->session->set_flashdata('error', lang("Warehouses id is don't have in biller"));
+                       redirect("products/update_quantity");
+                   }
+                }
+
+
             }
-
-            //$this->erp->print_arrays($final_purchase_item);
-
         }
+
+
 
         if ($this->form_validation->run() == true && !empty($final)) {
             $this->products_model->updateQuantityExcel($final);
@@ -2109,14 +2128,16 @@ class Products extends MY_Controller
             $this->products_model->updateQuantityExcelVar($final_var);
             $this->products_model->insertGlTran($total_cost);
             $check  = $this->products_model->updateQuantityExcelPurchase($final_purchase_item);
+
             optimizeOpeningQuantity(date('Y-m-d'));
             getUserIdPermission();
             if($check)
             {
-               $this->session->set_flashdata('message', lang("quantity_updated"));
-                redirect('products'); 
+                $this->session->set_flashdata('message', lang("quantity_updated"));
+                redirect('products');
             }
-            
+
+
         } else {
             $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
             $this->data['userfile'] = array('name' => 'userfile',
@@ -2448,7 +2469,7 @@ class Products extends MY_Controller
             } else {
                 $date = date('Y-m-d H:s:i');
             }
-
+            isClosedDate($date);
             isCloseDate(date('Y-m-d', strtotime($date)));
 
             $reference_no   = $this->input->post('reference_no') ? $this->input->post('reference_no') : $this->site->getReference('qa', $this->default_biller_id);
@@ -2808,6 +2829,7 @@ class Products extends MY_Controller
             } else {
                 $date = $adjustment->date;
             }
+            isClosedDate($date);
             isCloseDate(date('Y-m-d', strtotime($date)));
             $reference_no   = $this->input->post('reference_no');
             $warehouse_id   = $this->input->post('warehouse');
@@ -3074,16 +3096,16 @@ class Products extends MY_Controller
         $this->db->where('id',  $pr_details->supplier1);
         $q = $this->db->get()->result();
 
-        $this->data['supplier'] = $q;
-        $this->data['product'] = $pr_details;
-        $this->data['product_user'] = $pr_details_user;
-        $this->data['images'] = $this->products_model->getProductPhotos($id);
-        $this->data['category'] = $this->site->getCategoryByID($pr_details->category_id);
-        $this->data['subcategory'] = $pr_details->subcategory_id ? $this->products_model->getSubCategoryByID($pr_details->subcategory_id) : NULL;
-        $this->data['tax_rate'] = $pr_details->tax_rate ? $this->site->getTaxRateByID($pr_details->tax_rate) : NULL;
-        $this->data['warehouses'] = $this->products_model->getAllWarehousesWithPQ($id);
-        $this->data['options'] = $this->products_model->getProductOptionsWithWH($id);
-        $this->data['variants'] = $this->products_model->getProductOptionsData($id);
+        $this->data['supplier']             = $q;
+        $this->data['product']              = $pr_details;
+        $this->data['product_user']         = $pr_details_user;
+        $this->data['images']               = $this->products_model->getProductPhotos($id);
+        $this->data['category']             = $this->site->getCategoryByID($pr_details->category_id);
+        $this->data['subcategory']          = $pr_details->subcategory_id ? $this->products_model->getSubCategoryByID($pr_details->subcategory_id) : NULL;
+        $this->data['tax_rate']             = $pr_details->tax_rate ? $this->site->getTaxRateByID($pr_details->tax_rate) : NULL;
+        $this->data['warehouses']           = $this->products_model->getAllWarehousesWithPQ($id);
+        $this->data['options']              = $this->products_model->getProductOptionsWithWH($id);
+        $this->data['variants']             = $this->products_model->getProductOptionsData($id);
         $this->data['ordered_products_qty'] = $this->products_model->getAllOrderProductsQty($id);
         
         $this->load->view($this->theme.'products/modal_view', $this->data);
@@ -3709,6 +3731,7 @@ class Products extends MY_Controller
             } else {
                 $date = date('Y-m-d H:i:s');
             }
+            isClosedDate($date);
             isCloseDate(date('Y-m-d', strtotime($date)));
             $convert_id         = $_POST['convert_id'];
             
@@ -4080,6 +4103,7 @@ class Products extends MY_Controller
             } else {
                 $date = date('Y-m-d H:i:s');
             }
+            isCLosedDate($date);
             isCloseDate(date('Y-m-d', strtotime($date)));
             $warehouse_id        = $_POST['warehouse'];
             // list convert item from
@@ -4896,7 +4920,7 @@ class Products extends MY_Controller
             redirect($_SERVER["HTTP_REFERER"]);
         }
     }
-    
+
     public function add_using_stock()
     {
         $this->form_validation->set_rules('reference_no', lang("reference_no"), 'required|is_unique[enter_using_stock.reference_no]');
@@ -4904,53 +4928,56 @@ class Products extends MY_Controller
         $this->form_validation->set_rules('from_location', lang("from_location"), 'required');
         if ($this->form_validation->run() == true){
             if($this->Owner || $this->Admin){
-                $date       = $this->erp->fld($this->input->post('date'));
+                $date 		= $this->erp->fld($this->input->post('date'));
             } else {
-                $date       = date('Y-m-d');
+                $date 		= date('Y-m-d');
             }
+            isClosedDate($date);
             isCloseDate(date('Y-m-d', strtotime($date)));
-            $authorize      = $this->input->post('authorize_id');
-            $account        = $this->input->post('account');
-            $reference_no   = $this->input->post('reference_no');
-            $employee_id    = $this->input->post('employee_id');
-            $customer_id    = $this->input->post('customer');
-            $plan           = $this->input->post('plan');
-            $address        = $this->input->post('address');
-            $warehouse_id   = $this->input->post('from_location');
-            $shop           = $this->input->post('shop');
-            $note           = $this->input->post('note');
+            $authorize 		= $this->input->post('authorize_id');
+            $account 		= $this->input->post('account');
+            $reference_no 	= $this->input->post('reference_no');
+            $employee_id 	= $this->input->post('employee_id');
+            $customer_id 	= $this->input->post('customer');
+            $sale_order_id  = $this->input->post('sale_order_invoice');
+            $sale_id        = $this->input->post('sale_invoice');
+            $plan 			= $this->input->post('plan');
+            $address 		= $this->input->post('address');
+            $warehouse_id 	= $this->input->post('from_location');
+            $shop 			= $this->input->post('shop');
+            $note 	 		= $this->input->post('note');
             $total_item_cost= 0;
 
-            $i              = sizeof($_POST['product_id']);
+            $i 				= sizeof($_POST['product_id']);
             for ($r = 0; $r < $i; $r++) {
-                $product_id     = $_POST['product_id'][$r];
-                $product_code   = $_POST['item_code'][$r];
-                $product_name   = $_POST['name'][$r];
-                $product_cost   = $_POST['cost'][$r];
-                $description    = $_POST['description'][$r];
-                $qty_use        = $_POST['qty_use'][$r];
-                $unit           = $_POST['unit'][$r];
-                $exp            = $_POST['exp'][$r];
-                $qty_balance    = $qty_use;
-                $option_id      = '';
-                $total_cost     = $product_cost * $qty_balance; 
-                
-                $variant        = $this->site->getProductVariantByID($product_id, $unit);
+                $product_id 	= $_POST['product_id'][$r];
+                $product_code 	= $_POST['item_code'][$r];
+                $product_name 	= $_POST['name'][$r];
+                $product_cost 	= $_POST['cost'][$r];
+                $description 	= $_POST['description'][$r];
+                $qty_use 		= $_POST['qty_use'][$r];
+                $unit 			= $_POST['unit'][$r];
+                $exp 			= $_POST['exp'][$r];
+                $qty_balance	= $qty_use;
+                $option_id		= '';
+                $total_cost		= $product_cost * $qty_balance;
+
+                $variant 		= $this->site->getProductVariantByID($product_id, $unit);
                 if ($variant) {
-                    $qty_balance    = $qty_use * $variant->qty_unit;
-                    $option_id      = $variant->id;
-                    $total_cost     = $product_cost * $qty_balance;
-                        
+                    $qty_balance 	= $qty_use * $variant->qty_unit;
+                    $option_id  	= $variant->id;
+                    $total_cost		= $product_cost * $qty_balance;
+
                 }
-                
+
                 //======================= Check Stock ========================//
-                $warehouse      = $this->site->getWarehouseQty($product_id, $warehouse_id);
+                $warehouse 		= $this->site->getWarehouseQty($product_id, $warehouse_id);
                 if($warehouse->quantity < $qty_balance OR $qty_balance == 0){
                     $this->session->set_flashdata('error', $this->lang->line("quantity_bigger") );
                     redirect($_SERVER["HTTP_REFERER"]);
                 }
                 //=========================== End ============================//
-                
+
                 //================== Check Stock With Expiry =================//
                 if ($this->Settings->product_expiry) {
                     $stock_expiry = $this->site->checkExpiryDate($product_id, $exp, $warehouse_id);
@@ -4962,67 +4989,69 @@ class Products extends MY_Controller
                 //============================= End ==========================//
 
                 $item_data[] = array(
-                    'product_id'    => $product_id,
-                    'code'          => $product_code,
-                    'product_name'  => $product_name,
-                    'description'   => $description,
-                    'qty_use'       => $qty_balance,
-                    'qty_by_unit'   => $qty_use,
-                    'unit'          => $unit,
-                    'expiry'        => $exp,
-                    'warehouse_id'  => $warehouse_id,
-                    'cost'          => $product_cost,
-                    'reference_no'  => $reference_no,
-                    'option_id'     => $option_id
+                    'product_id' 	=> $product_id,
+                    'code'  		=> $product_code,
+                    'product_name' 	=> $product_name,
+                    'description' 	=> $description,
+                    'qty_use' 		=> $qty_balance,
+                    'qty_by_unit' 	=> $qty_use,
+                    'unit' 			=> $unit,
+                    'expiry' 		=> $exp,
+                    'warehouse_id' 	=> $warehouse_id,
+                    'cost' 			=> $product_cost,
+                    'reference_no' 	=> $reference_no,
+                    'option_id' 	=> $option_id
                 );
-                
+
                 $total_item_cost+= $total_cost;
             }
-            
-            if (empty($item_data)) {
+
+            /*if (empty($item_data)) {
                 $this->session->set_flashdata('error', $this->lang->line("no_data_select") );
                 redirect($_SERVER["HTTP_REFERER"]);
             } else {
                 krsort($item_data);
-            }
-            
+            }*/
+
             $data = array(
-                'date'          => $date,
-                'reference_no'  => $reference_no,
-                'warehouse_id'  => $warehouse_id,
-                'authorize_id'  => $authorize,
-                'employee_id'   => $employee_id,
-                'customer_id'   => $customer_id,
-                'shop'          => $shop,
-                'account'       => $account,
-                'note'          => $note,
-                'create_by'     => $this->session->userdata('user_id'),
-                'type'          => 'use',
-                'total_cost'    => $total_item_cost,
-                'plan_id'       => $plan,
-                'address_id'    => $address,
+                'date' 			=> $date,
+                'reference_no' 	=> $reference_no,
+                'warehouse_id' 	=> $warehouse_id,
+                'authorize_id' 	=> $authorize,
+                'employee_id' 	=> $employee_id,
+                'customer_id' 	=> $customer_id,
+                'sale_order_id' => $sale_order_id,
+                'sale_id'       => $sale_id,
+                'shop' 			=> $shop,
+                'account' 		=> $account,
+                'note' 			=> $note,
+                'create_by' 	=> $this->session->userdata('user_id'),
+                'type' 			=> 'use',
+                'total_cost' 	=> $total_item_cost,
+                'plan_id'		=> $plan,
+                'address_id'	=> $address,
             );
-            
             //$this->erp->print_arrays($data, $item_data);
             $using_stock = $this->products_model->insert_enter_using_stock($data, $item_data);
             optimizeUsing(date('Y-m-d', strtotime($date)));
             if($using_stock){
                 $this->session->set_flashdata(lang('enter_using_stock_added.'));
 
-                $r_r = str_replace("/","-",$reference_no);
+				
+                $r_r = str_replace("/","_",$reference_no);
                 $ref = str_replace("&","_",$r_r);
 
                 $this->session->set_userdata('remove_usitem', '1');
-                redirect('products/print_using_stock/' . $ref);
+                redirect('products/print_using_stock/' . $r_r);
             }
-            
+
         } else {
             $this->session->set_flashdata('error', validation_errors());
             $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
             redirect($_SERVER["HTTP_REFERER"]);
         }
     }
-    
+
     public function getUnitOfMeasureByProductCode()
     {
         $code = $this->input->get('product_code', TRUE);        
@@ -5043,6 +5072,7 @@ class Products extends MY_Controller
     
     public function print_enter_using_stock($ref)
     {
+		
         $r_r            = str_replace("-","/",$ref);
         $using_stock    = $this->products_model->get_enter_using_stock_by_ref($r_r);
         $stock_item     = $this->products_model->get_enter_using_stock_item_by_ref($r_r);
@@ -5055,16 +5085,17 @@ class Products extends MY_Controller
     
     public function print_using_stock($r_r)
     {
-        $r_r = str_replace('-', '/', $r_r);
-
-        $using_stock    =   $this->products_model->get_enter_using_stock_by_ref($r_r);
-        $stock_item     =   $this->products_model->get_enter_using_stock_item_by_ref($r_r);
+		
+        $r_rs = str_replace('_', '/', $r_r);
+		//echo $r_rs;exit;
+        $using_stock    =   $this->products_model->get_enter_using_stock_by_ref($r_rs);
+        $stock_item     =   $this->products_model->get_enter_using_stock_item_by_ref($r_rs);
         $this->data['info'] = $this->products_model->get_enter_using_stock_info();
         $this->data['using_stock'] = $using_stock; 
         $this->data['stock_item'] = $stock_item;
-        $this->data['biller'] = $this->products_model->getUsingStockProjectByRef($r_r);
-        $this->data['invs'] = $this->products_model->getUsingStockProjectByRef($r_r);
-        $this->data['au_info'] =$this->products_model->getAuInfoByref($r_r);
+        $this->data['biller'] = $this->products_model->getUsingStockProjectByRef($r_rs);
+        $this->data['invs'] = $this->products_model->getUsingStockProjectByRef($r_rs);
+        $this->data['au_info'] =$this->products_model->getAuInfoByref($r_rs);
 
         $this->load->view($this->theme.'products/print_using_stock',$this->data);
     }
@@ -5209,8 +5240,8 @@ class Products extends MY_Controller
             <ul class="dropdown-menu pull-right" role="menu">                                                               
                 <li class="edit_using"><a href="'.site_url('products/edit_using_stock_by_id/$1/$2').'" ><i class="fa fa-edit"></i>'.lang('edit_using_stock').'</a></li> 
                 <li class="add_return" ><a href="'.site_url('products/return_using_stock/$1/$2').'" ><i class="fa fa-reply"></i>'.lang('return_using_stock').'</a></li> 
-                <li><a href="' . site_url('products/print_using_stock_by_id/$1/$2') . '" ><i class="fa fa-print"></i>' . lang('print_using_stock') . '</a></li>
-                <li><a href="' . site_url('products/stock_using_issue_a5/$1/$2') . '" ><i class="fa fa-print"></i>' . lang('Stock_Using_Issue_a5') . '</a></li>
+                <!--<li><a href="' . site_url('products/print_using_stock_by_id/$1/$2') . '" ><i class="fa fa-print"></i>' . lang('print_using_stock') . '</a></li>-->
+                 <li><a href="' . site_url('products/stock_using_issue_a5/$1/$2') . '" ><i class="fa fa-print"></i>' . lang('Stock_Using_Issue_a5') . '</a></li>
                 <!--<li><a href="' . site_url('products/print_sample_form_ppcp/$1/$2') . '" ><i class="fa fa-newspaper-o"></i>' . lang('print_sample_form_ppcp') . '</a></li>-->
             </ul>
         </div>';
@@ -5566,12 +5597,15 @@ class Products extends MY_Controller
             } else {
                 $date       = date('Y-m-d');
             }
+            isClosedDate($date);
             isCloseDate(date('Y-m-d', strtotime($date)));
             $authorize      = $this->input->post('authorize_id');
             $account        = $this->input->post('account');
             $reference_no   = $this->input->post('reference_no');
             $employee_id    = $this->input->post('employee_id');
             $customer_id    = $this->input->post('customer');
+            $sale_order_id  = $this->input->post('sale_order_invoice');
+            $sale_id        = $this->input->post('sale_invoice');
             $plan           = $this->input->post('plan');
             $address        = $this->input->post('address');
             $warehouse_id   = $this->input->post('from_location');
@@ -5608,7 +5642,6 @@ class Products extends MY_Controller
                     $this->session->set_flashdata('error', $this->lang->line("quantity_bigger") );
                     redirect($_SERVER["HTTP_REFERER"]);
                 }
-
                 $item_data[] = array(
                     'product_id'    => $product_id,
                     'code'          => $product_code,
@@ -5627,12 +5660,12 @@ class Products extends MY_Controller
                 $total_item_cost+= $total_cost;
             }
             
-            if (empty($item_data)) {
+           /* if (empty($item_data)) {
                 $this->session->set_flashdata('error', $this->lang->line("no_data_select") );
                 redirect($_SERVER["HTTP_REFERER"]);
-            } else {
+            } else {*/
                 krsort($item_data);
-            }
+            /*}*/
             
             $data = array(
                 'date'          => $date,
@@ -5641,6 +5674,8 @@ class Products extends MY_Controller
                 'authorize_id'  => $authorize,
                 'employee_id'   => $employee_id,
                 'customer_id'   => $customer_id,
+                'sale_order_id' => $sale_order_id,
+                'sale_id'       => $sale_id,
                 'shop'          => $shop,
                 'account'       => $account,
                 'note'          => $note,
@@ -5706,7 +5741,7 @@ class Products extends MY_Controller
         if($type=="return"){
             $using_stock = $this->products_model->get_enter_using_stock_by_id($id);
             $ref_no=$using_stock->reference_no;
-            $stock_item=$this->products_model->get_enter_using_stock_item_by_ref($id);
+            $stock_item=$this->products_model->get_enter_using_stock_item_by_ref($ref_no);
              $this->data['using_stock'] = $using_stock; 
              $this->data['stock_item'] = $stock_item;
             $this->data['au_info']      = $this->products_model->getAuInfo($id);
@@ -5715,34 +5750,7 @@ class Products extends MY_Controller
             $this->load->view($this->theme.'products/print_enter_using_stock_return',$this->data);
         }
     }
-    public function stock_using_issue_a5($id, $type)
-    {
-        $this->erp->checkPermissions('using_stock');
-        if($type=="use"){
-            $using_stock = $this->products_model->get_enter_using_stock_by_id($id);
-            $ref_no      = $using_stock->reference_no;
-            $stock_item  = $this->products_model->get_enter_using_stock_item_by_ref($ref_no);
 
-            $this->data['using_stock']  = $using_stock;
-            $this->data['stock_item']   = $stock_item;
-            $this->data['info']         = $this->products_model->get_enter_using_stock_info();
-            $this->data['biller']       = $this->products_model->getUsingStockProject($id);
-            $this->data['invs'] = $this->products_model->getUsingStockProjectByRef($ref_no);
-            $this->data['au_info']      = $this->products_model->getAuInfo($id);
-            $this->load->view($this->theme.'products/stock_using_issue_a5',$this->data);
-        }
-        if($type=="return"){
-            $using_stock = $this->products_model->get_enter_using_stock_by_id($id);
-            $ref_no=$using_stock->reference_no;
-            $stock_item=$this->products_model->get_enter_using_stock_item_by_ref($id);
-            $this->data['using_stock'] = $using_stock;
-            $this->data['stock_item'] = $stock_item;
-            $this->data['au_info']      = $this->products_model->getAuInfo($id);
-            $this->data['biller']       = $this->products_model->getUsingStockProject($id);
-            $this->data['invs'] = $this->products_model->getUsingStockProjectByRef($ref_no);
-            $this->load->view($this->theme.'products/stock_using_issue_a5',$this->data);
-        }
-    }
     public function print_sample_form_ppcp($id, $type)
     {
         $this->erp->checkPermissions('using_stock');
@@ -7118,6 +7126,7 @@ class Products extends MY_Controller
         }
         
     }
+
     public function product_history($product=NULL){
         $this->load->library('datatables');
         if($this->input->get('product')){
@@ -7147,5 +7156,36 @@ class Products extends MY_Controller
         }
         echo $this->datatables->generate();
     }
-    
+    public function stock_using_issue_a5($id, $type)
+    {
+        $this->erp->checkPermissions('using_stock');
+        if($type=="use"){
+            $using_stock = $this->products_model->get_enter_using_stock_by_id($id);
+            $ref_no      = $using_stock->reference_no;
+            $stock_item  = $this->products_model->get_enter_using_stock_item_by_ref($ref_no);
+
+            $this->data['using_stock']  = $using_stock;
+            $this->data['stock_item']   = $stock_item;
+            $this->data['info']         = $this->products_model->get_enter_using_stock_info();
+            $this->data['biller']       = $this->products_model->getUsingStockProject($id);
+            $this->data['invs'] = $this->products_model->getUsingStockProjectByRef($ref_no);
+            $this->data['au_info']      = $this->products_model->getAuInfo($id);
+            $this->data['getProject']    =$this->products_model->getProjectByCode($this->data['invs']->code);
+            $this->load->view($this->theme.'products/stock_using_issue_a5',$this->data);
+
+        }
+        if($type=="return"){
+			
+            $using_stock = $this->products_model->get_enter_using_stock_by_id($id);
+            $ref_no=$using_stock->reference_no;
+            $stock_item=$this->products_model->get_enter_using_stock_item_by_ref($ref_no);
+            $this->data['using_stock'] = $using_stock;
+            $this->data['stock_item'] = $stock_item;
+            $this->data['au_info']      = $this->products_model->getAuInfo($id);
+            $this->data['biller']       = $this->products_model->getUsingStockProject($id);
+            $this->data['invs'] = $this->products_model->getUsingStockProjectByRef($ref_no);
+            $this->data['getProject']    =$this->products_model->getProjectByCode($this->data['invs']->code);
+            $this->load->view($this->theme.'products/stock_using_issue_a5',$this->data);
+        }
+    }
 }

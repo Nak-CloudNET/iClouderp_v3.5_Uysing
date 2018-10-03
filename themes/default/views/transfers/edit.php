@@ -257,7 +257,7 @@
                                     </div>
 									<div class="col-md-4">
 										<div class="form-group">
-											<?= lang("to_site", "to_warehouse"); ?>
+											<?= lang("to_warehouse", "to_warehouse"); ?>
 											<?php
 											
 											echo form_dropdown('to_warehouse', $wh, (isset($_POST['to_warehouse']) ? $_POST['to_warehouse'] : $Settings->default_warehouse), 'id="to_warehouse" class="form-control input-tip select" data-placeholder="' . $this->lang->line("select") . ' ' . $this->lang->line("to_warehouse") . '" required="required" style="width:100%; pointer-events:none;" ');

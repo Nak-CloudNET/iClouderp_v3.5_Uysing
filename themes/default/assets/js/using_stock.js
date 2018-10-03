@@ -1,12 +1,20 @@
 $(document).ready(function (e) {
-	var $customer = $('#customer');
-	$customer.change(function (e) {
+    var $customer = $('#customer');
+    var $sale_invoice=$('#sale_invoice');
+    var $sale_order_invoice=$('#sale_order_invoice');
+    $customer.change(function (e) {
         __setItem('customer', $(this).val());
         //$('#slcustomer_id').val($(this).val());
     });
-	
+    $sale_invoice.change(function (e) {
+        __setItem('sale_id', $(this).val());
+        //$('#slcustomer_id').val($(this).val());
+    });
+    $sale_order_invoice.change(function (e) {
+        __setItem('sale_order_id', $(this).val());
+        //$('#slcustomer_id').val($(this).val());
+    });
     if (customer = __getItem('customer')) {
-		
         $customer.val(customer).select2({
             minimumInputLength: 1,
             data: [],
@@ -39,9 +47,83 @@ $(document).ready(function (e) {
                 }
             }
         });
-		
-    } 
-	
+
+    }
+    if (true) {
+        sale_order_id = __getItem('sale_order_id');
+        $sale_order_invoice.val(sale_order_id).select2({
+            minimumInputLength: 1,
+            data: [],
+            initSelection: function (element, callback) {
+
+                $.ajax({
+                    type: "get", async: false,
+                    url: site.base_url+"sales/getSaleOrderByRef/" + $(element).val(),
+                    dataType: "json",
+                    success: function (data) {
+                        callback(data[0]);
+                    }
+                });
+            },
+            ajax: {
+                url: site.base_url + "sales/getSaleOrderByRefNo",
+                dataType: 'json',
+                quietMillis: 15,
+                data: function (term, page) {
+                    return {
+                        term: term,
+                        limit: 10
+                    };
+                },
+                results: function (data, page) {
+                    if (data.results != null) {
+                        return {results: data.results};
+                    } else {
+                        return {results: [{id: '', text: 'No Match Found'}]};
+                    }
+                }
+            }
+        });
+
+    }
+    if (true) {
+        sale_id = __getItem('sale_id');
+        $sale_invoice.val(sale_id).select2({
+            minimumInputLength: 1,
+            data: [],
+            initSelection: function (element, callback) {
+
+                $.ajax({
+                    type: "get", async: false,
+                    url: site.base_url+"sales/getSaleByRef/" + $(element).val(),
+                    dataType: "json",
+                    success: function (data) {
+                        callback(data[0]);
+                    }
+                });
+            },
+            ajax: {
+                url: site.base_url + "sales/getSaleByRefNo",
+                dataType: 'json',
+                quietMillis: 15,
+                data: function (term, page) {
+                    return {
+                        term: term,
+                        limit: 10
+                    };
+                },
+                results: function (data, page) {
+                    if (data.results != null) {
+                        return {results: data.results};
+                    } else {
+                        return {results: [{id: '', text: 'No Match Found'}]};
+                    }
+                }
+            }
+        });
+
+    }
+
 });
 /* ---------------------- 
  * On Edit 
@@ -338,94 +420,114 @@ function loadItems() {
 		item_reason      		= '';
 		item_qty_use     		= 0;
 		item_qty_by_unit     	= '';
-        $.each(usitems, function () {
-            var item 			= this;
-            var item_id 		= site.settings.item_addition == 1 ? item.item_id : item.id;
-            usitems[item_id] 	= item;
-			var product_id 		= item.row.id, 
-				item_code 		= item.row.code, 
-				item_name 		= item.row.name, 
-				item_label 		= item.label, 
-				qoh 			= item.row.qoh, 
-				unit_name 		= item.row.unit_name, 
-				item_cost 		= item.row.cost, 
-				item_unit 		= item.row.unit,  
-				qty_plan 		= item.row.project_qty,  
-				qty_old 		= item.row.qty_old,  
-				item_proj		= item.project_qty,
-				have_plan		= item.row.have_plan,
-				stock_item_id 	= item.stock_item;
-			item_qty_use 		= formatPurDecimal(item.row.qty_use);
+        if(usitems!=null ) {
+            $.each(usitems, function () {
+                var item = this;
+                var item_id = site.settings.item_addition == 1 ? item.item_id : item.id;
+                usitems[item_id] = item;
+                var product_id = item.row.id,
+                    item_code = item.row.code,
+                    item_name = item.row.name,
+                    item_label = item.label,
+                    qoh = item.row.qoh,
+                    unit_name = item.row.unit_name,
+                    item_cost = item.row.cost,
+                    item_unit = item.row.unit,
+                    qty_plan = item.row.project_qty,
+                    qty_old = item.row.qty_old,
+                    item_proj = item.project_qty,
+                    have_plan = item.row.have_plan,
+                    stock_item_id = item.stock_item;
+                item_qty_use = formatPurDecimal(item.row.qty_use);
 
-			
-			var opt = $("<select id=\"unit\" name=\"unit\[\]\" style=\"padding-top: 2px !important;\" class=\"form-control unit\" />");
-			
-            if(item.option_unit !== false) {
-                $.each(item.option_unit, function () {
-				  if(item.row.unit == this.unit_variant){
-					$("<option />", {value: this.unit_variant, text: this.unit_variant, qty: this.qty_unit, selected: 'selected'}).appendTo(opt);
-				  }else{
-					$("<option />", {value: this.unit_variant, text: this.unit_variant, qty: this.qty_unit}).appendTo(opt);  
-				  }
-				});
-            } else {
-                $("<option />", {value: 0, text: 'n/a'}).appendTo(opt);
-                opt = opt.hide();
-            }
-			
-			var exp_date = $("<select id=\"exp\" name=\"exp\[\]\" style=\"padding-top: 2px !important;\" class=\"form-control exp\" />");
-			
-            if(item.expiry_date !== false && item.expiry_date !==undefined) {
-				$("<option />", {value: 0, text: lang.select_exp, qty: 0}).appendTo(exp_date);
-                $.each(item.expiry_date, function () {
-					if (item.row.expiry == this.expiry) {
-						$("<option />", {value: this.expiry, text: fsd(this.expiry), qty: this.quantity_balance, selected: 'selected'}).appendTo(exp_date);
-					} else {
-						$("<option />", {value: this.expiry, text: fsd(this.expiry), qty: this.quantity_balance}).appendTo(exp_date);  
-					}
-				});
-				
-            } else {
-				
-                $("<option />", {value: 0, text: 'n/a'}).appendTo(exp_date);
-                exp_date = exp_date.hide();
-            }
-			
-			
-			if(item.row.description){
-				item_description = item.row.description;
-			} else {
-				item_description = '';
-			}
-			
-			if(item.reason){
-				item_reason = item.reason;
-			}
-			
-			var row_no = (new Date).getTime();
-			
-			var newTr = $('<tr id="row_' + row_no + '" class="row_' + item_id + '" data-item-id="' + item_id + '"></tr>');
-			
-			tr_html = '<td><input type="hidden" value="'+ product_id +'" name="product_id[]"/><input type="hidden" value="'+ item_code +'" name="item_code[]"/><input type="hidden" value="'+ item_name +'" name="name[]"/><input type="hidden" value="'+ item_cost +'" name="cost[]"/> <input type="hidden" value="'+ stock_item_id +'" name="stock_item_id[]"/>'+ item_label +'</td>';
-			
-			if (site.settings.product_expiry == 1) {
-				tr_html += '<td>'+(exp_date.get(0).outerHTML)+'</td>';
-			}
-			
-			tr_html += '<td><input type="text" value="'+ item_description +'" class="form-control" name="description[]"/></td>';
-			
-			tr_html += '<td class="text-center">'+ formatQuantity2(qoh) +'</td>';
-			
-			tr_html += '<td><input type="text" value="'+ item_qty_use +'" class="form-control qty_use" name="qty_use[]" style="text-align:center !important;"/><input type="hidden" value="'+ qty_plan +'" class="qty_project" name="qty_project[]" /><input type="hidden" value="'+ qty_old +'" class="qty_old" name="qty_old[]" /><input type="hidden" value="'+ have_plan +'" class="have_plan" name="have_plan[]" /><input type="hidden" value="'+qoh+'" name="qoh[]" /></td>';
-			
-			tr_html += '<td>'+(opt.get(0).outerHTML)+'</td>';
-			
-			tr_html += '<td class="text-center"><i class="fa fa-times tip usdel btn_delete" id="' + product_id + '" title="Remove" style="cursor:pointer;"></i></td>';
-			count += 1;
-			newTr.html(tr_html);
-            newTr.appendTo("#UsData");
-	
-        });
+
+                var opt = $("<select id=\"unit\" name=\"unit\[\]\" style=\"padding-top: 2px !important;\" class=\"form-control unit\" />");
+
+                if (item.option_unit !== false) {
+                    $.each(item.option_unit, function () {
+                        if (item.row.unit == this.unit_variant) {
+                            $("<option />", {
+                                value: this.unit_variant,
+                                text: this.unit_variant,
+                                qty: this.qty_unit,
+                                selected: 'selected'
+                            }).appendTo(opt);
+                        } else {
+                            $("<option />", {
+                                value: this.unit_variant,
+                                text: this.unit_variant,
+                                qty: this.qty_unit
+                            }).appendTo(opt);
+                        }
+                    });
+                } else {
+                    $("<option />", {value: 0, text: 'n/a'}).appendTo(opt);
+                    opt = opt.hide();
+                }
+
+                var exp_date = $("<select id=\"exp\" name=\"exp\[\]\" style=\"padding-top: 2px !important;\" class=\"form-control exp\" />");
+
+                if (item.expiry_date !== false && item.expiry_date !== undefined) {
+                    $("<option />", {value: 0, text: lang.select_exp, qty: 0}).appendTo(exp_date);
+                    $.each(item.expiry_date, function () {
+                        if (item.row.expiry == this.expiry) {
+                            $("<option />", {
+                                value: this.expiry,
+                                text: fsd(this.expiry),
+                                qty: this.quantity_balance,
+                                selected: 'selected'
+                            }).appendTo(exp_date);
+                        } else {
+                            $("<option />", {
+                                value: this.expiry,
+                                text: fsd(this.expiry),
+                                qty: this.quantity_balance
+                            }).appendTo(exp_date);
+                        }
+                    });
+
+                } else {
+
+                    $("<option />", {value: 0, text: 'n/a'}).appendTo(exp_date);
+                    exp_date = exp_date.hide();
+                }
+
+
+                if (item.row.description) {
+                    item_description = item.row.description;
+                } else {
+                    item_description = '';
+                }
+
+                if (item.reason) {
+                    item_reason = item.reason;
+                }
+
+                var row_no = (new Date).getTime();
+
+                var newTr = $('<tr id="row_' + row_no + '" class="row_' + item_id + '" data-item-id="' + item_id + '"></tr>');
+
+                tr_html = '<td><input type="hidden" value="' + product_id + '" name="product_id[]"/><input type="hidden" value="' + item_code + '" name="item_code[]"/><input type="hidden" value="' + item_name + '" name="name[]"/><input type="hidden" value="' + item_cost + '" name="cost[]"/> <input type="hidden" value="' + stock_item_id + '" name="stock_item_id[]"/>' + item_label + '</td>';
+
+                if (site.settings.product_expiry == 1) {
+                    tr_html += '<td>' + (exp_date.get(0).outerHTML) + '</td>';
+                }
+
+                tr_html += '<td><input type="text" value="' + item_description + '" class="form-control" name="description[]"/></td>';
+
+                tr_html += '<td class="text-center">' + formatQuantity2(qoh) + '</td>';
+
+                tr_html += '<td><input type="text" value="' + item_qty_use + '" class="form-control qty_use" name="qty_use[]" style="text-align:center !important;"/><input type="hidden" value="' + qty_plan + '" class="qty_project" name="qty_project[]" /><input type="hidden" value="' + qty_old + '" class="qty_old" name="qty_old[]" /><input type="hidden" value="' + have_plan + '" class="have_plan" name="have_plan[]" /><input type="hidden" value="' + qoh + '" name="qoh[]" /></td>';
+
+                tr_html += '<td>' + (opt.get(0).outerHTML) + '</td>';
+
+                tr_html += '<td class="text-center"><i class="fa fa-times tip usdel btn_delete" id="' + product_id + '" title="Remove" style="cursor:pointer;"></i></td>';
+                count += 1;
+                newTr.html(tr_html);
+                newTr.appendTo("#UsData");
+
+            });
+        }
     }
 }
 

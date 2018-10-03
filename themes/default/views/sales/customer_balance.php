@@ -108,33 +108,33 @@
         <?= form_submit('performAction', 'performAction', 'id="action-form-submit"') ?>
     </div>
     <?= form_close() ?>
-	<div class="box-content">
-        <div class="row">
-            <div class="col-lg-12">
-				<p class="introtext"><?= lang('list_results'); ?></p>
-				 <div id="form">
+	 <div class="box-content">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <p class="introtext"><?= lang('list_results'); ?></p>
+                            <div id="form">
 
-                            <?php echo form_open("sales/customer_balance"); ?>
-                            <div class="row">                            
-								<div class="col-sm-4">
-                                    <div class="form-group">
-                                        <label class="control-label" for="biller"><?= lang("customer"); ?></label>
-                                        <?php
-                                        $cus["0"] = lang('all');
-                                        foreach ($customers as $customer) {
-                                            $cus[$customer->id] =  $customer->name;
-                                        }
-                                        echo form_dropdown('customer', $cus, (isset($_POST['customer']) ? $_POST['customer'] : ""), 'class="form-control" id="biller" data-placeholder="' . $this->lang->line("select") . " " . $this->lang->line("customer") . '"');
-                                        ?>
-                                    </div>
-                                </div>
-                                <?php if($this->Settings->product_serial) { ?>
+                                <?php echo form_open("sales/customer_balance"); ?>
+                                <div class="row">
                                     <div class="col-sm-4">
                                         <div class="form-group">
-                                            <?= lang('serial_no', 'serial'); ?>
-                                            <?= form_input('serial', '', 'class="form-control tip" id="serial"'); ?>
+                                            <label class="control-label" for="biller"><?= lang("customer"); ?></label>
+                                            <?php
+                                            $cus["0"] = lang('all');
+                                            foreach ($customers as $customer) {
+                                                $cus[$customer->id] =  $customer->name;
+                                            }
+                                            echo form_dropdown('customer', $cus, (isset($_POST['customer']) ? $_POST['customer'] : ""), 'class="form-control" id="biller" data-placeholder="' . $this->lang->line("select") . " " . $this->lang->line("customer") . '"');
+                                            ?>
                                         </div>
                                     </div>
+                                    <?php if($this->Settings->product_serial) { ?>
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <?= lang('serial_no', 'serial'); ?>
+                                                <?= form_input('serial', '', 'class="form-control tip" id="serial"'); ?>
+                                            </div>
+                                        </div>
                                     <?php } ?>
                                     <div class="col-sm-4">
                                         <div class="form-group">
@@ -148,16 +148,16 @@
                                             <?php echo form_input('end_date', (isset($_POST['end_date']) ? $_POST['end_date'] : ""), 'class="form-control datetime" id="end_date"'); ?>
                                         </div>
                                     </div>
-                            </div>
+                                </div>
                                 <div class="form-group">
                                     <div
-                                    class="controls"> <?php echo form_submit('submit_sale_report', $this->lang->line("submit"), 'class="btn btn-primary"'); ?> </div>
+                                            class="controls"> <?php echo form_submit('submit_sale_report', $this->lang->line("submit"), 'class="btn btn-primary"'); ?> </div>
                                 </div>
                                 <?php echo form_close(); ?>
 
-                        </div>               
+                            </div>
 
-                <div class="table-responsive">
+                            <div class="table-responsive">
                     <table id="CusData" cellpadding="0" cellspacing="0" border="0"
                            class="table table-bordered table-condensed table-hover table-striped reports-table">
                         <thead>

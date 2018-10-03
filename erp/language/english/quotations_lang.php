@@ -26,6 +26,7 @@ $lang['quote_updated']               		= "Quotation successfully updated";
 $lang['quote_deleted']                		= "Quotation successfully deleted";
 $lang['quotes_deleted']              		= "Quotations successfully deleted";
 $lang['quote_details'] = "Quotation Detail";
+
 $lang['email_quote']                 		= "Email Quotation";
 $lang['view_quote_details']       			= "View Quotation Details";
 $lang['quote_no']                       	= "Quotation No";
@@ -72,6 +73,6 @@ $lang['product_code']					    = "Product Code";
 $lang['subtotal']					        = "SUBTOTAL";
 $lang['quote_vat_logo']					    = "Quote Vat Logo";
 $lang['approve'] 							= "Approved";
-$lang['quote_discount'] 					= "Discount (%)";
+$lang['quote_discount'] 					= "Discount";
 $lang['contact'] 							= "Contact";
 $lang['camera_city'] 						= "Camera City";

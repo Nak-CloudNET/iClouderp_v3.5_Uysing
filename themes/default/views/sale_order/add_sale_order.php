@@ -1,4 +1,3 @@
-<?php //$this->erp->print_arrays($sale_order_items); ?>
 <script type="text/javascript">
     var count = 1, an = 1, product_variant = 0, DT = <?= $Settings->default_tax_rate ?>,
         product_tax = 0, invoice_tax = 0, total_discount = 0, total = 0, allow_discount = <?= ($Owner || $Admin || $this->session->userdata('allow_discount')) ? 1 : 0; ?>,
@@ -227,10 +226,6 @@
 		if (saleman = __getItem('saleman')) {
             $('#slsaleman').val(saleman);
         }
-		//if (tax_type = __getItem('tax_type')) {
-            //$('#tax_type').val(tax_type);
-        //}
-		
 		if (sale_type = __getItem('sale_type')) {
             $('#sale_type').val(sale_type);
         }
@@ -839,7 +834,7 @@
 									</div>
 							</div>
 							--> 
-						<!--
+						
 						<div class="col-sm-4">
                             <div class="form-group">
                                 <?= lang("payment_term", "slpayment_term"); ?>
@@ -848,10 +843,10 @@
                                     foreach ($payment_term as $term) {
                                         $ptr[$term->id] = $term->description;
                                     }
-									echo form_dropdown('payment_term', $ptr,$quote->payment_term?$quote->payment_term:"", 'id="slpayment_term" data-placeholder="' . lang("payment_term_tip") .  '" class="form-control input-tip select" style="width:100%;"');
-									//echo form_input('payment_term',$ptr,'11', 'class="form-control tip" data-trigger="focus" data-placement="top" title="' . lang('payment_term_tip') . '" id="slpayment_term"'); ?>
+									echo form_dropdown('payment_term', $ptr,$quotes->payment_term?$quotes->payment_term:"", 'id="slpayment_term" data-placeholder="' . lang("payment_term_tip") .  '" class="form-control input-tip select" style="width:100%;"');?>
                             </div>
                         </div>
+                        <!--
 						<div class="col-sm-4">
                             <div class="form-group">
                                 <?= lang("payment_status", "slpayment_status"); ?>
@@ -1221,6 +1216,7 @@
 
 							<div class="col-sm-8">
 								<input type="text" class="form-control" id="pprice">
+                                <input type="hidden" class="form-control" id="pcost">
 							</div>
 						</div>
 					<?php } ?>
@@ -1446,8 +1442,65 @@
         });
 		
 		$('#before_sub').click(function (e) {
-			
+
 			e.preventDefault();
+            var message = '';
+            var help = false;
+            var alert_price= <?= $setting->alert_price_less_than_cost ?>;
+            if(alert_price)
+            {
+                $('.ruprice').each(function() {
+                    var tr = $(this).closest('tr');
+                    var price = $(this).val() - 0;
+                    var cost = tr.find('.rucost').val() - 0;
+                    if(price <= cost) {
+                        var product_name = $(this).parent().parent().closest('tr').find('.rname').val();
+                        message += 'Some products price is less than cost )!\n';
+                        help = true;
+                    }
+                });
+            }
+
+          /*  if (help) {
+                message += "\n Do you want to continue your sale order? \n";
+                message += "Press \"OK\" is continue and \"Cancel\" is recheck!!!";
+                var result = confirm(message);
+                if (result) {
+                    //return false;
+                } else {
+                    return false;
+                }
+            }*/
+            if(help == false){
+                $('#add_sale').trigger('click');
+            }else{
+                bootbox.prompt({
+                    title: message + "Please enter password to continue",
+                    inputType: 'password',
+                    className: "medium",
+                    callback: function (result) {
+                        $.ajax({
+                            type: 'get',
+                            url: '<?= site_url('auth/checkPassDiscount'); ?>',
+                            dataType: "json",
+                            data: {
+                                password: result
+                            },
+                            success: function (data) {
+                                if(data == 1){
+                                    $('#add_sale').trigger('click');
+                                }else{
+                                    bootbox.alert({
+                                        message: "Incorrect password!",
+                                        size: 'small'
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
+                return false;
+            }
 			/*var message = '';
 			var help = false;
 			$('.qty_rec').each(function() {

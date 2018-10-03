@@ -9,7 +9,7 @@
 	}
 </style>
 <div class="modal-dialog modal-lg no-modal-header">
-    <div class="modal-content">
+
         <div class="modal-body print">
             <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-2x">&times;</i>
             </button>

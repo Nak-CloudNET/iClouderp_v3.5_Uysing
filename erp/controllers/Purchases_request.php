@@ -488,8 +488,8 @@ class Purchases_request extends MY_Controller
 	***************** Update Function add
 	***************** 05/06/2017
 	*****************/
-	
-	public function add($quote_id = null)
+
+    public function add($quote_id = null)
     {
         $this->erp->checkPermissions('add', NULL, 'purchase_request');
 
@@ -497,10 +497,10 @@ class Purchases_request extends MY_Controller
         $this->form_validation->set_rules('warehouse', $this->lang->line("warehouse"), 'required|is_natural_no_zero');
         $this->form_validation->set_rules('supplier', $this->lang->line("supplier"), 'required');
         $this->form_validation->set_rules('biller', $this->lang->line("biller"), 'required');
-		$this->form_validation->set_rules('reference_no', $this->lang->line("reference_no"), 'required|is_unique[purchases_request.reference_no]');
-		
-		$this->session->unset_userdata('csrf_token');
-		
+        $this->form_validation->set_rules('reference_no', $this->lang->line("reference_no"), 'required|is_unique[purchases_request.reference_no]');
+
+        $this->session->unset_userdata('csrf_token');
+
         if ($this->form_validation->run() == true) {
             $quantity 			= "quantity";
             $product 			= "product";
@@ -508,29 +508,29 @@ class Purchases_request extends MY_Controller
             $tax_rate 			= "tax_rate";
             $biller_id 			= $this->input->post('biller');
             $reference 			= $this->input->post('reference_no') ? $this->input->post('reference_no') : $this->site->getReference('pq',$biller_id);
-			$payment_term 		= $this->input->post('payment_term');
-			
+            $payment_term 		= $this->input->post('payment_term');
+
             if ($this->Owner || $this->Admin || $this->Settings->allow_change_date == 1) {
                 $date 		= $this->erp->fld(trim($this->input->post('date')));
             } else {
                 $date 		= date('Y-m-d H:i:s');
             }
             $warehouse_id 		= $this->input->post('warehouse');
-            $supplier_id 		= $this->input->post('supplier'); 
-			$rsupplier_id 		= $this->input->post('rsupplier_id');
-			
-			//$this->erp->print_arrays($rsupplier_id);
+            $supplier_id 		= $this->input->post('supplier');
+            $rsupplier_id 		= $this->input->post('rsupplier_id');
+
+            //$this->erp->print_arrays($rsupplier_id);
             $status 			= $this->input->post('status') ? $this->input->post('status') : 'requested';
             $shipping 			= $this->input->post('shipping') ? $this->input->post('shipping') : 0;
             $payment_status 	= $this->input->post('payment_status');
-            
-			$supplier_details 	= $this->site->getCompanyByID($supplier_id);
+
+            $supplier_details 	= $this->site->getCompanyByID($supplier_id);
             $supplier 			= $supplier_details->company != ''  ? $supplier_details->company : $supplier_details->name;
             $note 				= $this->input->post('note');
-			$variant_id 		= $this->input->post('variant_id');
+            $variant_id 		= $this->input->post('variant_id');
 
-			//$variant_id 		= array_filter($variant_id);
-			
+            //$variant_id 		= array_filter($variant_id);
+
             $total 				= 0;
             $product_tax 		= 0;
             $order_tax 			= 0;
@@ -541,33 +541,33 @@ class Purchases_request extends MY_Controller
             for ($r = 0; $r < $i; $r++) {
                 $item_code 		= $_POST['product'][$r];
                 $unit_cost 		= $this->erp->formatPurDecimal($_POST['unit_cost'][$r]);
-				$unit_cost_real = $unit_cost;
+                $unit_cost_real = $unit_cost;
                 $real_unit_cost = $this->erp->formatPurDecimal($_POST['real_unit_cost'][$r]);
                 $item_quantity  = $_POST['quantity'][$r];
-				
-				$serial_no  	= $_POST['serial'][$r];
-				$ucost_t  	= $_POST['ucost_t'][$r];
+
+                $serial_no  	= $_POST['serial'][$r];
+                $ucost_t  	= $_POST['ucost_t'][$r];
                 $p_supplier 	= $_POST['rsupplier_id'][$r];
-				$p_price    	= $_POST['price'][$r];
+                $p_price    	= $_POST['price'][$r];
                 $p_type     	= $_POST['type'][$r];
                 $pro_note     	= $_POST['pro_note'][$r];
-				$tax_method		= $_POST['tax_method'][$r];
-				$item_peice 	= $_POST['piece'][$r];
-				$item_wpeice 	= $_POST['wpiece'][$r];
+                $tax_method		= $_POST['tax_method'][$r];
+                $item_peice 	= $_POST['piece'][$r];
+                $item_wpeice 	= $_POST['wpiece'][$r];
 
                 $item_option 	= isset($_POST['product_option'][$r]) ? $_POST['product_option'][$r] : NULL;
-				
-				if($item_option == 'undefined'){
-					$item_option = NULL;
-				}
-				
+
+                if($item_option == 'undefined'){
+                    $item_option = NULL;
+                }
+
                 $item_tax_rate 	= isset($_POST['product_tax'][$r]) ? $_POST['product_tax'][$r] : null;
                 $item_discount 	= isset($_POST['rdiscount'][$r]) ? $_POST['rdiscount'][$r] : null;
-				
+
                 $item_expiry 	= (isset($_POST['expiry'][$r]) && !empty($_POST['expiry'][$r])) ? $this->erp->fsd($_POST['expiry'][$r]) : null;
 
                 if (isset($item_code) && isset($real_unit_cost) && isset($unit_cost) && isset($item_quantity)) {
-					$product_details = $this->purchases_model->getProductByCode($item_code);
+                    $product_details = $this->purchases_model->getProductByCode($item_code);
                     if ($item_expiry) {
                         $today = date('Y-m-d');
                         if ($item_expiry <= $today) {
@@ -597,8 +597,8 @@ class Purchases_request extends MY_Controller
                     $pr_item_tax 		= 0;
                     $item_tax 			= 0;
                     $tax 				= "";
-					$ptax_method 		= ($tax_method == "" ? $product_details->tax_method : $tax_method);
-					
+                    $ptax_method 		= ($tax_method == "" ? $product_details->tax_method : $tax_method);
+
                     if (isset($item_tax_rate) && $item_tax_rate != 0) {
                         $pr_tax = $item_tax_rate;
                         $tax_details = $this->site->getTaxRateByID($pr_tax);
@@ -607,20 +607,20 @@ class Purchases_request extends MY_Controller
                             if ($product_details && $ptax_method == 1) {
                                 $item_tax = (($unit_cost) * $tax_details->rate) / 100;
                                 $tax = $tax_details->rate . "%";
-								$item_net_cost = $unit_cost;
+                                $item_net_cost = $unit_cost;
                             } else {
                                 $item_tax = (($unit_cost) * $tax_details->rate) / (100 + $tax_details->rate);
                                 $tax = $tax_details->rate . "%";
-								$item_net_cost = $unit_cost - $item_tax;
-								
+                                $item_net_cost = $unit_cost - $item_tax;
+
                             }
-							
+
                         } elseif ($tax_details->type == 2) {
-							
+
                             if ($product_details && $ptax_method == 1) {
                                 $item_tax = (($unit_cost) * $tax_details->rate) / 100;
                                 $tax = $tax_details->rate . "%";
-								$item_net_cost = $unit_cost;
+                                $item_net_cost = $unit_cost;
                             } else {
                                 $item_tax = (($unit_cost) * $tax_details->rate) / (100 + $tax_details->rate);
                                 $tax = $tax_details->rate . "%";
@@ -629,97 +629,97 @@ class Purchases_request extends MY_Controller
                             $item_tax = $this->erp->formatPurDecimal($tax_details->rate);
                             $tax = $tax_details->rate;
                         }
-						
+
                         $pr_item_tax = $this->erp->formatPurDecimal($item_tax * $item_quantity);
                     }
-					
-					$quantity_balance = 0;
-					if($item_option != 0) {
-						$row = $this->purchases_model->getVariantQtyById($item_option);
-						$quantity_balance = $item_quantity * $row->qty_unit;
-					}else{
-						$quantity_balance = $item_quantity;
-					}
+
+                    $quantity_balance = 0;
+                    if($item_option != 0) {
+                        $row = $this->purchases_model->getVariantQtyById($item_option);
+                        $quantity_balance = $item_quantity * $row->qty_unit;
+                    }else{
+                        $quantity_balance = $item_quantity;
+                    }
                     $product_tax += $pr_item_tax;
-					
-					if( $ptax_method == 0){
-						$subtotal = (($unit_cost_real * $item_quantity) ) - $pr_item_discount;
-					}else{
-						$subtotal = (($unit_cost_real * $item_quantity) + $pr_item_tax) - $pr_item_discount;
-					}
-					$setting = $this->site->get_setting();
-					$ohmygod = $this->site->getPurchasedItems($product_details->id, $warehouse_id, $item_option);
-					
-					if(!$setting->accounting_method == 2){
-						$real_unit_costs = $this->site->calculateCost($unit_cost, $item_quantity, $shipping);
-					} else {
-						$real_unit_costs = $this->site->calculateAVCosts($product_details->id, $warehouse_id, $item_net_cost, $unit_cost, $item_quantity, $product_details->name, $item_option, $item_quantity, $shipping);
-					}
-					
-					$products[] = array(
-						'product_id' 		=> $product_details->id,
-						'product_code' 		=> $item_code,
-						'product_name'		=> $product_details->name,
-						'option_id' 		=> $item_option,
-						'net_unit_cost' 	=> $item_net_cost,
-						'unit_cost' 		=> $unit_cost_real,
-						'quantity' 			=> $item_quantity,
-						'quantity_balance' 	=> $quantity_balance,
-						'warehouse_id' 		=> $warehouse_id,
-						'item_tax' 			=> $pr_item_tax,
-						'tax_rate_id' 		=> $pr_tax,
-						'tax' 				=> $tax,
-						'discount' 			=> $item_discount,
-						'item_discount' 	=> $pr_item_discount,
-						'subtotal' 			=> $this->erp->formatPurDecimal($subtotal),
-						'expiry' 			=> $item_expiry,
-						'real_unit_cost' 	=> $real_unit_costs,
-						'date' 				=> date('Y-m-d', strtotime($date)),
-						'tax_method'		=> $tax_method,
-						'status' 			=> $status,
-						'price' 			=> $p_price,
-						'note' 				=> $pro_note,
-						'type' 				=> $p_type,
-						'piece'				=> $item_peice,
-						'wpiece' 			=> $item_wpeice,
-						'unitcost_ton' 			=> $ucost_t
-					);
-					
-					$serial[] = array(
-						'product_id'    	=> $product_details->id,
-						'serial_number' 	=> $serial_no,
-						'warehouse'     	=> $warehouse_id,
-						'biller_id'     	=> $this->session->userdata('biller_id')?$this->session->userdata('biller_id'):$this->Settings->default_biller,
-						'serial_status' 	=> 1
-						
-					);
-					
-					//$this->erp->print_arrays($products);
+
+                    if( $ptax_method == 0){
+                        $subtotal = (($unit_cost_real * $item_quantity) ) - $pr_item_discount;
+                    }else{
+                        $subtotal = (($unit_cost_real * $item_quantity) + $pr_item_tax) - $pr_item_discount;
+                    }
+                    $setting = $this->site->get_setting();
+                    $ohmygod = $this->site->getPurchasedItems($product_details->id, $warehouse_id, $item_option);
+
+                    if(!$setting->accounting_method == 2){
+                        $real_unit_costs = $this->site->calculateCost($unit_cost, $item_quantity, $shipping);
+                    } else {
+                        $real_unit_costs = $this->site->calculateAVCosts($product_details->id, $warehouse_id, $item_net_cost, $unit_cost, $item_quantity, $product_details->name, $item_option, $item_quantity, $shipping);
+                    }
+
+                    $products[] = array(
+                        'product_id' 		=> $product_details->id,
+                        'product_code' 		=> $item_code,
+                        'product_name'		=> $product_details->name,
+                        'option_id' 		=> $item_option,
+                        'net_unit_cost' 	=> $item_net_cost,
+                        'unit_cost' 		=> $unit_cost_real,
+                        'quantity' 			=> $item_quantity,
+                        'quantity_balance' 	=> $quantity_balance,
+                        'warehouse_id' 		=> $warehouse_id,
+                        'item_tax' 			=> $pr_item_tax,
+                        'tax_rate_id' 		=> $pr_tax,
+                        'tax' 				=> $tax,
+                        'discount' 			=> $item_discount,
+                        'item_discount' 	=> $pr_item_discount,
+                        'subtotal' 			=> $this->erp->formatPurDecimal($subtotal),
+                        'expiry' 			=> $item_expiry,
+                        'real_unit_cost' 	=> $real_unit_costs,
+                        'date' 				=> date('Y-m-d', strtotime($date)),
+                        'tax_method'		=> $tax_method,
+                        'status' 			=> $status,
+                        'price' 			=> $p_price,
+                        'note' 				=> $pro_note,
+                        'type' 				=> $p_type,
+                        'piece'				=> $item_peice,
+                        'wpiece' 			=> $item_wpeice,
+                        'unitcost_ton' 			=> $ucost_t
+                    );
+
+                    $serial[] = array(
+                        'product_id'    	=> $product_details->id,
+                        'serial_number' 	=> $serial_no,
+                        'warehouse'     	=> $warehouse_id,
+                        'biller_id'     	=> $this->session->userdata('biller_id')?$this->session->userdata('biller_id'):$this->Settings->default_biller,
+                        'serial_status' 	=> 1
+
+                    );
+
+                    //$this->erp->print_arrays($products);
                     $total += $subtotal;
                 }
             }
-			
-			if($setting->accounting_method == 2 || $shipping){
-				$c = count($products);
-				
-				$t_po_item_amount = 0;
-				foreach($products as $p){
-					$t_po_item_amount += $p['subtotal'];
-				}
-				for($i = 0; $i < $c; $i++){
-					$item_option = $_POST['product_option'][$i];
-					$unitCost = $this->erp->formatPurDecimal($_POST['unit_cost'][$i]);
-					$costunit = $this->site->calculateAverageCost($products[$i]['product_id'], $unitCost, $products[$i]['quantity'], $c, $products[$i]['item_discount'], $order_discount, $shipping, $t_po_item_amount, $item_option);
-					$products[$i]['real_unit_cost'] = $costunit;
-				}
-			}
-			
+
+            if($setting->accounting_method == 2 || $shipping){
+                $c = count($products);
+
+                $t_po_item_amount = 0;
+                foreach($products as $p){
+                    $t_po_item_amount += $p['subtotal'];
+                }
+                for($i = 0; $i < $c; $i++){
+                    $item_option = $_POST['product_option'][$i];
+                    $unitCost = $this->erp->formatPurDecimal($_POST['unit_cost'][$i]);
+                    $costunit = $this->site->calculateAverageCost($products[$i]['product_id'], $unitCost, $products[$i]['quantity'], $c, $products[$i]['item_discount'], $order_discount, $shipping, $t_po_item_amount, $item_option);
+                    $products[$i]['real_unit_cost'] = $costunit;
+                }
+            }
+
             if (empty($products)) {
                 $this->form_validation->set_rules('product', lang("order_items"), 'required');
             } else {
                 krsort($products);
             }
-			
+
             if ($this->input->post('discount')) {
                 $order_discount_id = $this->input->post('discount');
                 $opos = strpos($order_discount_id, $percentage);
@@ -732,9 +732,9 @@ class Purchases_request extends MY_Controller
             } else {
                 $order_discount_id = null;
             }
-            
-			$total_discount = $this->erp->formatPurDecimal($order_discount + $product_discount);
-			
+
+            $total_discount = $this->erp->formatPurDecimal($order_discount + $product_discount);
+
             if ($this->Settings->tax2 != 0) {
                 $order_tax_id = $this->input->post('order_tax');
                 if ($order_tax_details = $this->site->getTaxRateByID($order_tax_id)) {
@@ -748,13 +748,13 @@ class Purchases_request extends MY_Controller
             } else {
                 $order_tax_id = null;
             }
-			
+
             $total_tax = $this->erp->formatPurDecimal($product_tax + $order_tax);
             $grand_total = $this->erp->formatPurDecimal($total);
             $data = array(
-				'biller_id' 		=> $biller_id,  
-				'reference_no' 		=> $reference,
-				'payment_term' 		=> $payment_term,
+                'biller_id' 		=> $biller_id,
+                'reference_no' 		=> $reference,
+                'payment_term' 		=> $payment_term,
                 'date' 				=> $date,
                 'supplier_id' 		=> $supplier_id,
                 'supplier' 			=> $supplier,
@@ -775,7 +775,7 @@ class Purchases_request extends MY_Controller
                 'payment_status' 	=> $payment_status,
                 'created_by' 		=> $this->session->userdata('user_id'),
             );
-			
+
             if ($_FILES['document']['size'] > 0) {
                 $this->load->library('upload');
                 $config['upload_path'] 		= $this->digital_upload_path;
@@ -791,14 +791,14 @@ class Purchases_request extends MY_Controller
                 }
                 $photo = $this->upload->file_name;
                 $data['attachment'] 		= $photo;
-            } 
-			//$this->erp->print_arrays($data, $products);
-        } 
-        
-		if ($this->form_validation->run() == true && $this->purchases_request_model->addPurchaseRequest($data, $products)) {
-			if($this->Settings->purchase_serial){
-				$this->purchases_model->addSerial($serial);
-			}
+            }
+            //$this->erp->print_arrays($data, $products);
+        }
+
+        if ($this->form_validation->run() == true && $this->purchases_request_model->addPurchaseRequest($data, $products)) {
+            if($this->Settings->purchase_serial){
+                $this->purchases_model->addSerial($serial);
+            }
             $this->session->set_userdata('remove_polsr', '1');
             $this->session->set_flashdata('message', $this->lang->line("purchase_added"));
             redirect('purchases_request');
@@ -809,7 +809,7 @@ class Purchases_request extends MY_Controller
                 $c = rand(100000, 9999999);
                 foreach ($items as $item) {
                     $row = $this->site->getProductByID($item->product_id);
-					
+
                     if ($row->type == 'combo') {
                         $combo_items = $this->purchases_model->getProductComboItems($row->id, $warehouse_id);
                         foreach ($combo_items as $citem) {
@@ -865,39 +865,39 @@ class Purchases_request extends MY_Controller
                         } else {
                             $pr[$ri] = array('id' => $c, 'item_id' => $row->id, 'label' => $row->name . " (" . $row->code . ")", 'row' => $row, 'tax_rate' => false, 'options' => $options, 'suppliers' => '' ,'supplier_id' => '');
                         }
-						
+
                         $c++;
                     }
                 }
                 $this->data['quote_items'] = json_encode($pr);
             }
-			
+
             $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
             $this->data['quote_id'] = $quote_id;
-            
-			//$this->erp->print_arrays($psupplier);
+
+            //$this->erp->print_arrays($psupplier);
             $this->data['categories'] = $this->site->getAllCategories();
-			$this->data['unit'] = $this->purchases_model->getUnits();
-			$this->data['customers'] = $this->site->getCustomers();
+            $this->data['unit'] = $this->purchases_model->getUnits();
+            $this->data['customers'] = $this->site->getCustomers();
             $this->data['tax_rates'] = $this->site->getAllTaxRates();
             $this->data['warehouses'] = $this->site->getAllWarehouses();
-			$this->data['payment_term'] = $this->site->getAllPaymentTerm();
-			$this->data['billers'] = $this->site->getAllCompanies('biller');
-			$this->data['suppliers'] = $this->site->getAllSuppliers('supplier');
+            $this->data['payment_term'] = $this->site->getAllPaymentTerm();
+            $this->data['billers'] = $this->site->getAllCompanies('biller');
+            $this->data['suppliers'] = $this->site->getAllSuppliers('supplier');
 
             if ($this->Owner || $this->Admin || !$this->session->userdata('biller_id')){
-				$biller_id = $this->site->get_setting()->default_biller;
-				$this->data['ponumber'] = $this->site->getReference('pq',$biller_id);
-				$this->data['payment_ref'] = $this->site->getReference('pp',$biller_id);
-			}else{
-				$biller_id = $this->session->userdata('biller_id');
-				$this->data['ponumber'] = $this->site->getReference('pq',$biller_id);
-				$this->data['payment_ref'] = $this->site->getReference('pp',$biller_id);
-			}
-			
+                $biller_id = $this->site->get_setting()->default_biller;
+                $this->data['ponumber'] = $this->site->getReference('pq',$biller_id);
+                $this->data['payment_ref'] = $this->site->getReference('pp',$biller_id);
+            }else{
+                $biller_id = $this->session->userdata('biller_id');
+                $this->data['ponumber'] = $this->site->getReference('pq',$biller_id);
+                $this->data['payment_ref'] = $this->site->getReference('pp',$biller_id);
+            }
+
             $this->load->helper('string');
             $value = random_string('alnum', 20);
-			
+
             $this->session->set_userdata('user_csrf', $value);
             $this->data['csrf'] = $this->session->userdata('user_csrf');
             $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('purchase_request'), 'page' => lang('purchase_request')), array('link' => '#', 'page' => lang('add_purchase_request')));
@@ -905,21 +905,21 @@ class Purchases_request extends MY_Controller
             $this->page_construct('purchase_request/add', $meta, $this->data);
         }
     }
-	
-	/**************** Nak 
+
+    /**************** Nak
 	***************** Update Function edit
 	***************** 05/09/2017
 	*****************/
-	
-	public function edit($id = null)
+
+    public function edit($id = null)
     {
         $this->erp->checkPermissions('edit', NULL, 'purchase_request');
 
         $this->form_validation->set_message('is_natural_no_zero', $this->lang->line("no_zero_required"));
         $this->form_validation->set_rules('warehouse', $this->lang->line("warehouse"), 'required|is_natural_no_zero');
         $this->form_validation->set_rules('supplier', $this->lang->line("supplier"), 'required');
-		$this->form_validation->set_rules('biller', $this->lang->line("biller"), 'required');
-		
+        $this->form_validation->set_rules('biller', $this->lang->line("biller"), 'required');
+
         $this->session->unset_userdata('csrf_token');
         if ($this->form_validation->run() == true) {
             $quantity = "quantity";
@@ -927,28 +927,28 @@ class Purchases_request extends MY_Controller
             $unit_cost = "unit_cost";
             $tax_rate = "tax_rate";
             $reference = $this->input->post('reference_no') ? $this->input->post('reference_no') : $this->site->getReference('pq');
-			$payment_term = $this->input->post('payment_term');
-			
+            $payment_term = $this->input->post('payment_term');
+
             if ($this->Owner || $this->Admin || $this->Settings->allow_change_date == 1) {
                 $date = $this->erp->fld(trim($this->input->post('date')));
             } else {
                 $date = date('Y-m-d H:i:s');
             }
-			
+
             $warehouse_id = $this->input->post('warehouse');
             $supplier_id = $this->input->post('supplier');
-			$rsupplier_id = $this->input->post('rsupplier_id');
-			$biller_id = $this->input->post('biller');
+            $rsupplier_id = $this->input->post('rsupplier_id');
+            $biller_id = $this->input->post('biller');
             $status = $this->input->post('status') ? $this->input->post('status') : 'requested';
             $shipping = $this->input->post('shipping') ? $this->input->post('shipping') : 0;
             $payment_status = $this->input->post('payment_status');
-            
-			$supplier_details = $this->site->getCompanyByID($supplier_id);
+
+            $supplier_details = $this->site->getCompanyByID($supplier_id);
             $supplier = $supplier_details->company != '-'  ? $supplier_details->company : $supplier_details->name;
-            
+
             $note = $this->input->post('note');
-			$variant_id = $this->input->post('variant_id');
-			
+            $variant_id = $this->input->post('variant_id');
+
             $total = 0;
             $product_tax = 0;
             $order_tax = 0;
@@ -960,31 +960,31 @@ class Purchases_request extends MY_Controller
                 $item_code 		= $_POST['product'][$r];
                 $item_net_cost 	= $_POST['net_cost'][$r];
                 $unit_cost 		= $_POST['unit_cost'][$r];
-				$unit_cost_real = $unit_cost;
+                $unit_cost_real = $unit_cost;
                 $real_unit_cost = $_POST['real_unit_cost'][$r];
                 $item_quantity 	= $_POST['quantity'][$r];
                 $ucost_t 	= $_POST['ucost_t'][$r];
 
-				$serial_no 		= isset($_POST['serial'][$r])?$_POST['serial'][$r]:null;
+                $serial_no 		= isset($_POST['serial'][$r])?$_POST['serial'][$r]:null;
                 $p_supplier 	= $_POST['rsupplier_id'][$r];
-				$p_price 		= isset($_POST['price'][$r])?$_POST['price'][$r]:0;
+                $p_price 		= isset($_POST['price'][$r])?$_POST['price'][$r]:0;
                 $p_type 		= $_POST['type'][$r];
-				$tax_method		= $_POST['tax_method'][$r];
-				$item_peice		= $_POST['piece'][$r];
-				$item_wpeice	= $_POST['wpiece'][$r];
-				
+                $tax_method		= $_POST['tax_method'][$r];
+                $item_peice		= $_POST['piece'][$r];
+                $item_wpeice	= $_POST['wpiece'][$r];
+
                 $item_option 	= isset($_POST['product_option'][$r]) ? $_POST['product_option'][$r] : NULL;
-				
-				if($item_option == 'undefined'){
-					$item_option = NULL;
-				}
-				
+
+                if($item_option == 'undefined'){
+                    $item_option = NULL;
+                }
+
                 $item_tax_rate = isset($_POST['product_tax'][$r]) ? $_POST['product_tax'][$r] : null;
                 $item_discount = isset($_POST['rdiscount'][$r]) ? $_POST['rdiscount'][$r] : null;
                 $item_expiry = (isset($_POST['expiry'][$r]) && !empty($_POST['expiry'][$r])) ? $this->erp->fsd($_POST['expiry'][$r]) : null;
 
                 if (isset($item_code) && isset($real_unit_cost) && isset($unit_cost) && isset($item_quantity)) {
-					$product_details = $this->purchases_model->getProductByCode($item_code);
+                    $product_details = $this->purchases_model->getProductByCode($item_code);
                     if ($item_expiry) {
                         $today = date('Y-m-d');
                         if ($item_expiry <= $today) {
@@ -996,15 +996,15 @@ class Purchases_request extends MY_Controller
                     $pr_discount = 0;
 
                     if (isset($item_discount)) {
-						$discount = $item_discount;
-						$dpos = strpos($discount, $percentage);
-						if ($dpos !== false) {
-							$pds = explode("%", $discount);
-							$pr_discount = (((($unit_cost)) * (Float) ($pds[0])) / 100);
-						} else {
-							$pr_discount = ($discount/ $item_quantity);
-						}
-					}
+                        $discount = $item_discount;
+                        $dpos = strpos($discount, $percentage);
+                        if ($dpos !== false) {
+                            $pds = explode("%", $discount);
+                            $pr_discount = (((($unit_cost)) * (Float) ($pds[0])) / 100);
+                        } else {
+                            $pr_discount = ($discount/ $item_quantity);
+                        }
+                    }
 
                     $unit_cost 			= ($unit_cost - $pr_discount);
                     $item_net_cost 		= $unit_cost_real;
@@ -1014,129 +1014,129 @@ class Purchases_request extends MY_Controller
                     $pr_item_tax 		= 0;
                     $item_tax 			= 0;
                     $tax 				= "";
-					$ptax_method		= ($tax_method == ""? $product_details->tax_method:$tax_method);
-					if (isset($item_tax_rate) && $item_tax_rate != 0) {
-						$pr_tax = $item_tax_rate;
-						$tax_details = $this->site->getTaxRateByID($pr_tax);
-						if ($tax_details->type == 1 && $tax_details->rate != 0) {
+                    $ptax_method		= ($tax_method == ""? $product_details->tax_method:$tax_method);
+                    if (isset($item_tax_rate) && $item_tax_rate != 0) {
+                        $pr_tax = $item_tax_rate;
+                        $tax_details = $this->site->getTaxRateByID($pr_tax);
+                        if ($tax_details->type == 1 && $tax_details->rate != 0) {
 
-							if ($product_details && $ptax_method == 1) {
-								$item_tax = ((($unit_cost) * $tax_details->rate) / 100);
-								$tax = $tax_details->rate . "%";
-								$item_net_cost = $unit_cost;
-							} else {
-								$item_tax = (($unit_cost) * $tax_details->rate) / (100 + $tax_details->rate);
-								$tax = $tax_details->rate . "%";
-								$item_net_cost = $unit_cost - $item_tax;
-							}
-							
-						} elseif ($tax_details->type == 2) {
-							
-							if ($product_details && $ptax_method== 1) {
-								$item_tax = ((($unit_cost) * $tax_details->rate) / 100);
-								$tax = $tax_details->rate . "%";
-								$item_net_cost = $unit_cost;
-							} else {
-								$item_tax = ((($unit_cost) * $tax_details->rate) / (100 + $tax_details->rate));
-								$tax = $tax_details->rate . "%";
-								$item_net_cost = $unit_cost - $item_tax;
-							}
-							
-							$item_tax = ($tax_details->rate);
-							$tax = $tax_details->rate;
-						}
-						$pr_item_tax = ($item_tax * $item_quantity);
-					}
-					
-					$quantity_balance = 0;
-					if($item_option != 0) {
-						$row = $this->purchases_model->getVariantQtyById($item_option);
-						$quantity_balance = $item_quantity * $row->qty_unit;
-					}else{
-						$quantity_balance = $item_quantity;
-					}
+                            if ($product_details && $ptax_method == 1) {
+                                $item_tax = ((($unit_cost) * $tax_details->rate) / 100);
+                                $tax = $tax_details->rate . "%";
+                                $item_net_cost = $unit_cost;
+                            } else {
+                                $item_tax = (($unit_cost) * $tax_details->rate) / (100 + $tax_details->rate);
+                                $tax = $tax_details->rate . "%";
+                                $item_net_cost = $unit_cost - $item_tax;
+                            }
+
+                        } elseif ($tax_details->type == 2) {
+
+                            if ($product_details && $ptax_method== 1) {
+                                $item_tax = ((($unit_cost) * $tax_details->rate) / 100);
+                                $tax = $tax_details->rate . "%";
+                                $item_net_cost = $unit_cost;
+                            } else {
+                                $item_tax = ((($unit_cost) * $tax_details->rate) / (100 + $tax_details->rate));
+                                $tax = $tax_details->rate . "%";
+                                $item_net_cost = $unit_cost - $item_tax;
+                            }
+
+                            $item_tax = ($tax_details->rate);
+                            $tax = $tax_details->rate;
+                        }
+                        $pr_item_tax = ($item_tax * $item_quantity);
+                    }
+
+                    $quantity_balance = 0;
+                    if($item_option != 0) {
+                        $row = $this->purchases_model->getVariantQtyById($item_option);
+                        $quantity_balance = $item_quantity * $row->qty_unit;
+                    }else{
+                        $quantity_balance = $item_quantity;
+                    }
                     $product_tax += $pr_item_tax;
-					
-					if( $ptax_method == 0){
-						$subtotal = (($unit_cost_real * $item_quantity) ) - $pr_item_discount;
-					}else{
-						$subtotal = (($unit_cost_real * $item_quantity) + $pr_item_tax) - $pr_item_discount;
-					}
-					
 
-                   // $subtotal = (($unit_cost_real * $item_quantity) + $pr_item_tax) - $pr_item_discount;
-					
-					$setting = $this->site->get_setting();
-					$ohmygod = $this->site->getPurchasedItems($product_details->id, $warehouse_id, $item_option);
-					
-					if(!$setting->accounting_method == 2){
-						$real_unit_costs = $this->site->calculateCost($unit_cost, $item_quantity, $shipping);
-					} else {
-						$real_unit_costs = $this->site->calculateAVCosts($product_details->id, $warehouse_id, $item_net_cost, $unit_cost, $item_quantity, $product_details->name, $item_option, $item_quantity, $shipping);
-					}
-					
-					$products[] = array(
-						'product_id' 		=> $product_details->id,
-						'product_code' 		=> $item_code,
-						'product_name' 		=> $product_details->name,
-						'option_id' 		=> $item_option,
-						'net_unit_cost' 	=> $item_net_cost,
-						'unit_cost' 		=> $unit_cost_real, 
-						'quantity' 			=> $item_quantity,
-						'quantity_balance' 	=> $quantity_balance,
-						'warehouse_id' 		=> $warehouse_id,
-						'item_tax' 			=> $pr_item_tax,
-						'tax_rate_id' 		=> $pr_tax,
-						'tax' 				=> $tax,
-						'discount' 			=> $item_discount,
-						'item_discount' 	=> $pr_item_discount,
-						'tax_method'		=> $tax_method,
-						'subtotal' 			=> $subtotal,//$this->erp->formatPurDecimal($subtotal),
-						'expiry' 			=> $item_expiry,
-						'real_unit_cost' 	=> $real_unit_costs,
-						'date' 				=> date('Y-m-d', strtotime($date)),
-						'status' 			=> $status,
-						'price'  			=> $p_price,
-						'supplier_id' 		=> $p_supplier,
-						'type' 				=> $p_type,
-						'piece'				=> $item_peice,
-						'wpiece'			=> $item_wpeice,
-						'unitcost_ton'			=> $ucost_t
-					);
-					$serial[] = array(
-						'product_id'    => $product_details->id,
-						'serial_number' => $serial_no,
-						'warehouse'     => $warehouse_id,
-						'biller_id'     => $biller_id,
-						'serial_status' => 1
-						
-					);
-					
+                    if( $ptax_method == 0){
+                        $subtotal = (($unit_cost_real * $item_quantity) ) - $pr_item_discount;
+                    }else{
+                        $subtotal = (($unit_cost_real * $item_quantity) + $pr_item_tax) - $pr_item_discount;
+                    }
+
+
+                    // $subtotal = (($unit_cost_real * $item_quantity) + $pr_item_tax) - $pr_item_discount;
+
+                    $setting = $this->site->get_setting();
+                    $ohmygod = $this->site->getPurchasedItems($product_details->id, $warehouse_id, $item_option);
+
+                    if(!$setting->accounting_method == 2){
+                        $real_unit_costs = $this->site->calculateCost($unit_cost, $item_quantity, $shipping);
+                    } else {
+                        $real_unit_costs = $this->site->calculateAVCosts($product_details->id, $warehouse_id, $item_net_cost, $unit_cost, $item_quantity, $product_details->name, $item_option, $item_quantity, $shipping);
+                    }
+
+                    $products[] = array(
+                        'product_id' 		=> $product_details->id,
+                        'product_code' 		=> $item_code,
+                        'product_name' 		=> $product_details->name,
+                        'option_id' 		=> $item_option,
+                        'net_unit_cost' 	=> $item_net_cost,
+                        'unit_cost' 		=> $unit_cost_real,
+                        'quantity' 			=> $item_quantity,
+                        'quantity_balance' 	=> $quantity_balance,
+                        'warehouse_id' 		=> $warehouse_id,
+                        'item_tax' 			=> $pr_item_tax,
+                        'tax_rate_id' 		=> $pr_tax,
+                        'tax' 				=> $tax,
+                        'discount' 			=> $item_discount,
+                        'item_discount' 	=> $pr_item_discount,
+                        'tax_method'		=> $tax_method,
+                        'subtotal' 			=> $subtotal,//$this->erp->formatPurDecimal($subtotal),
+                        'expiry' 			=> $item_expiry,
+                        'real_unit_cost' 	=> $real_unit_costs,
+                        'date' 				=> date('Y-m-d', strtotime($date)),
+                        'status' 			=> $status,
+                        'price'  			=> $p_price,
+                        'supplier_id' 		=> $p_supplier,
+                        'type' 				=> $p_type,
+                        'piece'				=> $item_peice,
+                        'wpiece'			=> $item_wpeice,
+                        'unitcost_ton'			=> $ucost_t
+                    );
+                    $serial[] = array(
+                        'product_id'    => $product_details->id,
+                        'serial_number' => $serial_no,
+                        'warehouse'     => $warehouse_id,
+                        'biller_id'     => $biller_id,
+                        'serial_status' => 1
+
+                    );
+
                     $total += $subtotal;
                 }
             }
-			
-			if($setting->accounting_method == 2 || $shipping){
-				$c = count($products);
-				
-				$t_po_item_amount = 0;
-				foreach($products as $p){
-					$t_po_item_amount += $p['subtotal'];
-				}
-				for($i = 0; $i < $c; $i++){
-					$item_option = $_POST['product_option'][$i];
-					$unitCost = $this->erp->formatPurDecimal($_POST['unit_cost'][$i]);
-					$costunit = $this->site->calculateAverageCost($products[$i]['product_id'], $unitCost, $products[$i]['quantity'], $c, $products[$i]['item_discount'], $order_discount, $shipping, $t_po_item_amount, $item_option);
-					$products[$i]['real_unit_cost'] = $costunit;
-				}
-			}
-			
+
+            if($setting->accounting_method == 2 || $shipping){
+                $c = count($products);
+
+                $t_po_item_amount = 0;
+                foreach($products as $p){
+                    $t_po_item_amount += $p['subtotal'];
+                }
+                for($i = 0; $i < $c; $i++){
+                    $item_option = $_POST['product_option'][$i];
+                    $unitCost = $this->erp->formatPurDecimal($_POST['unit_cost'][$i]);
+                    $costunit = $this->site->calculateAverageCost($products[$i]['product_id'], $unitCost, $products[$i]['quantity'], $c, $products[$i]['item_discount'], $order_discount, $shipping, $t_po_item_amount, $item_option);
+                    $products[$i]['real_unit_cost'] = $costunit;
+                }
+            }
+
             if (empty($products)) {
                 $this->form_validation->set_rules('product', lang("order_items"), 'required');
             } else {
                 krsort($products);
             }
-			
+
             if ($this->input->post('discount')) {
                 $order_discount_id = $this->input->post('discount');
                 $opos = strpos($order_discount_id, $percentage);
@@ -1150,7 +1150,7 @@ class Purchases_request extends MY_Controller
                 $order_discount_id = null;
             }
             $total_discount = $this->erp->formatPurDecimal($order_discount + $product_discount);
-			
+
             if ($this->Settings->tax2 != 0) {
                 $order_tax_id = $this->input->post('order_tax');
                 if ($order_tax_details = $this->site->getTaxRateByID($order_tax_id)) {
@@ -1164,13 +1164,13 @@ class Purchases_request extends MY_Controller
             } else {
                 $order_tax_id = null;
             }
-			
+
             $total_tax = ($product_tax + $order_tax);
             $grand_total = (($total - $order_discount) + $order_tax + $shipping );
-            $data = array( 
-				'biller_id' 		=> $biller_id,
-				'reference_no' 		=> $reference,
-				'payment_term' 		=> $payment_term,
+            $data = array(
+                'biller_id' 		=> $biller_id,
+                'reference_no' 		=> $reference,
+                'payment_term' 		=> $payment_term,
                 'date' 				=> $date,
                 'supplier_id' 		=> $supplier_id,
                 'supplier' 			=> $supplier,
@@ -1191,7 +1191,7 @@ class Purchases_request extends MY_Controller
                 'payment_status' 	=> $payment_status,
                 'created_by' 		=> $this->session->userdata('user_id'),
             );
-			
+
             if ($_FILES['document']['size'] > 0) {
                 $this->load->library('upload');
                 $config['upload_path'] = $this->digital_upload_path;
@@ -1209,94 +1209,94 @@ class Purchases_request extends MY_Controller
                 $data['attachment'] = $photo;
             }
 
-			//$this->erp->print_arrays($data, $products);
+            //$this->erp->print_arrays($data, $products);
         }
-		
+
         if ($this->form_validation->run() == true && $this->purchases_request_model->UpdatePurchaseRequest($id,$data, $products)) {
-			if($this->Settings->purchase_serial){
-				$this->purchases_model->addSerial($serial);
-			}
+            if($this->Settings->purchase_serial){
+                $this->purchases_model->addSerial($serial);
+            }
             $this->session->set_userdata('remove_polsr', '1');
             $this->session->set_flashdata('message', $this->lang->line("purchase_added"));
             redirect('purchases_request');
         } else {
-			if($id){
-				
-				$request_id = $this->purchases_request_model->getPurchaseRequestByID($id);
-				$this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
-				
-				if($request_id->status == "approved"){
-					$this->session->set_flashdata('error', "Purchase request is approved already. Can not edit more.");
+            if($id){
+
+                $request_id = $this->purchases_request_model->getPurchaseRequestByID($id);
+                $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
+
+                if($request_id->status == "approved"){
+                    $this->session->set_flashdata('error', "Purchase request is approved already. Can not edit more.");
                     redirect('purchases_request');
-				}else{
-					$this->data['inv'] = $request_id;
-					$pref = $this->purchases_model->getPaymentByPurchaseID($id);
+                }else{
+                    $this->data['inv'] = $request_id;
+                    $pref = $this->purchases_model->getPaymentByPurchaseID($id);
 
-					$inv_items = $this->purchases_request_model->getAllPurchaseRequestItems($id);
-					
-					//$this->erp->print_arrays($inv_items);
-					
-					$c = rand(100000, 9999999);
-					foreach ($inv_items as $item) {
-						$row 			= $this->site->getProductByID($item->product_id);
-						$row->expiry 	= (($item->expiry && $item->expiry != '0000-00-00') ? $this->erp->fsd($item->expiry) : '');
-						$row->qty 		= $item->quantity;
+                    $inv_items = $this->purchases_request_model->getAllPurchaseRequestItems($id);
 
-						$row->received 	= $item->quantity_received ? $item->quantity_received : $item->quantity;
-						$row->quantity_balance = $item->quantity_balance + ($item->quantity-$row->received);
-						$row->discount 	= $item->discount ? $item->discount : '0';
-						$options 		= $this->purchases_model->getProductOptions($row->id);
-						$row->option 	= $item->option_id;
-						$row->real_unit_cost = $item->real_unit_cost;
-						$row->cost 		= $this->erp->formatPurDecimal($item->net_unit_cost + ($item->item_discount / $item->quantity));
-						$row->tax_rate 	= $item->tax_rate_id;
-						$row->net_cost 	= $item->unit_cost;
-						$row->price    	= $item->price?$item->price:'0';
-						$row->tax_method = $item->tax_method;
-						$row->piece		= $item->piece;
-						$row->wpiece	= $item->wpiece;
-						$row->ucost_t	= $item->unitcost_ton;
+                    //$this->erp->print_arrays($inv_items);
 
-						$pii = $this->purchases_model->getPurcahseItemByPurchaseID($id);
-						
-						unset($row->details, $row->product_details, $row->file, $row->product_group_id);
-						$ri = $this->Settings->item_addition ? $row->id : $c;
-						if ($row->tax_rate) {
-							$tax_rate = $this->site->getTaxRateByID($row->tax_rate);
-							$pr[$c] = array('id' => $c, 'item_id' => $row->id, 'label' => $row->name . " (" . $row->code . ")", 'row' => $row, 'tax_rate' => $tax_rate, 'options' => $options, 'suppliers' => '' ,'supplier_id' => $item->supplier_id);
-						} else {
-							$pr[$c] = array('id' => $c, 'item_id' => $row->id, 'label' => $row->name . " (" . $row->code . ")", 'row' => $row, 'tax_rate' => false, 'options' => $options, 'suppliers' => '' ,'supplier_id' => $item->supplier_id);
-						}
-						$c++;
-					}
-					
-					
-					//$this->erp->print_arrays($pr);
-					$this->data['inv_items'] = json_encode($pr);
-					
-					//$this->data['id'] = $id;
-				}
-			}
+                    $c = rand(100000, 9999999);
+                    foreach ($inv_items as $item) {
+                        $row 			= $this->site->getProductByID($item->product_id);
+                        $row->expiry 	= (($item->expiry && $item->expiry != '0000-00-00') ? $this->erp->fsd($item->expiry) : '');
+                        $row->qty 		= $item->quantity;
+
+                        $row->received 	= $item->quantity_received ? $item->quantity_received : $item->quantity;
+                        $row->quantity_balance = $item->quantity_balance + ($item->quantity-$row->received);
+                        $row->discount 	= $item->discount ? $item->discount : '0';
+                        $options 		= $this->purchases_model->getProductOptions($row->id);
+                        $row->option 	= $item->option_id;
+                        $row->real_unit_cost = $item->real_unit_cost;
+                        $row->cost 		= $this->erp->formatPurDecimal($item->net_unit_cost + ($item->item_discount / $item->quantity));
+                        $row->tax_rate 	= $item->tax_rate_id;
+                        $row->net_cost 	= $item->unit_cost;
+                        $row->price    	= $item->price?$item->price:'0';
+                        $row->tax_method = $item->tax_method;
+                        $row->piece		= $item->piece;
+                        $row->wpiece	= $item->wpiece;
+                        $row->ucost_t	= $item->unitcost_ton;
+
+                        $pii = $this->purchases_model->getPurcahseItemByPurchaseID($id);
+
+                        unset($row->details, $row->product_details, $row->file, $row->product_group_id);
+                        $ri = $this->Settings->item_addition ? $row->id : $c;
+                        if ($row->tax_rate) {
+                            $tax_rate = $this->site->getTaxRateByID($row->tax_rate);
+                            $pr[$c] = array('id' => $c, 'item_id' => $row->id, 'label' => $row->name . " (" . $row->code . ")", 'row' => $row, 'tax_rate' => $tax_rate, 'options' => $options, 'suppliers' => '' ,'supplier_id' => $item->supplier_id);
+                        } else {
+                            $pr[$c] = array('id' => $c, 'item_id' => $row->id, 'label' => $row->name . " (" . $row->code . ")", 'row' => $row, 'tax_rate' => false, 'options' => $options, 'suppliers' => '' ,'supplier_id' => $item->supplier_id);
+                        }
+                        $c++;
+                    }
+
+
+                    //$this->erp->print_arrays($pr);
+                    $this->data['inv_items'] = json_encode($pr);
+
+                    //$this->data['id'] = $id;
+                }
+            }
 
             $biller_id = $this->session->userdata('biller_id');
 
-			$this->load->model('purchases_model');
-			$this->data['id'] = $id;
+            $this->load->model('purchases_model');
+            $this->data['id'] = $id;
             $this->data['suppliers'] = $this->site->getAllCompanies('supplier');
             $this->data['purchase'] = $this->purchases_request_model->getPurchaseRequestByID($id);
-			$this->data['edit_status'] = $id;
+            $this->data['edit_status'] = $id;
             $this->data['categories'] = $this->site->getAllCategories();
-			$this->data['unit'] = $this->purchases_model->getUnits();
-			$this->data['customers'] = $this->site->getCustomers();
+            $this->data['unit'] = $this->purchases_model->getUnits();
+            $this->data['customers'] = $this->site->getCustomers();
             $this->data['tax_rates'] = $this->site->getAllTaxRates();
             $this->data['warehouses'] = $this->site->getAllWarehouses();
             $this->data['ponumber'] = ''; //$this->site->getReference('po');
-			$this->data['payment_term'] = $this->site->getAllPaymentTerm();
+            $this->data['payment_term'] = $this->site->getAllPaymentTerm();
             $this->data['billers'] = $this->site->getAllCompanies('biller');
 
             $this->load->helper('string');
             $value = random_string('alnum', 20);
-			$this->session->set_userdata('remove_polsr', '1');
+            $this->session->set_userdata('remove_polsr', '1');
             $this->session->set_userdata('user_csrf', $value);
             $this->data['csrf'] = $this->session->userdata('user_csrf');
             $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('purchase_request'), 'page' => lang('purchase_request')), array('link' => '#', 'page' => lang('edit_purchase_request')));
@@ -1304,8 +1304,8 @@ class Purchases_request extends MY_Controller
             $this->page_construct('purchase_request/edit', $meta, $this->data);
         }
     }
-	
-	public function view($purchase_id = null)
+
+    public function view($purchase_id = null)
     {
         $this->erp->checkPermissions('index', NULL, 'purchase_request');
 

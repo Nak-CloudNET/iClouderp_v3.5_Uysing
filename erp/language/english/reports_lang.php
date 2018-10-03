@@ -264,3 +264,7 @@ $lang['invoice_reference']	        = "Invoice Reference";
 $lang['product_value']	            = "Product Value";
 $lang['no_product_grossmargin_report_selected']	   = "No Product Grossmargin Report Selected!";
 $lang['no_product_value_report_selected']	       = "No Product Value Report Selected!";
+$lang['transaction_detail_by_acount']	       = "Transaction Detail By Account";
+$lang['sales_person']                              = 'Sales Person';
+$lang['class']                              = 'Class';
+$lang['inventory']                              = 'Inventory';

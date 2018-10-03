@@ -63,33 +63,34 @@
             "aoColumns": [{
                 "bSortable": false,
                 "mRender": checkbox
-            }, {"mRender": fld}, null, null, null, {"mRender": row_status},{"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": row_status}, {"bSortable": false}],
+            }, {"mRender": fld}, null, null, null,null, {"mRender": row_status},{"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": currencyFormat}, {"mRender": row_status}, {"bSortable": false}],
             "fnFooterCallback": function (nRow, aaData, iStart, iEnd, aiDisplay) {
                 var gtotal = 0, paid = 0, balance = 0;
 				 var deposit = 0, return_s = 0, discount = 0;
                 for (var i = 0; i < aaData.length; i++) {
-                    gtotal += parseFloat(aaData[aiDisplay[i]][6]);
-                    return_s += parseFloat(aaData[aiDisplay[i]][7]);
-                    paid += parseFloat(aaData[aiDisplay[i]][8]);
-					deposit += parseFloat(aaData[aiDisplay[i]][9]);
-                    discount += parseFloat(aaData[aiDisplay[i]][10]);
-                    balance += parseFloat(aaData[aiDisplay[i]][11]);
+                    gtotal += parseFloat(aaData[aiDisplay[i]][7]);
+                    return_s += parseFloat(aaData[aiDisplay[i]][8]);
+                    paid += parseFloat(aaData[aiDisplay[i]][9]);
+					deposit += parseFloat(aaData[aiDisplay[i]][10]);
+                    discount += parseFloat(aaData[aiDisplay[i]][11]);
+                    balance += parseFloat(aaData[aiDisplay[i]][12]);
                 }
                 var nCells = nRow.getElementsByTagName('th');
-                nCells[6].innerHTML = currencyFormat(parseFloat(gtotal));
-                nCells[7].innerHTML = currencyFormat(parseFloat(return_s));
-                nCells[8].innerHTML = currencyFormat(parseFloat(paid));
-				nCells[9].innerHTML = currencyFormat(parseFloat(deposit));
-                nCells[10].innerHTML = currencyFormat(parseFloat(discount));
-                nCells[11].innerHTML = currencyFormat(parseFloat(balance));
+                nCells[7].innerHTML = currencyFormat(parseFloat(gtotal));
+                nCells[8].innerHTML = currencyFormat(parseFloat(return_s));
+                nCells[9].innerHTML = currencyFormat(parseFloat(paid));
+				nCells[10].innerHTML = currencyFormat(parseFloat(deposit));
+                nCells[11].innerHTML = currencyFormat(parseFloat(discount));
+                nCells[12].innerHTML = currencyFormat(parseFloat(balance));
             }
         }).fnSetFilteringDelay().dtFilter([
             {column_number: 1, filter_default_label: "[<?=lang('date');?> (yyyy-mm-dd)]", filter_type: "text", data: []},
             {column_number: 2, filter_default_label: "[<?=lang('reference_no');?>]", filter_type: "text", data: []},
             {column_number: 3, filter_default_label: "[<?=lang('shop');?>]", filter_type: "text", data: []},
             {column_number: 4, filter_default_label: "[<?=lang('customer');?>]", filter_type: "text", data: []},
-            {column_number: 5, filter_default_label: "[<?=lang('sale_status');?>]", filter_type: "text", data: []},
-            {column_number: 9, filter_default_label: "[<?=lang('payment_status');?>]", filter_type: "text", data: []},
+            {column_number: 5, filter_default_label: "[<?=lang('sale_man');?>]", filter_type: "text", data: []},
+            {column_number: 6, filter_default_label: "[<?=lang('sale_status');?>]", filter_type: "text", data: []},
+            {column_number: 13, filter_default_label: "[<?=lang('payment_status');?>]", filter_type: "text", data: []},
         ], "footer");
 
         if (__getItem('remove_slls')) {
@@ -488,6 +489,7 @@
                             <th><?php echo $this->lang->line("reference_no"); ?></th>
                             <th><?php echo $this->lang->line("shop"); ?></th>
                             <th><?php echo $this->lang->line("customer"); ?></th>
+                            <th><?php echo $this->lang->line("saleman"); ?></th>
                             <th><?php echo $this->lang->line("sale_status"); ?></th>
                             <th><?php echo $this->lang->line("amount"); ?></th>
 							 <th><?php echo $this->lang->line("return"); ?></th>
@@ -520,6 +522,7 @@
                             <th></th>
                             <th></th>
 							<th></th>
+                            <th></th>
                             <th></th>
                             <th></th>
                             <th style="width:80px; text-align:center;"><?php echo $this->lang->line("actions"); ?></th>

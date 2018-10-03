@@ -34,10 +34,9 @@ class Billers extends MY_Controller
     function getBillers()
     {
         $this->erp->checkPermissions('index');
-
         $this->load->library('datatables');
         $this->datatables
-            ->select("id,id as no, COALESCE(code, '') AS code, company, name, vat_no, phone, email, city, country")
+            ->select("id,id as no , COALESCE(code, '') AS code, company, name, vat_no, phone, email, city, country")
             ->from("companies")
             ->where('group_name', 'biller')
             ->add_column("Actions", "<div class=\"text-center\"><a class=\"tip\" title='" . $this->lang->line("edit_billers") . "' href='" . site_url('billers/edit/$1') . "' data-toggle='modal' data-target='#myModal'><i class=\"fa fa-edit\"></i></a> <a href='#' class='tip po' title='<b>" . $this->lang->line("delete_biller") . "</b>' data-content=\"<p>" . lang('r_u_sure') . "</p><a class='btn btn-danger po-delete' href='" . site_url('billers/deleteByID/$1') . "'>" . lang('i_m_sure') . "</a> <button class='btn po-close'>" . lang('no') . "</button>\"  rel='popover'><i class=\"fa fa-trash-o\"></i></a></div>", "id");

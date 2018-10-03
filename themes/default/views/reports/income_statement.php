@@ -156,9 +156,9 @@
                             $totalBeforeAyearRows = $query->row();
 								$amount_income = (-1)*$totalBeforeAyearRows->amount;
 								if($amount_income < 0){
-									$amount_income = '( '.$this->erp->formatMoney(abs($totalBeforeAyearRows->amount)).' )';
+									$amount_income = '( '.number_format(abs($totalBeforeAyearRows->amount),2).' )';
 								}else{
-									$amount_income = $this->erp->formatMoney(abs($totalBeforeAyearRows->amount));
+									$amount_income = number_format(abs($totalBeforeAyearRows->amount),2);
 								}
 								
 								if(($index+1)==1){
@@ -196,9 +196,9 @@
 								$index++;
 						}
 							if($total_per_income < 0){
-								$total_per_income = '( ' . $this->erp->formatMoney(abs($total_per_income)) . ' )';
+								$total_per_income = '( ' . number_format(abs($total_per_income),2) . ' )';
 							}else{
-								$total_per_income = $this->erp->formatMoney(abs($total_per_income));
+								$total_per_income = number_format(abs($total_per_income),2);
 							}
 							echo '<td class="right">'. $total_per_income .'</td>';
 								?>
@@ -260,15 +260,15 @@
 									'amount' => $total_amt_inc
 								);
 								
-								echo '<td class="right" style="font-weight:bold;border-top:2px solid #000">' . $this->erp->formatMoney(abs($total_amt_inc)) . '</td>';
+								echo '<td class="right" style="font-weight:bold;border-top:2px solid #000">' . number_format(abs($total_amt_inc),2) . '</td>';
 							}
 							?>
 							<?php 
 							$total_income_display = '';
 							if($total_income < 0){
-								$total_income_display = '( '.$this->erp->formatMoney(abs($total_income)).' )';
+								$total_income_display = '( '.number_format(abs($total_income),2).' )';
 							}else{
-								$total_income_display = $this->erp->formatMoney(abs($total_income));
+								$total_income_display = number_format(abs($total_income),2);
 							}
 							?>
 								<td class="right" style="font-weight:bold;border-top:2px solid #000;border-left:2px solid #000;">
@@ -311,9 +311,9 @@
 									
 									$amount_cost = 0;
 									if($totalBeforeAyearRows->amount < 0){
-										$amount_cost = '( '.$this->erp->formatMoney(abs($totalBeforeAyearRows->amount)).' )';
+										$amount_cost = '( '.number_format(abs($totalBeforeAyearRows->amount),2).' )';
 									}else{
-										$amount_cost = $this->erp->formatMoney(abs($totalBeforeAyearRows->amount));
+										$amount_cost = number_format(abs($totalBeforeAyearRows->amount),2);
 									}
 									
 									if(($index1+1)==1){
@@ -349,13 +349,13 @@
 										'amount' => $totalBeforeAyearRows->amount
 									);
 								}
-								$total_per_cost += $this->erp->formatDecimal($totalBeforeAyearRows->amount);
+								$total_per_cost += number_format($totalBeforeAyearRows->amount,2);
 								$index1++;
 								}
 								if($total_per_cost < 0){
-									$total_per_cost = '( '.$this->erp->formatMoney(abs($total_per_cost)).' )';
+									$total_per_cost = '( '.number_format(abs($total_per_cost),2).' )';
 								}else{
-									$total_per_cost = $this->erp->formatMoney(abs($total_per_cost));
+									$total_per_cost = number_format(abs($total_per_cost),2);
 								}
 								echo '<td class="right">'. $total_per_cost .'</td>';
 								echo '</tr>';
@@ -384,17 +384,17 @@
 									);
 									
 									if($total_amt_cost < 0){
-										$total_amt_cost = '( '.$this->erp->formatMoney(abs($total_amt_cost)).' )';
+										$total_amt_cost = '( '.number_format(abs($total_amt_cost),2).' )';
 									}else{
-										$total_amt_cost = $this->erp->formatMoney(abs($total_amt_cost));
+										$total_amt_cost = number_format(abs($total_amt_cost),2);
 									}
 									echo '<td class="right" style="font-weight:bold;border-top:2px solid #000">' . $total_amt_cost . '</td>';
 								}
 								$total_cost_display = '';
 								if($total_cost < 0){
-									$total_cost_display = '( '.$this->erp->formatMoney(abs($total_cost)).' )';
+									$total_cost_display = '( '.number_format(abs($total_cost),2).' )';
 								}else{
-									$total_cost_display = $this->erp->formatMoney(abs($total_cost));
+									$total_cost_display = number_format(abs($total_cost),2);
 								}
 								?>
 								
@@ -417,9 +417,9 @@
 										'amount' => $amount_per_gross
 									);
 									if($amount_per_gross < 0){
-										$total_amount_per_gross = '('.$this->erp->formatMoney(abs($amount_per_gross)).')';
+										$total_amount_per_gross = '('.number_format(abs($amount_per_gross),2).')';
 									}else{
-										$total_amount_per_gross = $this->erp->formatMoney(abs($amount_per_gross));
+										$total_amount_per_gross = number_format(abs($amount_per_gross),2);
 									}
 									echo '<td style="font-weight:bold;" class="right">' . $total_amount_per_gross . '</td>';
 								}
@@ -427,9 +427,9 @@
 								<td class="right" style="font-weight:bold;">
 									<?php 
 									if(($total_income - $total_cost) < 0){
-										echo "(".$this->erp->formatMoney(abs($total_income - $total_cost)).")";
+										echo "(".number_format(abs($total_income - $total_cost),2).")";
 									}else{
-										echo $this->erp->formatMoney(abs($total_income - $total_cost));
+										echo number_format(abs($total_income - $total_cost),2);
 									}
 									?>
 								</td>
@@ -467,9 +467,9 @@
 									$totalBeforeAyear_expense += $totalBeforeAyearRows->amount;
 									$amount_op = 0;
 									if($totalBeforeAyearRows->amount < 0){
-										$amount_op = '( '.$this->erp->formatMoney(abs($totalBeforeAyearRows->amount)).' )';
+										$amount_op = '( '.number_format(abs($totalBeforeAyearRows->amount),2).' )';
 									}else{
-										$amount_op = $this->erp->formatMoney(abs($totalBeforeAyearRows->amount));
+										$amount_op = number_format(abs($totalBeforeAyearRows->amount),2);
 									}
 									
 									if($i==1){
@@ -506,9 +506,9 @@
 									$in_op++;
 								}
 								if($total_per_op < 0){
-									$total_per_op = '( '.$this->erp->formatMoney(abs($total_per_op)).' )';
+									$total_per_op = '( '.number_format(abs($total_per_op),2).' )';
 								}else{
-									$total_per_op = $this->erp->formatMoney(abs($total_per_op));
+									$total_per_op = number_format(abs($total_per_op),2);
 								}
 								echo '<td class="right">' . $total_per_op .'</td>';
 								?>
@@ -539,17 +539,17 @@
 								);
 								
 								if($total_amt_op < 0){
-									$total_amt_op = '( '.$this->erp->formatMoney(abs($total_amt_op)).' )';
+									$total_amt_op = '( '.number_format(abs($total_amt_op),2).' )';
 								}else{
-									$total_amt_op = $this->erp->formatMoney(abs($total_amt_op));
+									$total_amt_op = number_format(abs($total_amt_op),2);
 								}
 								echo '<td class="right" style="border-top:2px solid #000;font-weight:bold">' . $total_amt_op . '</td>';
 							}
 							$total_expense_display = '';
 							if($total_expense < 0){
-								$total_expense_display = '( '.$this->erp->formatMoney(abs($total_expense)).' )';
+								$total_expense_display = '( '.number_format(abs($total_expense),2).' )';
 							}else{
-								$total_expense_display = $this->erp->formatMoney(abs($total_expense));
+								$total_expense_display = number_format(abs($total_expense),2);
 							}
 							?>
 							<td class="right" style="border-top:2px solid #000;border-left:2px solid #000;font-weight:bold">
@@ -566,9 +566,9 @@
 									$per_exp = $sum_total_op[$i]['amount'];
 									$total_per_op_ex = ($per_gross - $per_exp);
 									if($total_per_op_ex < 0){
-										$total_per_op_ex = '( '.$this->erp->formatMoney(abs($total_per_op_ex)).' )';
+										$total_per_op_ex = '( '.number_format(abs($total_per_op_ex),2).' )';
 									}else{
-										$total_per_op_ex = $this->erp->formatMoney(abs($total_per_op_ex));
+										$total_per_op_ex = number_format(abs($total_per_op_ex),2);
 									}
 									echo '<th class="right">' . $total_per_op_ex . '</th>';
 								}
@@ -578,9 +578,9 @@
 								$total_profit_per = ($total_income - $total_cost)-$total_expense;
 								$total_profit_loss_display = '';
 								if($total_profit_per < 0){
-									$total_profit_loss_display = '( '.$this->erp->formatMoney(abs($total_profit_per)).' )';
+									$total_profit_loss_display = '( '.number_format(abs($total_profit_per),2).' )';
 								}else{
-									$total_profit_loss_display = $this->erp->formatMoney(abs($total_profit_per));
+									$total_profit_loss_display = number_format(abs($total_profit_per),2);
 								}
 								?>
 								<th class="right"><?php echo $total_profit_loss_display;?></th>

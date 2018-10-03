@@ -203,6 +203,7 @@ class system_settings extends MY_Controller
 				'allow_change_date' 				=> $this->input->post('allow_change_date'),
 				'increase_stock_import' 			=> $this->input->post('increase_stock_import'),
 				'member_card_expiry' 				=> $this->input->post('member_card_expiry'),
+				'alert_price_less_than_cost' 		=> $this->input->post('alert_price_less_than_cost'),
 				'tax_calculate' 					=> $this->input->post('tax_calculate'),
 				'business_type'						=> $this->input->post('business_type')
             );
@@ -252,7 +253,7 @@ class system_settings extends MY_Controller
 	function getPaymentTerm(){
         $this->load->library('datatables');
         $this->datatables
-            ->select("id, description, due_day,due_day_for_discount, discount")
+            ->select("id,id as idd, description,description_kh, due_day,due_day_for_discount, discount")
             ->from("payment_term")
             ->order_by('id', 'asc')
             ->add_column("Actions", "<center><a href='" . site_url('system_settings/edit_payment_term/$1') . "' class='tip' title='" . lang("edit_payment_term") . "' data-toggle='modal' data-target='#myModal'><i class=\"fa fa-edit\"></i></a> <a href='#' class='tip po' title='<b>" . lang("delete_payment_term") . "</b>' data-content=\"<p>" . lang('r_u_sure') . "</p><a class='btn btn-danger po-delete' href='" . site_url('system_settings/delete_payment_term/$1') . "'>" . lang('i_m_sure') . "</a> <button class='btn po-close'>" . lang('no') . "</button>\"  rel='popover'><i class=\"fa fa-trash-o\"></i></a></center>", "id");
@@ -264,6 +265,7 @@ class system_settings extends MY_Controller
 	public function edit_payment_term($id)
 	{
         $this->form_validation->set_rules('description', lang("description"), 'trim|required');
+        $this->form_validation->set_rules('description_kh', lang("description_kh"), 'trim|required');
         $config = array(                    
                     array(
                         'field' => 'due_day',
@@ -280,6 +282,7 @@ class system_settings extends MY_Controller
         if ($this->form_validation->run() == true) {
             $data = array(
                 'description'  => $this->input->post('description'),
+                'description_kh'  => $this->input->post('description_kh'),
                 'due_day' => $this->input->post('due_day'),
                 'due_day_for_discount'=> $this->input->post('due_day_for_discount'),
                 'discount'     => $this->input->post('discount') ? $this->input->post('discount'): '0'
@@ -654,7 +657,24 @@ class system_settings extends MY_Controller
             $this->load->view($this->theme . 'settings/change_logo', $this->data);
         }
     }
-    
+
+	function closing_date()
+    {
+        if ($this->form_validation->run() == true) {
+
+            $data = array('closing_date' => $this->input->post('date'),
+                'notes' => $this->input->post('note')
+            );
+        }
+        if ($this->form_validation->run() == true && $this->purchases_model->addExpense($data)) {
+            $this->session->set_flashdata('message', lang("expense_added"));
+            redirect('welcome');
+        } else {
+            $this->load->view($this->theme . 'settings/cloding_date', $this->data);
+        }
+
+    }
+
 	public function write_index($timezone)
     {
 
@@ -1677,6 +1697,7 @@ class system_settings extends MY_Controller
             $code = $this->input->post('code');
 			$brand_id = $this->input->post('brand');
 			$categories_note = $this->input->post('categories_note');
+            $disable_sale = $this->input->post('disable_sale');
 			$categories_note_id = '';
 			$i = 1;
 			foreach($categories_note as $cate_id){
@@ -1770,7 +1791,8 @@ class system_settings extends MY_Controller
 							'ac_stock' =>  $account_stock,
 							'ac_stock_adj' => $account_stock_adj, 
 							'ac_cost_variant' => $account_cost_variant ,
-							'ac_purchase' => $account_purchase
+							'ac_purchase' => $account_purchase,
+                            'disable_sale' => $disable_sale
 							
 						 );
             
@@ -1910,7 +1932,8 @@ class system_settings extends MY_Controller
 				'ac_stock_adj' 			=> $this->input->post('account_stock_adjust'),
 				'ac_cost_variant' 		=> $this->input->post('account_cost_variant'),
 				'ac_purchase' 			=> $this->input->post('account_purchase'),
-				'type' 					=> $cate_type
+				'type' 					=> $cate_type,
+                'disable_sale' 			=> $this->input->post('disable_sale'),
 			 );
         } elseif ($this->input->post('edit_category')) {
             $this->session->set_flashdata('error', validation_errors());
@@ -6977,5 +7000,96 @@ class system_settings extends MY_Controller
             redirect('system_settings/tax_exchange_rate');
 		}
 	}
+
+    function closing_date_list(){
+         $this->page_construct('settings/closing_date', $meta, $this->data);
+    }
+    function getCLosingDate(){
+        $this->load->library('datatables');
+        $this->datatables
+            ->select("erp_closing_date.id as id,erp_closing_date.date,erp_closing_date.note,erp_users.username,erp_closing_date.created_at,erp_closing_date.updated_at,", FALSE)
+            ->join("users","users.id=closing_date.user_id","LEFT")
+            ->from("closing_date")
+            ->add_column("Actions", "<div class=\"text-center\"><a href='" . site_url('system_settings/edit_closing_date/$1') . "' data-toggle='modal' data-target='#myModal' class='tip' title='" . lang("edit_unit") . "'><i class=\"fa fa-edit\"></i></a> <a href='#' class='tip po' title='<b>" . lang("delete_unit") . "</b>' data-content=\"<p>" . lang('r_u_sure') . "</p><a class='btn btn-danger po-delete' href='" . site_url('system_settings/delete_closing_date/$1') . "'>" . lang('i_m_sure') . "</a> <button class='btn po-close'>" . lang('no') . "</button>\"  rel='popover'><i class=\"fa fa-trash-o\"></i></a></div>", "id");
+
+        echo $this->datatables->generate();
+    }
+
+    function add_closing_date()
+    {
+        $this->form_validation->set_rules('date', lang("date"), 'required');
+        $this->form_validation->set_rules('note', lang("note"), 'required');
+        if ($this->form_validation->run() == true) {
+
+            $data = array(
+                'date' => $this->erp->fld(trim($this->input->post('date'))),
+                'note' => $this->input->post('note'),
+                'user_id' => $this->session->userdata('user_id'),
+                'created_at' =>date('Y-m-d H:i:s'),
+                'updated_at' =>date('Y-m-d H:i:s'),
+                );
+
+        } elseif ($this->input->post('add_closing_date')) {
+            $this->session->set_flashdata('error', validation_errors());
+            redirect("system_settings/closing_date_list");
+        }
+
+        if ($this->form_validation->run() == true && $uid = $this->settings_model->add_closing_date($data)) {
+            $this->session->set_flashdata('message', lang("closing_date_added"));
+            redirect("system_settings/closing_date_list");
+        } else {
+
+            $this->data['error'] = validation_errors() ? validation_errors() : $this->session->flashdata('error');
+            $this->data['base_units'] = $this->site->getAllBaseUnits();
+            $this->data['modal_js'] = $this->site->modal_js();
+            $this->load->view($this->theme . 'settings/add_closing_date', $this->data);
+
+        }
+    }
+    function edit_closing_date($id = NULL)
+    {
+
+        $this->form_validation->set_rules('date', lang("date"), 'required');
+        $this->form_validation->set_rules('note', lang("note"), 'required');
+
+        if ($this->form_validation->run() == true) {
+            $data = array(
+                'date'              => $this->erp->fld(trim($this->input->post('date'))),
+                'note'              => $this->input->post('note'),
+                'user_id'           => $this->session->userdata('user_id'),
+                'updated_at'        => date('Y-m-d H:i:s'),
+                );
+
+        } elseif ($this->input->post('edit_closing_date')) {
+            $this->session->set_flashdata('error', validation_errors());
+            redirect("system_settings/closing_date_list");
+        }
+
+        if ($this->form_validation->run() == true && $this->settings_model->updateClosingDate($id, $data)) {
+            $this->session->set_flashdata('message', lang("closing_date_updated"));
+            redirect("system_settings/closing_date_list");
+        } else {
+            $closing_dates = $this->site->getClosingDateByID($id);
+            $this->data['error'] = validation_errors() ? validation_errors() : $this->session->flashdata('error');
+            $this->data['modal_js'] = $this->site->modal_js();
+            $this->data['closing_dates'] = $closing_dates;
+
+            $this->load->view($this->theme . 'settings/edit_closing_date', $this->data);
+
+        }
+    }
+
+    function delete_closing_date($id = NULL)
+    {
+
+        if ($this->site->getUnitsByBUID($id)) {
+            $this->session->set_flashdata('error', lang("closing_date_has_subunit"));
+        }
+        if($this->settings_model->deleteClosingDate($id)){
+            echo lang("closing_date_deleted"); 
+        }
+    }
+    
+
 	
 }

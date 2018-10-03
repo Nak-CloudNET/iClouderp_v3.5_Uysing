@@ -290,7 +290,7 @@
 								?>
 							</div>
 						</div>
-						
+
 						<!--
                         <div class="col-md-4">
                             <div class="form-group">
@@ -459,7 +459,17 @@
                                 </div>
                             </div>
                         <?php } ?>
-						
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                <?= lang("payment_term", "qpayment_term"); ?>
+                                <?php
+                                $ptr[""] = "";
+                                foreach ($payment_term as $term) {
+                                    $ptr[$term->id] = $term->description;
+                                }
+                                echo form_dropdown('payment_term', $ptr, $inv->payment_term ? $inv->payment_term : "", 'id="qpayment_term" data-placeholder="' . lang("payment_term_tip") . '" required="required" class="form-control input-tip select" style="width:100%;"'); ?>
+                            </div>
+                        </div>
 						<div class="col-md-4">
                             <div class="form-group">
                                 <?= lang("document", "document") ?>
@@ -486,7 +496,9 @@
                         </div>
                         <div class="col-sm-12">
                             <div
-                                class="fprom-group"><?php echo form_submit('edit_quote', $this->lang->line("submit"), 'id="edit_quote" class="btn btn-primary" style="padding: 6px 15px; margin:15px 0;"'); ?>
+                                class="fprom-group">
+                                <?php echo form_submit('edit_quote', $this->lang->line("submit"), 'id="edit_quote" class="btn btn-primary" style="padding: 6px 15px; margin:15px 0;display:none;"'); ?>
+                                <button type="submit" class="btn btn-primary" id="before_sub"><?= lang('submit') ?></button>
                                 <button type="button" class="btn btn-danger" id="reset"><?= lang('reset') ?></div>
                         </div>
                     </div>
@@ -602,6 +614,7 @@
                         <div class="col-sm-8">
                             <input type="text" class="form-control" id="pprice_show">
                             <input type="hidden" class="form-control" id="pprice">
+                            <input type="hidden" class="form-control" id="pcost">
 							<input type="hidden" class="form-control" id="curr_rate">
                         </div>
                     </div>
@@ -686,6 +699,115 @@ $(document).ready(function(){
                 {id: '', text: '<?= lang('select_category_to_load') ?>'}
             ]
         });
+        $('#before_sub').click(function (e) {
+        e.preventDefault();
+        var message = '';
+        var help = false;
+        var alert_price= <?= $setting->alert_price_less_than_cost ?>;
+        if(alert_price)
+        {
+            $('.ruprice').each(function() {
+                var tr = $(this).closest('tr');
+                var price = $(this).val() - 0;
+                var cost = tr.find('.rucost').val() - 0;
+                if(price <= cost) {
+                    var product_name = $(this).parent().parent().closest('tr').find('.rname').val();
+                    message += 'Some products price is less than cost!\n';
+                    help = true;
+                }
+            });
+        }
+
+        if(help == false){
+            $('#edit_quote').trigger('click');
+        }else{
+
+            bootbox.prompt({
+                title: message + "Please enter password to continue",
+                inputType: 'password',
+                className: "medium",
+                callback: function (result) {
+                    $.ajax({
+                        type: 'get',
+                        url: '<?= site_url('auth/checkPassDiscount'); ?>',
+                        dataType: "json",
+                        data: {
+                            password: result
+                        },
+                        success: function (data) {
+                            if(data == 1){
+                                $('#edit_quote').trigger('click');
+                            }else{
+                                bootbox.alert({
+                                    message: "Incorrect password!",
+                                    size: 'small'
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+            return false;
+        }
+
+        <?php if($setting->credit_limit == 1) {?>
+        var payment_status = $("#slpayment_status").val();
+        if (payment_status == 'due' || payment_status == 'partial') {
+            var customer_id = $('#slcustomer').val();
+            var c_balance = __getItem('cust_balance');
+            var c_limit = __getItem('credit_limit');
+            var cust_balance = $('#total_balance').val() - 0;
+            cust_balance += parseFloat(c_balance);
+            if (c_limit >= 0 && c_limit < cust_balance) {
+                if (confirm("This customer has over credit limit (" + (cust_balance - c_limit) + "$)!\n Your Balance is " + cust_balance + "$\n Your Credit Balance is " + parseFloat(c_limit) + "$\n Click (OK) if you want to continue  Or Click (Cancel) if you want to Cancel Adding.") == true) {
+
+                } else {
+
+                    return false;
+                }
+
+            }
+        }
+        <?php } ?>
+        var GP = '<?= $GP['sales-discount'];?>';
+        var Owner = '<?= $Owner?>';
+        var Admin = '<?= $Admin?>';
+        var user_log = '<?= $this->session->userdata('user_id');?>';
+        if(Owner || Admin || (GP == 1)){
+            $('#add_sale').trigger('click');
+        }else{
+            var val = '';
+            $('.sdiscount').each(function(){
+                var parent = $(this).parent().parent();
+                var value  = parent.find('.sdiscount').text();
+                if(value != 0){
+                    val = value;
+                }
+            });
+            if(val == ''){
+                $('#add_sale').trigger('click');
+            }else{
+                bootbox.prompt("Please insert password", function(result){
+                    $.ajax({
+                        type: 'get',
+                        url: '<?= site_url('auth/checkPassDiscount'); ?>',
+                        dataType: "json",
+                        data: {
+                            password: result
+                        },
+                        success: function (data) {
+                            if(data == 1){
+                                $('#add_sale').trigger('click');
+                            }else{
+                                alert('Incorrect passord');
+                            }
+                        }
+                    });
+                });
+            }
+        }
+
+    });
 		$('#category').change(function () {
             var v = $(this).val();
             $('#modal-loading').show();

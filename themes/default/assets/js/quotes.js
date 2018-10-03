@@ -241,7 +241,7 @@ $('#qudiscount').focus(function () {
     old_qudiscount = $(this).val();
 }).change(function () {
     var new_discount = $(this).val() ? $(this).val() : '0';
-    if (is_valid_discount(new_discount) && (new_discount > -1 && new_discount < 101)) {
+    if (is_valid_discount(new_discount)) {
         __removeItem('qudiscount');
         __setItem('qudiscount', new_discount);
         loadItems();
@@ -249,7 +249,6 @@ $('#qudiscount').focus(function () {
     } else {
         bootbox.alert(lang.unexpected_value);
         $(this).val(old_qudiscount);
-
     }
 
 });
@@ -552,6 +551,7 @@ $(document).on('click', '.qudel', function () {
         }
 		var pquantity = parseFloat($('#pquantity').val());
         var price = parseFloat($('#pprice_show').val());
+        var cost  = parseFloat($('#pcost').val());
 		var opt_cur = $("#pgroup_price option:selected").attr('rate');
 		
 		//alert(JSON.stringify(opt_cur));
@@ -577,6 +577,7 @@ $(document).on('click', '.qudel', function () {
 		quitems[item_id].row.wpiece = wpiece;
         quitems[item_id].row.qty = parseFloat($('#pquantity').val()),
         quitems[item_id].row.real_unit_price = price,
+        quitems[item_id].row.cost = cost,
         quitems[item_id].row.tax_rate = new_pr_tax,
         quitems[item_id].tax_rate = new_pr_tax_rate,
         quitems[item_id].row.discount = $('#pdiscount').val() ? $('#pdiscount').val() : '',
@@ -641,7 +642,8 @@ $(document).on('click', '.qudel', function () {
 	 	if(item.options !== false) {
 	 		$.each(item.options, function () {
 	 			if(this.id == opt) {
-	 			    var price= parseFloat(this.price);
+	 			    var price = parseFloat(this.price);
+                    var cost  = parseFloat(this.cost);
                     var pro_mkp	=  $("#poption option:selected").attr('makeup_cost_percent');
                     if(item.makeup_cost == 1 && pro_mkp != undefined) {
                         var pro_opt = $("#poption option:selected").attr('rate');
@@ -652,6 +654,7 @@ $(document).on('click', '.qudel', function () {
                     }
                     price = (parseFloat(price)+((parseFloat(price)*item.customer_percent)/100));
                     $('#pprice').val(price);
+                    $('#pcost').val(cost);
                     $("#net_price").text(formatMoney(price));
                     $('#pprice_show').val(formatDecimal(price));
 	 			}
@@ -925,6 +928,7 @@ function loadItems() {
 			item_price 		= item.row.price, 
 			item_aqty 		= item.row.quantity, 
 			item_qoh  		= item.row.qoh,
+            item_cost       = item.row.cost,
 			item_tax_method = item.row.tax_method, 
 			item_ds 		= item.row.discount, 
 			item_discount 	= 0, 
@@ -946,7 +950,8 @@ function loadItems() {
 			digital_name 	= item.row.digital_name.replace(/"/g, "&#034;").replace(/'/g, "&#039;"),
 			digital_id 		= item.row.digital_id?item.row.digital_id:0;
 
-            var unit_price = parseFloat(item.row.real_unit_price);
+            var unit_price  = parseFloat(item.row.real_unit_price);
+            var cost        = parseFloat(item.row.cost);
             var real_unit_price = parseFloat(item.row.real_unit_price);
 			var exchange_rate = $("#exchange_rate").val();
 			var is_edit = $("#is_edit").val() ? $("#is_edit").val() : 0;
@@ -1189,7 +1194,7 @@ function loadItems() {
 				tr_html += '<td><input name="digital_id[]" type="hidden" class="did" value="' + digital_id + '"><input name="product_id[]" type="hidden" class="rid" value="' + product_id + '"><input name="product_type[]" type="hidden" class="rtype" value="' + item_type + '"><input name="product_code[]" type="hidden" class="rcode" value="' + item_code + '"><input name="product_name[]" type="hidden" class="rname" value="' + item_name + '"><input name="piece[]" type="hidden" class="piece" value="' + piece + '"><input name="wpiece[]" type="hidden" class="wpiece" value="' + wpiece + '"><input name="product_option[]" type="hidden" class="roption" value="' + item_option + '"><input name="product_note[]" type="hidden" class="rnote" value="' + pn + '"><input name="product_group_id[]" type="hidden" class="product_group_id" value="' + item.row.price_id + '"><span class="sname" id="name_' + row_no + '">' + ((item_promotion == 1 && (current_date >= start_date && current_date <= end_date)) ? '<i class="fa fa-check-circle"></i> ' : '') + (digital_id?digital_name:item_name) +(sel_opt != '' ? ' ('+sel_opt+')' : '') + (pn != '' ? ' [<span id="get_not">' + pn + '</span>]' : '') + '</span> <i class="pull-right fa fa-edit tip pointer edit" id="' + row_no + '" data-item="' + item_id + '" title="Edit" style="cursor:pointer;"></i></td>';
 			}
 			
-			tr_html += '<td class="text-right"><input class="form-control input-sm text-right rprice" name="net_price[]" type="hidden" id="price_' + row_no + '" value="' + formatDecimal(item_price) + '"><input class="ruprice" name="unit_price[]" type="hidden" value="' + unit_price + '"><input class="realuprice" name="real_unit_price[]" type="hidden" value="' + (unit_price) + '"><span class="text-right sprice" id="sprice_' + row_no + '">' + formatMoney(unit_price) + '</span></td>';
+			tr_html += '<td class="text-right"><input class="form-control input-sm text-right rprice" name="net_price[]" type="hidden" id="price_' + row_no + '" value="' + formatDecimal(item_price) + '"><input class="ruprice" name="unit_price[]" type="hidden" value="' + unit_price + '"><input class="rucost" name="rucost[]" type="hidden" value="' + cost + '"><input class="realuprice" name="real_unit_price[]" type="hidden" value="' + (unit_price) + '"><span class="text-right sprice" id="sprice_' + row_no + '">' + formatMoney(unit_price) + '</span></td>';
 			
             tr_html += '<td><input class="form-control text-center rquantity" name="quantity[]" type="text" value="' + formatDecimal(item_qty) + '" data-id="' + row_no + '" data-item="' + item_id + '" id="quantity_' + row_no + '" onClick="this.select();"></td>';
 			tr_html += '<input class="default_price" name="default_price[]" type="hidden" value="' + default_price + '">';
@@ -1272,7 +1277,7 @@ function loadItems() {
                     order_discount = parseFloat((total * ds) / 100);
                 }
             } else {
-                order_discount = (parseFloat(total) * parseFloat(ds)) / 100;
+                order_discount = parseFloat(ds) ;
             }
         }
 		

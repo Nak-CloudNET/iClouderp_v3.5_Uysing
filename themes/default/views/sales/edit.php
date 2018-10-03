@@ -685,7 +685,8 @@
                         <div class="col-md-12">
                             <div
                                 class="fprom-group"><?php // echo form_submit('edit_sale', lang("submit"), 'id="edit_sale" class="btn btn-primary" style="padding: 6px 15px; margin:15px 0;"'); ?>
-                                <button type="submit" class="btn btn-primary" style="padding: 6px 15px; margin:15px 0;" id="edit_sale"><?= lang('submit') ?></button>
+                                <button type="submit" class="btn btn-primary" style="padding: 6px 15px; margin:15px 0;display: none;" id="edit_sale"><?= lang('submit') ?></button>
+                                <button type="submit" class="btn btn-primary" id="before_sub"><?= lang('submit') ?></button>
 								<button type="button" class="btn btn-danger" id="reset"><?= lang('reset') ?></button>
                             </div>
                         </div>
@@ -813,6 +814,7 @@
                         <div class="col-sm-8">
 							<input type="text" class="form-control" id="pprice_show">
                             <input type="hidden" class="form-control" id="pprice">
+                            <input type="hidden" class="form-control" id="pcost">
 							<input type="hidden" class="form-control" id="curr_rate">
                         </div>
                     </div>
@@ -1029,8 +1031,115 @@
             }
             $('#modal-loading').hide();
         });
-		
-	   
+
+       $('#before_sub').click(function (e) {
+           e.preventDefault();
+           var message = '';
+           var help = false;
+           var alert_price= <?= $setting->alert_price_less_than_cost ?>;
+           if(alert_price)
+           {
+               $('.ruprice').each(function() {
+                   var tr = $(this).closest('tr');
+                   var price = $(this).val() - 0;
+                   var cost = tr.find('.rucost').val() - 0;
+                   if(price <= cost) {
+                       var product_name = $(this).parent().parent().closest('tr').find('.rname').val();
+                       message += 'Some products price is less than cost )!\n';
+                       help = true;
+                   }
+               });
+           }
+
+           if(help == false){
+               $('#add_sale').trigger('click');
+           }else{
+               bootbox.prompt({
+                   title: message + "Please enter password to continue",
+                   inputType: 'password',
+                   className: "medium",
+                   callback: function (result) {
+                       $.ajax({
+                           type: 'get',
+                           url: '<?= site_url('auth/checkPassDiscount'); ?>',
+                           dataType: "json",
+                           data: {
+                               password: result
+                           },
+                           success: function (data) {
+                               if(data == 1){
+                                   $('#add_sale').trigger('click');
+                               }else{
+                                   bootbox.alert({
+                                       message: "Incorrect password!",
+                                       size: 'small'
+                                   });
+                               }
+                           }
+                       });
+                   }
+               });
+               return false;
+           }
+
+           <?php if($setting->credit_limit == 1) {?>
+           var payment_status = $("#slpayment_status").val();
+           if (payment_status == 'due' || payment_status == 'partial') {
+               var customer_id = $('#slcustomer').val();
+               var c_balance = __getItem('cust_balance');
+               var c_limit = __getItem('credit_limit');
+               var cust_balance = $('#total_balance').val() - 0;
+               cust_balance += parseFloat(c_balance);
+               if (c_limit >= 0 && c_limit < cust_balance) {
+                   if (confirm("This customer has over credit limit (" + (cust_balance - c_limit) + "$)!\n Your Balance is " + cust_balance + "$\n Your Credit Balance is " + parseFloat(c_limit) + "$\n Click (OK) if you want to continue  Or Click (Cancel) if you want to Cancel Adding.") == true) {
+
+                   } else {
+
+                       return false;
+                   }
+
+               }
+           }
+           <?php } ?>
+           var GP = '<?= $GP['sales-discount'];?>';
+           var Owner = '<?= $Owner?>';
+           var Admin = '<?= $Admin?>';
+           var user_log = '<?= $this->session->userdata('user_id');?>';
+           if(Owner || Admin || (GP == 1)){
+               $('#add_sale').trigger('click');
+           }else{
+               var val = '';
+               $('.sdiscount').each(function(){
+                   var parent = $(this).parent().parent();
+                   var value  = parent.find('.sdiscount').text();
+                   if(value != 0){
+                       val = value;
+                   }
+               });
+               if(val == ''){
+                   $('#edit_sale').trigger('click');
+               }else{
+                   bootbox.prompt("Please insert password", function(result){
+                       $.ajax({
+                           type: 'get',
+                           url: '<?= site_url('auth/checkPassDiscount'); ?>',
+                           dataType: "json",
+                           data: {
+                               password: result
+                           },
+                           success: function (data) {
+                               if(data == 1){
+                                   $('#edit_sale').trigger('click');
+                               }else{
+                                   alert('Incorrect passord');
+                               }
+                           }
+                       });
+                   });
+               }
+           }
+
+       });
 	   
         $("#slcustomer").select2("destroy").empty().attr("placeholder", "<?= lang('select_customer_to_load') ?>").select2({
             placeholder: "<?= lang('select_area_to_load') ?>", data: [

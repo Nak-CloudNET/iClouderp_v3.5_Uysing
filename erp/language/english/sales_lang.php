@@ -444,10 +444,11 @@ $lang['expire_date']						= "Expire Date";
 $lang['gift_card_added']					= "Gift card successfully added";
 $lang['invoice_engtay']					    = "Invoic Engtay A4";
 $lang['invoice_nano_tech']					= "Invoice nano tech";
-$lang['order_discount_percent']			    = "Order Discount (%)";
+$lang['order_discount_percent']			    = "Order Discount";
 $lang['print_sale_order']			        = "Print Sale Order";
 $lang['contact'] 							= "Contact";
 $lang['customer_opening_balance'] 			= "Add Customer Opening Balance (A/R)";
 $lang['invoice_camera_city'] 				= "Invoice Camera City";
 $lang['iphoto_invoice'] 					= "iPhoto Invoice";
 $lang['print_iphoto'] 						= "Print iPhoto";
+

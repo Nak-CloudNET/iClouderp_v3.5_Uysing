@@ -178,8 +178,8 @@
                 </div>
                 <div class="invoice" style="margin-top:20px;">
                     <center>
-                        <h4 class="title">វិក្កយបត្រ​បញ្ជា​ទិញ</h4>
-                        <h4 class="title" style="margin-top: 3px;">Purchase Order Invoice</h4>
+                        <h4 class="title">វិក្កយបត្រ​ស្នើរទិញ</h4>
+                        <h4 class="title" style="margin-top: 3px;">Purchase Request</h4>
                     </center>
 
                 </div>
@@ -275,20 +275,28 @@
                         <th>ខ្នាត<br /><?= strtoupper(lang('unit')) ?></th>
                         <?php
                         $t_piece=0;
+                        $w_piece=0;
+                        $tax=0;
+                        $dis=0;
                         foreach ($rows as $row) {
                             $t_piece += $row->piece;
+                            $w_piece += $row->wpiece;
+                            $dis+=$row->item_discount;
+                            $tax+=$row->item_tax;
                         }
-                        if($t_piece!=0){ ?>
+//                      echo '$tp='.$t_piece.'---$wp='.$w_piece;
+//                        $this->erp->print_arrays($rows);
+                        if($t_piece>0 || $w_piece>0 ){ ?>
                             <th>ចំនួនដើម<br /><?= strtoupper(lang('Piece')) ?></th>
                             <th>ទំងន់<br /><?= strtoupper(lang('w/piecs')) ?></th>
                         <?php } ?>
-                        <th>ចំនួន<br /><?= strtoupper(lang('qty')) ?></th>
-                        <th>តម្លៃ<br /><?= strtoupper(lang('cost')) ?></th>
+                        <th width="8%">ចំនួន<br /><?= strtoupper(lang('qty')) ?></th>
+                        <th width="10%">តម្លៃ<br /><?= strtoupper(lang('cost')) ?></th>
 
-                        <?php if ($row->item_discount!=0) { ?>
+                        <?php if ($dis>0) { ?>
                             <th>បញ្ចុះតម្លៃ<br /><?= strtoupper(lang('discount')) ?></th>
                         <?php } ?>
-                        <?php if ($row->item_tax !=0) { ?>
+                        <?php if ($tax >0) { ?>
                             <th style="width: 10%">ពន្ធទំនិញ<br /><?= strtoupper(lang('tax')) ?></th>
                         <?php } ?>
                         <th>តម្លៃសរុប<br /><?= strtoupper(lang('subtotal')) ?></th>
@@ -302,7 +310,7 @@
                     $erow = 1;
                     $totalRow = 0;
                     $total_piece = 0;
-                    //$this->erp->print_arrays($rows['piece']);
+                    //$this->erp->print_arrays($rows);
                     foreach ($rows as $row) {
                         //$this->erp->print_arrays($row);
                         $free = lang('free');
@@ -350,9 +358,9 @@
                                 <?= $row->piece?round($row->piece,2):round($row->quantity,2);?>
                             </td>
                             <td style="vertical-align: middle; text-align: right">
-                                <?= $this->erp->formatMoney($row->unitcost_ton); ?>
+                                <?= $row->unitcost_ton!=0?$this->erp->formatMoney($row->unitcost_ton):$this->erp->formatMoney($row->unit_cost); ?>
                             </td>
-                            <?php if ($row->item_discount !=0) {?>
+                            <?php if ($dis>0) {?>
                                 <td style="vertical-align: middle; text-align: center">
                                     <?php
                                     if(strpos($row->discount,"%")){
@@ -362,7 +370,7 @@
                                     ?>
                                 </td>
                             <?php } ?>
-                            <?php if ($row->item_tax !=0) {?>
+                            <?php if ($tax >0) {?>
                                 <td style="vertical-align: middle; text-align: center">
                                     <?=$this->erp->formatMoney($row->item_tax);?></td>
                             <?php } ?>
@@ -386,17 +394,17 @@
                         $k=16 - $erow;
                         for($j=1;$j<=$k;$j++) {
                             echo  '<tr class="border">
-                                    <td height="34px" style="text-align: center; vertical-align: middle">'.$no.'</td>
+                                    <td height="" style="text-align: center; vertical-align: middle">'.$no.'</td>
                                     <td></td>
                                     <td></td>';
-                            if($total_piece !=0){
+                            if($t_piece>0){
                                 echo '<td></td>
                                           <td></td>';
                             }
-                            if($row->item_discount != 0){
+                            if($dis > 0){
                                 echo '<td></td>';
                             }
-                            if($row->item_tax != 0){
+                            if($tax > 0){
                                 echo '<td></td>';
                             }
                             echo '<td></td>
@@ -411,33 +419,31 @@
                     <?php
 
                     $row = 1;
-                    $col =5;
-                    if ($discount != 0) {
-                        $col=4;
-                    }else{
-                        $col=3;
+                    $col =2;
+                    if ($dis> 0) {
+                        $col++;
+                    }
+                    if($tax>0){
+                        $col++;
                     }
                     if ($invs->grand_total != $invs->total) {
                         $row++;
                     }
                     if ($invs->order_discount != 0) {
                         $row++;
-                        $col++;
+
                     }
-                    if($total_piece !=0){
-                        $row++;
-                        $col++;
-                    }else{
-                        $row++;
-                        $col++;
+                    if($total_piece>0){
+
+                        $col+=2;
                     }
                     if ($invs->shipping != 0) {
                         $row++;
-                        $col++;
+
                     }
                     if ($invs->order_tax != 0) {
                         $row++;
-                        $col++;
+
                     }
                     if($invs->paid != 0 && $invs->deposit != 0) {
                         $row += 4;
@@ -446,6 +452,7 @@
                     }elseif ($invs->paid == 0 && $invs->deposit != 0) {
                         $row += 3;
                     }
+
                     ?>
 
                     <?php
@@ -552,21 +559,21 @@
                                 <div class="col-sm-4 col-xs-4">
                                     <center>
                                         <hr style="margin:0; border:1px solid #000; width: 80%">
-                                        <p style=" margin-top: 4px !important">ហត្ថលេខា និងឈ្មោះអ្នករៀបចំ</p>
+                                        <p style=" margin-top: 4px !important">ហត្ថលេខា និងឈ្មោះអ្នកស្នើរសំុ</p>
                                         <p style="margin-top:-10px;">Prepared's Signature & Name</p>
                                     </center>
                                 </div>
                                 <div class="col-sm-4 col-xs-4">
                                     <center>
-                                        <hr style="margin:0; border:1px solid #000; width: 80%">
-                                        <p style="margin-top: 4px !important">ហត្ថលេខា និងឈ្មោះអ្នកលក់</p>
-                                        <p style="margin-top:-10px;">Seller's Signature & Name</p>
+                                        
+                                        <p style="margin-top: 4px !important"></p>
+                                        <p style="margin-top:-10px;"></p>
                                     </center>
                                 </div>
                                 <div class="col-sm-4 col-xs-4">
                                     <center>
                                         <hr style="margin:0; border:1px solid #000; width: 80%">
-                                        <p style=" margin-top: 4px !important">ហត្ថលេខា និងឈ្មោះអ្នកទិញ</p>
+                                        <p style=" margin-top: 4px !important">ហត្ថលេខា និងឈ្មោះអ្នកអនុញ្ញាតិ</p>
                                         <p style="margin-top:-10px; ">Customer's Signature & Name</p>
                                     </center>
                                 </div>
@@ -584,7 +591,7 @@
 
 
     <div style="width: 821px;margin: 20px">
-        <a class="btn btn-warning no-print" href="<?= site_url('sales'); ?>" style="border-radius: 0">
+        <a class="btn btn-warning no-print" href="<?= site_url('purchases_request'); ?>" style="border-radius: 0">
             <i class="fa fa-hand-o-left" aria-hidden="true"></i>&nbsp;<?= lang("back"); ?>
         </a>
     </div>

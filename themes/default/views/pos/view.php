@@ -197,7 +197,12 @@ if ($modal) {
                 border:none !important;
             }
         </style>
-
+        <?php
+//        $this->erp->print_arrays($rows);
+        foreach ($rows as $row){
+            $tax+=$row->item_tax;
+        }
+        ?>
         <table class="table-condensed receipt no_border_btm" style="width:100%;">
             <thead>
             <tr style="border:1px dotted black !important;">
@@ -205,9 +210,13 @@ if ($modal) {
                 <th style="text-align: left;"><?= lang("Description"); ?></th>
                 <th style="text-align:center;width: 100px;"><?= lang("qty"); ?></th>
                 <th style="text-align:center;"><?= lang("Price"); ?></th>
-                <?php if ($inv->Product_discount != 0 || $total_disc != '') {
-                    echo '<th style="text-align:right;width: 100px;">' . lang('discount') . '</th>';
+                <?php if ($tax>0) {
+                    echo '<th style="text-align:right;width: 100px;">' . lang('Tax') . '</th>';
                 } ?>
+                <?php if ($inv->Product_discount != 0 || $total_disc != '') {
+                    echo '<th style="text-align:right;width: 100px;">' . lang('Disc') . '</th>';
+                } ?>
+
                 <th style="padding-left:10px;padding-right:10px;text-align:right;width: 100px;"><?= lang("amount"); ?> </th>
             </tr>
             </thead>
@@ -244,15 +253,19 @@ if ($modal) {
                     echo '	<td class="text-center"  style="text-align:center; width:100px !important">' . (($row->unit_price) == 0 ? $free : $this->erp->formatMoney($row->unit_price)) . '</td>';
 
                     $colspan = 5;
+                    if ($tax>0) {
+                        echo '<td style="width: 100px; text-align:right; vertical-align:middle;">' .$this->erp->formatMoney($row->item_tax) . '</td>';
+                    }
                     if ($inv->product_discount != 0 || $row->item_discount != 0) {
                         echo '<td style="width: 100px; text-align:right; vertical-align:middle;">' . ($row->discount != 0 ? '<small>(' . $row->discount . ')</small>' : '') . $this->erp->formatMoney($row->item_discount) . '</td>';
                     }
+
                     echo '<td class="text-right">' . (($row->subtotal) == 0 ? $free : $this->erp->formatMoney($row->subtotal)) . '</td>';
 
                     $r++;
                     $total_quantity += $row->quantity;
 
-                    if ($row->product_type === 'combo') {
+                   /*if ($row->product_type === 'combo') {
                         $this->db->select('*, (select name from erp_products p where p.id = erp_combo_items.product_id) as p_name ');
                         $this->db->where('erp_combo_items.product_id = "' . $row->product_id . '"');
                         $comboLoop = $this->db->get('erp_combo_items');
@@ -269,7 +282,7 @@ if ($modal) {
                             echo '</tr>';
                             $c++;
                         }
-                    }
+                    }*/
                 }
             }
             ?>
@@ -302,13 +315,35 @@ if ($modal) {
                         {
                             echo '<small>(' . $inv->order_discount_id . ')</small> '.$this->erp->formatMoney($inv->order_discount);
                         } else {
-                            echo '<small>(' . $inv->order_discount_id .'%'. ')</small> '.$this->erp->formatMoney($inv->order_discount);
+//                            echo '<small>(' . $inv->order_discount_id .'%'. ')</small> '.$this->erp->formatMoney($inv->order_discount);
+                             echo$this->erp->formatMoney($inv->order_discount_id);
                         }
                         ?>
                     </td>
                 </tr>
             <?php }
-           
+
+
+//            $this->erp->print_arrays($inv);
+                    if($inv->total_tax>0){
+                        ?>
+
+                        <tr>
+                            <td class="text-left">ពន្ធអាករ</td>
+                            <td class="text-right flabel">Order Tax (<?= $default_currency->code; ?>)</td>
+                            <td style="text-align:right;"><?=$this->erp->formatMoney($inv->total_tax);?></td>
+                        </tr>
+                        <?php
+                    }
+            if($inv->shipping>0){
+                ?>
+                <tr>
+                    <td class="text-left">ដឹកជញ្ជូន</td>
+                    <td class="text-right flabel">Shipping (<?= $default_currency->code; ?>)</td>
+                    <td style="text-align:right;"><?=$this->erp->formatMoney($inv->shipping);?></td>
+                </tr>
+                <?php
+            }
             ?>
 
             <tr>
@@ -773,51 +808,52 @@ if ($modal) {
         <div style="clear:both;"></div>
     </div>
 </div>
+
 <canvas id="hidden_screenshot" style="display:none;"></canvas>
 <div class="canvas_con" style="display:none;"></div>
 <script type="text/javascript" src="<?= $assets ?>pos/js/jquery-1.7.2.min.js"></script>
 <?php if ($pos_settings->java_applet) {
-        function drawLine()
-        {
-            $size = $pos_settings->char_per_line;
-            $new = '';
-            for ($i = 1; $i < $size; $i++) {
-                $new .= '-';
-            }
+    function drawLine()
+    {
+        $size = $pos_settings->char_per_line;
+        $new = '';
+        for ($i = 1; $i < $size; $i++) {
+            $new .= '-';
+        }
+        $new .= ' ';
+        return $new;
+    }
+
+    function printLine($str, $sep = ":", $space = NULL)
+    {
+        $size = $space ? $space : $pos_settings->char_per_line;
+        $lenght = strlen($str);
+        list($first, $second) = explode(":", $str, 2);
+        $new = $first . ($sep == ":" ? $sep : '');
+        for ($i = 1; $i < ($size - $lenght); $i++) {
             $new .= ' ';
-            return $new;
         }
+        $new .= ($sep != ":" ? $sep : '') . $second;
+        return $new;
+    }
 
-        function printLine($str, $sep = ":", $space = NULL)
-        {
-            $size = $space ? $space : $pos_settings->char_per_line;
-            $lenght = strlen($str);
-            list($first, $second) = explode(":", $str, 2);
-            $new = $first . ($sep == ":" ? $sep : '');
-            for ($i = 1; $i < ($size - $lenght); $i++) {
-                $new .= ' ';
-            }
-            $new .= ($sep != ":" ? $sep : '') . $second;
-            return $new;
-        }
+    function printText($text)
+    {
+        $size = $pos_settings->char_per_line;
+        $new = wordwrap($text, $size, "\\n");
+        return $new;
+    }
 
-        function printText($text)
-        {
-            $size = $pos_settings->char_per_line;
-            $new = wordwrap($text, $size, "\\n");
-            return $new;
-        }
+    function taxLine($name, $code, $qty, $amt, $tax)
+    {
+        return printLine(printLine(printLine(printLine($name . ':' . $code, '', 18) . ':' . $qty, '', 25) . ':' . $amt, '', 35) . ':' . $tax, ' ');
+    }
 
-        function taxLine($name, $code, $qty, $amt, $tax)
-        {
-            return printLine(printLine(printLine(printLine($name . ':' . $code, '', 18) . ':' . $qty, '', 25) . ':' . $amt, '', 35) . ':' . $tax, ' ');
-        }
+    ?>
 
-        ?>
-
-        <script type="text/javascript" src="<?= $assets ?>pos/qz/js/deployJava.js"></script>
-        <script type="text/javascript" src="<?= $assets ?>pos/qz/qz-functions.js"></script>
-        <script type="text/javascript">
+    <script type="text/javascript" src="<?= $assets ?>pos/qz/js/deployJava.js"></script>
+    <script type="text/javascript" src="<?= $assets ?>pos/qz/qz-functions.js"></script>
+    <script type="text/javascript">
             deployQZ('themes/<?=$Settings->theme?>/assets/pos/qz/qz-print.jar', '<?= $assets ?>pos/qz/qz-print_jnlp.jnlp');
             usePrinter("<?= $pos_settings->receipt_printer; ?>");
             <?php /*$image = $this->erp->save_barcode($inv->reference_no);*/ ?>
@@ -916,49 +952,39 @@ if ($modal) {
             }
 
         </script>
+<?php } ?>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#email').click(function () {
+            var email = prompt("<?= lang("email_address"); ?>", "<?= $customer->email; ?>");
+            if (email != null) {
+                $.ajax({
+                    type: "post",
+                    url: "<?= site_url('pos/email_receipt') ?>",
+                    data: {<?= $this->security->get_csrf_token_name(); ?>: "<?= $this->security->get_csrf_hash(); ?>", email: email, id: <?= $inv->id; ?>},
+                dataType: "json",
+                    success: function (data) {
+                    alert(data.msg);
+                },
+                error: function () {
+                    alert('<?= lang('ajax_request_failed'); ?>');
+                    return false;
+                }
+            });
+            }
+            return false;
+        });
+    });
+    <?php if (!$pos_settings->java_applet) { ?>
+        $(window).load(function () {
+            window.print();
+            <?php if($Settings->auto_print){?>
+                setTimeout('window.close()', 5000);
+                document.location.href = "<?=base_url()?>pos";
+            <?php }	?>
+        });
     <?php } ?>
-            <script type="text/javascript">
-                $(document).ready(function () {
-                    $('#email').click(function () {
-                        var email = prompt("<?= lang("email_address"); ?>", "<?= $customer->email; ?>");
-                        if (email != null) {
-                            $.ajax({
-                                type: "post",
-                                url: "<?= site_url('pos/email_receipt') ?>",
-                                data: {;<?= $this->security->get_csrf_token_name(); ?>:
-                            "<?= $this->security->get_csrf_hash(); ?>", email;
-                        :
-                            email, id;
-                        : <?= $inv->id; ?>},
-                            "json",
-                                success;
-                        :
-
-                            function (data) {
-                                alert(data.msg);
-                            }
-
-                        ,
-                            error: function () {
-                                alert('<?= lang('ajax_request_failed'); ?>');
-                                return false;
-                            }
-                        })
-                        }
-                        return false;
-                    });
-                });
-         <?php if (!$pos_settings->java_applet) { ?>
-			$(window).load(function () {
-                // window.print();
-				<?php
-				if($Settings->auto_print){?>
-					setTimeout('window.close()', 5000);
-					document.location.href = "<?=base_url()?>pos";
-				<?php }	?>
-			});
-    <?php } ?>
-            </script>
+</script>
 </body>
 
 </html>

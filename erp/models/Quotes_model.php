@@ -154,7 +154,7 @@ class Quotes_model extends CI_Model
 
     public function getAllQuoteItems($quote_id)
     {
-        $this->db->select('quote_items.*, tax_rates.code as tax_code, tax_rates.name as tax_name,warehouses_products.quantity AS qoh, tax_rates.rate as tax_rate, products.unit, products.details as details, product_variants.name as variant')
+        $this->db->select('quote_items.*, tax_rates.code as tax_code, tax_rates.name as tax_name,warehouses_products.quantity AS qoh, tax_rates.rate as tax_rate, products.unit,products.cost,products.details as details, product_variants.name as variant')
             ->join('products', 'products.id=quote_items.product_id', 'left')
             ->join('product_variants', 'product_variants.id=quote_items.option_id', 'left')
 			->join('warehouses_products', 'quote_items.product_id = warehouses_products.product_id', 'left')	
@@ -333,7 +333,7 @@ class Quotes_model extends CI_Model
 
     public function getProductOptions_old($product_id, $warehouse_id)
     {
-        $this->db->select('product_variants.id as id, product_variants.name as name, product_variants.price as price, product_variants.quantity as total_quantity, warehouses_products_variants.quantity as quantity')
+        $this->db->select('product_variants.id as id, product_variants.name as name, product_variants.price as price,product_variants.cost as cost, product_variants.quantity as total_quantity, warehouses_products_variants.quantity as quantity')
             ->join('warehouses_products_variants', 'warehouses_products_variants.option_id=product_variants.id', 'left')
             //->join('warehouses', 'warehouses.id=product_variants.warehouse_id', 'left')
             ->where('product_variants.product_id', $product_id)
@@ -352,7 +352,7 @@ class Quotes_model extends CI_Model
 	
 	public function getProductOptions($product_id, $warehouse_id, $all = NULL)
     {
-        $this->db->select('product_variants.id as id, product_variants.name as name, product_variants.price as price, product_variants.quantity as total_quantity, warehouses_products_variants.quantity as quantity,product_variants.qty_unit as qty_unit')
+        $this->db->select('product_variants.id as id, product_variants.name as name, product_variants.price as price,product_variants.cost as cost, product_variants.quantity as total_quantity, warehouses_products_variants.quantity as quantity,product_variants.qty_unit as qty_unit')
             ->join('warehouses_products_variants', 'warehouses_products_variants.option_id=product_variants.id', 'left')
             //->join('warehouses', 'warehouses.id=product_variants.warehouse_id', 'left')
             ->where('product_variants.product_id', $product_id)

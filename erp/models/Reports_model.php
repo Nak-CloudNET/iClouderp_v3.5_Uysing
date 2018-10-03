@@ -9,11 +9,197 @@ class Reports_model extends CI_Model
     }
 
     public function getProductNames($term, $limit = 5)
+{
+    $this->db->select('id, code, name')
+        ->like('name', $term, 'both')->or_like('code', $term, 'both');
+    $this->db->limit($limit);
+    $q = $this->db->get('products');
+    if ($q->num_rows() > 0) {
+        foreach (($q->result()) as $row) {
+            $data[] = $row;
+        }
+        return $data;
+    }
+    return FALSE;
+}
+    public function getProductCodeById($customer_name = null, $pro = null, $reference = null, $biller = null,$s_start = null, $e_end = null,$pro_code1=null)
+{
+    $this->db->select('sale_items.`product_code`
+       ')
+        ->from('erp_sale_items')
+        ->join('erp_products', 'erp_products.code = erp_sale_items.product_code','left')
+        ->join('erp_sales' , 'erp_sales.id = erp_sale_items.sale_id','left')
+    ;
+    if ($customer_name){
+        $this->db->where('sales.customer_id ',$customer_name);
+    }
+    if ($s_start){
+        $this->db->where('erp_sales.date>=', $s_start);
+    }
+    if ($e_end){
+        $this->db->where('erp_sales.date<=', $e_end);
+    }
+    if ($pro_code1){
+        $this->db->where('erp_sale_items.product_code',$pro_code1);
+    }
+
+    if ($biller){
+        $this->db->where('sales.biller_id',$biller);
+    }
+    if ($reference){
+        $this->db->where('erp_sales.reference_no',$reference);
+    }
+    if ($pro){
+        $this->db->where('sale_items.product_id',$pro);
+    }
+    $this->db->where('erp_sale_items.product_type !=', 'service');
+    $this->db->group_by('sale_items.product_code');
+
+    $q = $this->db->get();
+    if ($q->num_rows() > 0) {
+        foreach (($q->result()) as $row) {
+            $data[] = $row;
+        }
+        return $data;
+    }
+
+    return FALSE;
+}
+    public function getPurchaseCodeById( $product_id = null,  $reference = null,$billers = null,$s_start = null, $e_end = null,$pro_code1=null)
     {
-        $this->db->select('id, code, name')
-            ->like('name', $term, 'both')->or_like('code', $term, 'both');
-        $this->db->limit($limit);
-        $q = $this->db->get('products');
+        //$this->erp->print_arrays($product_id);
+        $this->db->select('purchase_items`.`product_code` ,erp_purchases.biller_id,erp_purchases.reference_no
+       ')
+            ->from('erp_purchase_items')
+            ->join('erp_products', 'erp_products.code = erp_purchase_items.product_code','left')
+            ->join('erp_purchases' , 'erp_purchases.id = erp_purchase_items.purchase_id','left')
+            ->where('erp_purchase_items.purchase_id IS NOT NULL')
+        ;
+        if ($reference){
+            $this->db->where('erp_purchases.reference_no',$reference);
+        }
+        if ($product_id){
+            $this->db->where('erp_products.id',$product_id);
+        }
+        if ($billers){
+            $this->db->where('erp_purchases.biller_id',$billers);
+        }
+//        if ($customer_name){
+//            $this->db->where('erp_purchases.customer_id ',$customer_name);
+//        }
+        if ($s_start){
+            $this->db->where('erp_purchases.date>=', $s_start);
+        }
+        if ($e_end){
+            $this->db->where('erp_purchases.date<=', $e_end);
+        }
+        if ($pro_code1){
+            $this->db->where('erp_purchase_items.product_code',$pro_code1);
+        }
+
+        $this->db->where('purchase_items.product_type !=', 'service');
+        $this->db->group_by('erp_purchase_items.product_code');
+
+        $q = $this->db->get();
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+
+
+        return FALSE;
+    }
+    public function getSuppliersByID($supplier_id = null,  $reference = null,$s_start = null, $e_end = null,$biller=null)
+    {
+        //$this->erp->print_arrays($product_id);
+        $this->db->select('erp_purchases.supplier ,erp_purchases.reference_no,erp_purchases.id,erp_purchases.supplier_id,erp_purchases.biller_id
+       ')
+            ->from('erp_purchases');
+        if ($reference){
+            $this->db->where('erp_purchases.reference_no',$reference);
+        }
+        if ($supplier_id){
+            $this->db->where('erp_purchases.supplier_id',$supplier_id);
+        }
+
+//        if ($customer_name){
+//            $this->db->where('erp_purchases.customer_id ',$customer_name);
+//        }
+        if ($s_start){
+            $this->db->where('erp_purchases.date>=', $s_start);
+        }
+        if ($e_end){
+            $this->db->where('erp_purchases.date<=', $e_end);
+        }
+        if ($biller){
+            $this->db->where('erp_purchases.biller_id=', $biller);
+        }
+//        if ($pro_code1){
+//            $this->db->where('erp_purchase_items.product_code',$pro_code1);
+//        }
+
+        $this->db->group_by('erp_purchases.supplier_id');
+
+        $q = $this->db->get();
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+
+
+        return FALSE;
+    }
+    public function getAllSupplier()
+    {
+        $this->db->select('erp_purchases.supplier,erp_purchases.supplier_id
+       ')
+            ->from('erp_purchases');
+        $this->db->group_by('erp_purchases.supplier_id');
+
+        $q = $this->db->get();
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+
+
+        return FALSE;
+    }
+    public function getPurchaseSummaryCodeById($product_id = null,  $billers = null,$s_start = null, $e_end = null,$pro_code1=null)
+    {
+        $this->db->select('purchase_items`.`product_code` ,erp_purchases.biller_id,erp_purchases.reference_no,	erp_products.id')
+            ->from('erp_purchase_items')
+            ->join('erp_products', 'erp_products.code = erp_purchase_items.product_code','left')
+            ->join('erp_purchases' , 'erp_purchases.id = erp_purchase_items.purchase_id','left')
+        ;
+//        if ($reference){
+//            $this->db->where('erp_purchases.reference_no',$reference);
+//        }
+        if ($billers){
+            $this->db->where('erp_purchases.biller_id',$billers);
+        }
+        if ($product_id){
+            $this->db->where('erp_products.id',$product_id);
+        }
+
+        if ($s_start){
+            $this->db->where('erp_purchases.date>=', $s_start);
+        }
+        if ($e_end){
+            $this->db->where('erp_purchases.date<=', $e_end);
+        }
+        if ($pro_code1){
+            $this->db->where('erp_purchase_items.product_code',$pro_code1);
+        }
+        $this->db->where('purchase_items.product_type !=', 'service');
+        $this->db->group_by('erp_purchase_items.product_code');
+        $q = $this->db->get();
         if ($q->num_rows() > 0) {
             foreach (($q->result()) as $row) {
                 $data[] = $row;
@@ -21,6 +207,332 @@ class Reports_model extends CI_Model
             return $data;
         }
         return FALSE;
+    }
+    public function getPurchaseSummaryDataAll($pro_code = null, $customer = null,$reference = null,$billers=null,$s_start = null, $e_end = null,$pro_code1=null)
+    {
+        $this->db->select('erp_purchase_items.product_code,
+                                erp_purchases.note,
+                                erp_purchases.customer_id,
+                                erp_purchases.biller_id,
+                                date_format( erp_purchases.date,\'%d-%m-%Y\')as date,
+                                erp_purchase_items.unit_cost,
+                                erp_purchase_items.quantity,
+                                erp_companies.company')
+            ->from('erp_purchases')
+            ->join('erp_purchase_items', 'erp_purchase_items.purchase_id = erp_purchases.id ','left')
+            ->join('erp_companies', 'erp_companies.id = erp_purchases.biller_id ','left')
+            // ->join(' erp_companies' , 'erp_companies.id = erp_sales.biller_id ','left')
+        ;
+        if ($customer ){
+            $this->db->where('customer_id',$customer);
+        }
+        if ($s_start){
+            $this->db->where('erp_purchases.date>=', $s_start);
+        }
+        if ($e_end){
+            $this->db->where('erp_purchases.date<=', $e_end);
+        }
+        if ($billers){
+            $this->db->where('erp_purchases.biller_id',$billers);
+        }
+        if ($reference){
+            $this->db->where('erp_purchases.reference_no',$reference);
+        }
+        if ($pro_code ){
+            $this->db->where('erp_purchase_items.product_code',$pro_code);
+            $this->db->where('erp_purchase_items.product_type !=', 'service');
+
+        };
+        if ($pro_code1){
+            $this->db->where('erp_sale_items.product_code',$pro_code1);
+        }
+        $this->db->group_by('product_code');
+        $q = $this->db->get();
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return FALSE;
+    }
+    public function getProductCodeSummary($pr_c=null,$cus=null,$ref=null,$biller=null,$s_start=null,$e_end=null)
+    {
+        $this->db->select('erp_sale_items.`product_code`
+       ')
+            ->from('erp_sale_items')
+            ->join('erp_products', 'erp_products.code = erp_sale_items.product_code','left')
+        ->join('erp_sales' , 'erp_sales.id = erp_sale_items.sale_id','left');
+            if($pr_c){
+                $this->db ->where('erp_products.id',$pr_c);
+            }
+        if($cus){
+            $this->db->where('sales.customer_id ',$cus);
+        }
+        if($ref){
+            $this->db->where('sales.reference_no ',$ref);
+        }
+        if($biller){
+            $this->db->where('sales.biller_id ',$biller);
+        }
+        if ($s_start){
+            $this->db->where('erp_sales.date>=', $s_start);
+        }
+        if ($e_end){
+            $this->db->where('erp_sales.date<=', $e_end);
+        }
+        $this->db->where('erp_sale_items.product_type !=', 'service');
+        $this->db->group_by('erp_sale_items.product_code');
+
+        $q = $this->db->get();
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return FALSE;
+    }
+    public function getSupplierCodeSummary($pur_id=null,$s_start=null,$e_end=null,$biller=null,$ref_no=null)
+    {
+        $this->db->select('erp_purchases`.`supplier`,erp_purchases`.`supplier_id`,sum(`erp_purchase_items`.quantity) as total_qty,sum(erp_purchases.grand_total) as g_total
+       ')
+            ->from('erp_purchases')
+          //  ->join('erp_products', 'erp_products.code = erp_sale_items.product_code','left')
+         //   ->join('erp_sales' , 'erp_sales.id = erp_sale_items.sale_id','left')
+            ->join('erp_purchase_items','erp_purchase_items.purchase_id=erp_purchases.id','left')
+        ;
+        if($pur_id){
+            $this->db ->where('erp_purchases.supplier_id',$pur_id);
+        }
+//        if($ref){
+//            $this->db->where('erp_purchases.reference_no ',$ref);
+//        }
+//        if($biller){
+//            $this->db->where('erp_purchases.biller_id ',$biller);
+//        }
+        if ($s_start){
+            $this->db->where('erp_purchases.date>=', $s_start);
+        }
+        if ($e_end){
+            $this->db->where('erp_purchases.date<=', $e_end);
+        }
+        if($biller){
+            $this->db ->where('erp_purchases.biller_id',$biller);
+        }
+        if($ref_no){
+            $this->db ->where('erp_purchases.reference_no',$ref_no);
+        }
+
+        $this->db->group_by('erp_purchases.supplier_id');
+
+        $q = $this->db->get();
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return FALSE;
+    }
+    public function getAllProductCodeSummary($code = null)
+    {
+        $this->db->select('erp_sales.customer,
+                        erp_sales.type,
+                        date( erp_sales.date ) AS dd,
+                        SUM(erp_sale_items.quantity) as qty,
+                        erp_sale_items.description,
+                        erp_sale_items.product_code,
+                    (erp_sale_items.unit_price) as price,
+                    SUM((erp_sale_items.quantity)*(erp_sale_items.unit_price)) as amt                    
+       ')
+            ->from('erp_sales')
+            ->join('erp_sale_items', 'erp_sale_items.sale_id = erp_sales.id','left')
+            ->join('erp_companies', 'erp_companies.id = erp_sales.biller_id')
+        ;
+        $this->db->where('erp_sale_items.product_type !=', 'service');
+        if ($code){
+            $this->db->where('sale_items.product_code',$code);
+        }
+        $q = $this->db->get();
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+
+        return FALSE;
+    }
+    public function getProductDataAll($pro_code = null, $customer = null,$reference = null,$billers=null,$s_start = null, $e_end = null,$pro_code1=null)
+    {
+        $this->db->select(' erp_sales.customer,   
+                            erp_sales.customer_id,                     
+                            erp_sales.type,
+                             erp_sales.id as sale_id,
+                            date(erp_sales.date) as dd,
+                            erp_sales.reference_no,
+                            erp_sale_items.quantity,
+                            erp_sale_items.description,                            
+                            erp_sale_items.product_code,
+                            erp_sale_items.unit_price,
+                            erp_companies.`company`,
+                             erp_sales.`biller`')
+            ->from('erp_sales')
+            ->join('erp_sale_items', 'erp_sale_items.sale_id = erp_sales.id ','left')
+            ->join(' erp_companies' , 'erp_companies.id = erp_sales.biller_id ','left')
+
+        ;
+        if ($customer ){
+            $this->db->where('customer_id',$customer);
+        }
+        if ($s_start){
+            $this->db->where('erp_sales.date>=', $s_start);
+        }
+        if ($e_end){
+            $this->db->where('erp_sales.date<=', $e_end);
+        }
+        if ($billers){
+            $this->db->where('erp_sales.biller_id',$billers);
+        }
+        if ($reference){
+            $this->db->where('erp_sales.reference_no',$reference);
+        }
+        if ($pro_code ){
+            $this->db->where('erp_sale_items.product_code',$pro_code);
+            $this->db->where('erp_sale_items.product_type !=', 'service');
+
+        };
+        if ($pro_code1){
+            $this->db->where('erp_sale_items.product_code',$pro_code1);
+        }
+        $q = $this->db->get();
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+
+
+        return FALSE;
+    }
+    public function getPurchaseDataAll($pro_code = null, $customer = null,$reference = null,$billers=null,$s_start = null, $e_end = null,$pro_code1=null)
+    {
+        $this->db->select('erp_purchases.reference_no,
+                                erp_purchases.id as pu_id,
+                                erp_purchases.note,
+                                erp_purchases.customer_id,
+                                erp_purchases.biller_id,
+                                date_format( erp_purchases.date,\'%d-%m-%Y\')as date,
+                                erp_purchase_items.unit_cost,
+                                erp_purchase_items.quantity,
+                                erp_purchase_items.product_code,
+                                erp_companies.company')
+            ->from('erp_purchases')
+            ->join('erp_purchase_items', 'erp_purchase_items.purchase_id = erp_purchases.id ','left')
+            ->join('erp_companies', 'erp_companies.id = erp_purchases.biller_id ','left')
+            ->where('erp_purchase_items.purchase_id IS NOT NULL')
+            // ->join(' erp_companies' , 'erp_companies.id = erp_sales.biller_id ','left')
+        ;
+        if ($customer ){
+            $this->db->where('customer_id',$customer);
+        }
+        if ($s_start){
+            $this->db->where('erp_purchases.date>=', $s_start);
+        }
+        if ($e_end){
+            $this->db->where('erp_purchases.date<=', $e_end);
+        }
+        if ($billers){
+            $this->db->where('erp_purchases.biller_id',$billers);
+        }
+        if ($reference){
+            $this->db->where('erp_purchases.reference_no',$reference);
+        }
+        if ($pro_code ){
+            $this->db->where('erp_purchase_items.product_code',$pro_code);
+            $this->db->where('erp_purchase_items.product_type !=', 'service');
+
+        };
+        if ($pro_code1){
+            $this->db->where('erp_purchase_items.product_code',$pro_code1);
+        }
+        $q = $this->db->get();
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+
+
+        return FALSE;
+    }
+    public function getPurchaseDataAll_r($supplier_id = null,$reference = null,$s_start = null, $e_end = null,$billerss=null)
+    {
+        $this->db->select('erp_purchases.reference_no,
+                                erp_purchases.id as pu_id,
+                                erp_purchases.note,
+                                erp_purchases.customer_id,
+                                erp_purchases.biller_id,
+                                date_format( erp_purchases.date,\'%d-%m-%Y\')as date,
+                                erp_purchase_items.unit_cost,
+                                erp_purchase_items.quantity,
+                                erp_purchase_items.product_code,
+                                erp_companies.company')
+            ->from('erp_purchases')
+            ->join('erp_purchase_items', 'erp_purchase_items.purchase_id = erp_purchases.id ','left')
+            ->join('erp_companies', 'erp_companies.id = erp_purchases.biller_id ','left')
+//            ->where('erp_purchase_items.purchase_id IS NOT NULL')
+           // ->join(' erp_companies' , 'erp_companies.id = erp_sales.biller_id ','left')
+
+            ->order_by('erp_purchases.date','DESC');
+        ;
+//        if ($customer ){
+//            $this->db->where('customer_id',$customer);
+//        }
+        if ($s_start){
+            $this->db->where('erp_purchases.date>=', $s_start);
+        }
+        if ($e_end){
+            $this->db->where('erp_purchases.date<=', $e_end);
+        }
+        if ($billerss){
+            $this->db->where('erp_purchases.biller_id',$billerss);
+        }
+        if ($reference){
+            $this->db->where('erp_purchases.reference_no',$reference);
+        }
+//        if ($pro_code ){
+//            $this->db->where('erp_purchase_items.product_code',$pro_code);
+//            $this->db->where('erp_purchase_items.product_type !=', 'service');
+//
+//        };
+        if ($supplier_id){
+            $this->db->where('erp_purchases.supplier_id',$supplier_id);
+        }
+        $q = $this->db->get();
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+
+
+        return FALSE;
+    }
+    public function getQtyBySupplierId($sup=null){
+        $this->db->select("sum(erp_purchase_items.quantity)")
+            ->from("erp_purchase_items")
+            ->join("erp_purchases","erp_purchases.id=erp_purchase_items.purchase_id","left")
+            ->where("erp_purchases.supplier_id",$sup);
+        $q = $this->db->get();
+        if ($q->num_rows() > 0) {
+            return $q->row();
+        }
+        return false;
     }
 	public function getsale_top_export($id){
 		$this->db->select("erp_sale_items.id, 
@@ -381,7 +893,21 @@ class Reports_model extends CI_Model
         }
         return FALSE;
     }
-
+    public function getStaff_r()
+    {
+        if ($this->Admin) {
+            $this->db->where('group_id !=', 1);
+        }
+        $this->db->where('group_id !=', 3)->where('group_id !=', 4);
+        $q = $this->db->get('users');
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return FALSE;
+    }
     public function getSaleman($saleman=null)
     {
         $user_id = $this->session->userdata('user_id');
@@ -4601,6 +5127,7 @@ ORDER BY
         $this->db->join('products', 'stock_trans.product_id = products.id', 'left');
         $this->db->join('warehouses', 'warehouses.id = stock_trans.warehouse_id', 'left');
         $this->db->join('purchases', 'stock_trans.tran_id = purchases.id', 'left');
+        $this->db->where('products.type !=', 'service');
 
 		if($warehouse_id){
             $this->db->where("stock_trans.warehouse_id", $warehouse_id);
@@ -4648,6 +5175,7 @@ ORDER BY
 		$this->db->join('warehouses', 'sale_items.warehouse_id = warehouses.id');
 		$this->db->join('sales', 'sales.id = sale_items.sale_id');
 		$this->db->join('products','products.id = sale_items.product_id');
+		$this->db->where('products.type !=', 'service');
 		
 		if($warehouse_id){
 			$this->db->where("sale_items.warehouse_id",$warehouse_id);
@@ -4687,45 +5215,45 @@ ORDER BY
 		}
 		return false;
 	}
-	
-	public function getCategoriesInventoryValuationByWarehouse($warehouse_id,$category_id,$product_id,$stockType,$from_date,$to_date,$reference_no, $biller){
-        $this->db->select('category_id, categories.name AS category_name, purchases.reference_no');
+
+    public function getCategoriesInventoryValuationByWarehouse($warehouse_id,$category_id,$product_id,$stockType,$from_date,$to_date,$reference_no, $biller){
+        $this->db->select('erp_products.category_id, categories.name AS category_name, purchases.reference_no');
         $this->db->join('products', 'stock_trans.product_id = products.id', 'left');
         $this->db->join('categories', 'categories.id = products.category_id', 'left');
         $this->db->join('purchases', 'stock_trans.tran_id = purchases.id', 'left');
-		if($warehouse_id){
+        if($warehouse_id){
             $this->db->where('stock_trans.warehouse_id', $warehouse_id);
-		}
-		if($category_id){
+        }
+        if($category_id){
             $this->db->where('products.category_id', $category_id);
-		}
-		if($product_id){
+        }
+        if($product_id){
             $this->db->where('stock_trans.product_id', $product_id);
-		}
-		if($biller){
+        }
+        if($biller){
             $this->db->where('stock_trans.biller_id', $biller);
-		}
-		if($stockType){
+        }
+        if($stockType){
             $this->db->where('stock_trans.tran_type', $stockType);
-		}
-		
-		if($reference_no){
+        }
+
+        if($reference_no){
             $this->db->where('purchases.reference_no', $reference_no);
-		}
-		if($from_date && $to_date){
+        }
+        if($from_date && $to_date){
             $this->db->where('date_format(erp_stock_trans.tran_date,"%Y-%m-%d") >="' . $from_date . '" AND date_format(erp_stock_trans.tran_date,"%Y-%m-%d") <="' . $to_date . '"');
-		}
+        }
 
         $this->db->group_by('category_id');
         $q = $this->db->get('stock_trans');
-		if($q->num_rows() > 0 ) {
-			foreach($q->result() as $row){
-				$data[] = $row;
-			}
-			return $data;
-		}
-		return false;
-	}
+        if($q->num_rows() > 0 ) {
+            foreach($q->result() as $row){
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return false;
+    }
 	
 	public function getCategoriesProductProfitByWarehouse($warehouse_id,$category_id,$product_id,$from_date,$to_date,$reference_no,$biller){
 		
@@ -4733,6 +5261,8 @@ ORDER BY
 		$this->db->join('erp_products','erp_products.id = erp_sale_items.product_id');
 		$this->db->join('erp_categories', 'erp_categories.id = erp_products.category_id');
 		$this->db->join('sales','sales.id = sale_items.sale_id');
+		$this->db->where('products.type !=', 'service');
+
 		if($warehouse_id){
 			$this->db->where('sale_items.warehouse_id', $warehouse_id);
 		}
@@ -4769,28 +5299,28 @@ ORDER BY
         $this->db->select('product_id, product_code,products.name as product_name,units.name as un');
         $this->db->join("products", "products.id=inventory_valuation_details.product_id", "LEFT");
         $this->db->join("units", "units.id=products.unit", "LEFT");
-		if($warehouse_id){
+        if($warehouse_id){
             $this->db->where('inventory_valuation_details.warehouse_id', $warehouse_id);
-		}
-		if($category_id){
+        }
+        if($category_id){
             $this->db->where('inventory_valuation_details.category_id', $category_id);
-		}
-		if($product_id){
+        }
+        if($product_id){
             $this->db->where('inventory_valuation_details.product_id', $product_id);
-		}
-		if($stockType){
+        }
+        if($stockType){
             $this->db->where('inventory_valuation_details.type', $stockType);
-		}
-		if($biller){
+        }
+        if($biller){
             $this->db->where('biller_id', $biller);
         }
         if ($plan_id) {
             $this->db->where('plan_id', $plan_id);
-		}
-		if($reference_no){
+        }
+        if($reference_no){
             $this->db->where('inventory_valuation_details.reference_no', $reference_no);
-		}
-		if($from_date && $to_date){
+        }
+        if($from_date && $to_date){
 
             //$from_date = date('Y-m-d',strtotime($from_date)).' 00:00:00';
             //$to_date   = date('Y-m-d',strtotime($to_date)).' 00:00:00';
@@ -4799,20 +5329,23 @@ ORDER BY
         $this->db->group_by('inventory_valuation_details.product_id');
         $this->db->order_by('inventory_valuation_details.id', 'desc');
         $q = $this->db->get('inventory_valuation_details');
-		if($q->num_rows() > 0 ) {
-			foreach($q->result() as $row){
-				$data[] = $row;
-			}
-			return $data;
-		}
-		return false;
-	}
+        if($q->num_rows() > 0 ) {
+            foreach($q->result() as $row){
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return false;
+    }
 	
-	public function getProductsProfitByWhCat($warehouse_id,$category_id,$product_id,$from_date,$to_date,$reference_no,$biller){
+	public function getProductsProfitByWhCat($warehouse_id,$category_id,$product_id,$from_date,$to_date,$reference_no,$biller)
+	{
 		$this->db->select('product_id, product_code,products.name as product_name,units.name as un');
 		$this->db->join("products","products.id=erp_sale_items.product_id");
 		$this->db->join("units","units.id=products.unit");
 		$this->db->join('sales','sales.id = sale_items.sale_id');
+		$this->db->where('products.type !=', 'service');
+
 		if($warehouse_id){
 			$this->db->where('erp_sale_items.warehouse_id', $warehouse_id);
 		}
@@ -4844,56 +5377,84 @@ ORDER BY
 		}
 		return false;
 	}
-	
-	public function getProductsInventoryValuationByProduct($warehouse_id,$category_id,$product_id,$stockType,$from_date,$to_date,$reference_no, $biller){
+
+    public function getProductsInventoryValuationByProduct($warehouse_id,$category_id,$product_id,$stockType,$from_date,$to_date,$reference_no, $biller){
         $this->db->select('
                             stock_trans.*,
                             products.name as product_name,
                             companies.company AS biller_company,
                             companies.name AS biller_name,
-                            products.image
-                            ')
-            ->join('companies', 'companies.id = stock_trans.biller_id', 'left')
-            ->join('products', 'products.id = stock_trans.product_id', 'left');
+                            products.image,
+                            CASE
+                                WHEN erp_stock_trans.tran_type = \'PURCHASE\' THEN
+                                    erp_purchases.reference_no
+                                WHEN erp_stock_trans.tran_type = \'SALE\' THEN
+                                    erp_sales.reference_no
+                                WHEN erp_stock_trans.tran_type = \'ADJUSTMENT\' THEN
+                                    erp_adjustments.reference_no
+                                WHEN erp_stock_trans.tran_type = \'USING STOCK\' THEN
+                                    erp_enter_using_stock.reference_no
+                                WHEN erp_stock_trans.tran_type = \'CONVERT\' THEN
+                                    erp_convert.reference_no
+                                WHEN erp_stock_trans.tran_type = \'TRANSFER\' THEN
+                                    erp_transfers.transfer_no
+                                WHEN erp_stock_trans.tran_type = \'SALE RETURN\' THEN
+                                    erp_return_sales.reference_no
+                                WHEN erp_stock_trans.tran_type = \'DELIVERY\' THEN
+                                    erp_deliveries.do_reference_no
+                                
+                            END as reference_no     
+                            ');
+        $this->db->join('companies', 'companies.id = stock_trans.biller_id', 'left');
+        $this->db->join('products', 'products.id = stock_trans.product_id', 'left');
+        $this->db->join('purchases', 'stock_trans.tran_id = purchases.id', 'left');
+        $this->db->join('sales', 'stock_trans.tran_id = sales.id', 'left');
+        $this->db->join('adjustments', 'stock_trans.tran_id = adjustments.id', 'left');
+        $this->db->join('enter_using_stock', 'stock_trans.tran_id = enter_using_stock.id', 'left');
+        $this->db->join('convert', 'stock_trans.tran_id = convert.id', 'left');
+        $this->db->join('transfers', 'stock_trans.tran_id = transfers.id', 'left');
+        $this->db->join('return_sales', 'stock_trans.tran_id = return_sales.id', 'left');
+        $this->db->join('deliveries', 'stock_trans.tran_id = deliveries.id', 'left');
 
-		if ($this->Settings->product_expiry == 1) {
-            $this->db->select('SUM(COALESCE(erp_stock_trans.quantity,0)) as quantity');
-            $this->db->group_by('stock_trans.expired_date');
-            $this->db->group_by('stock_trans.tran_type');
-		}
+        /*	if ($this->Settings->product_expiry == 1) {
+                $this->db->select('SUM(COALESCE(erp_stock_trans.quantity,0)) as quantity');
+                $this->db->group_by('stock_trans.expired_date');
+                $this->db->group_by('stock_trans.tran_type');
+            }*/
 
-		if($category_id){
+        if($category_id){
             $this->db->where('products.category_id', $category_id);
-		}
-		if($product_id){
+        }
+        if($product_id){
             $this->db->where('stock_trans.product_id', $product_id);
-		}
-		
-		if($warehouse_id){
+        }
+
+        if($warehouse_id){
             $this->db->where('stock_trans.warehouse_id', $warehouse_id);
-		}
-		
-		if($stockType){
+        }
+
+        if($stockType){
             $this->db->where('stock_trans.tran_type', $stockType);
-		}
-		if($biller){
+        }
+        if($biller){
             $this->db->where('stock_trans.biller_id', $biller);
-		}
-		if($reference_no){
-            $this->db->where('stock_trans.reference', $reference_no);
-		}
-		if($from_date && $to_date){
+        }
+        if($reference_no){
+            $this->db->where('purchases.reference_no', $reference_no);
+        }
+        if($from_date && $to_date){
             $this->db->where('date_format(erp_stock_trans.tran_date,"%Y-%m-%d") >="' . $from_date . '" AND date_format(erp_stock_trans.tran_date,"%Y-%m-%d") <="' . $to_date . '"');
         }
+        $this->db->order_by('stock_trans.tran_date','ASC');
         $q = $this->db->get('stock_trans');
-		if($q->num_rows() > 0 ) {
-			foreach($q->result() as $row){
-				$data[] = $row;
-			}
-			return $data;
-		}
-		return false;
-	}
+        if($q->num_rows() > 0 ) {
+            foreach($q->result() as $row){
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return false;
+    }
 	
 	public function getProductsProfitByProduct($warehouse_id,$category_id,$product_id,$from_date,$to_date,$reference_no, $biller){
         $this->db->select('erp_sales.date,erp_sales.customer,erp_sales.reference_no,erp_sale_items.*, companies.name AS biller_name, product_variants.qty_unit as qty_variant, products.image');
@@ -4901,6 +5462,8 @@ ORDER BY
 		$this->db->join('companies', 'companies.id = erp_sales.biller_id', 'left');
 		$this->db->join('product_variants', 'product_variants.id = erp_sale_items.option_id', 'left');
 		$this->db->join('products','products.id = sale_items.product_id');
+		$this->db->where('products.type !=', 'service');
+
 		if($warehouse_id){
 			$this->db->where('erp_sale_items.warehouse_id', $warehouse_id);
 		}
@@ -5106,35 +5669,36 @@ ORDER BY
         }
         return FALSE;
 	}
-	
-	
-	public function getWarePur($wid,$warehouse,$product,$category,$biller){
-		$this->db->select("erp_warehouses.id,erp_warehouses.name")
-				 ->join("erp_warehouses","erp_warehouses.id = stock_trans.warehouse_id","LEFT")
-				 ->join("products","products.id = stock_trans.product_id","LEFT");
-		if ($warehouse) {
-			$this->db->where("stock_trans.warehouse_id",$warehouse);
-		} else {
-			if($wid){
-				$this->db->where("stock_trans.warehouse_id IN ($wid)");
-			}
-		}
-		if ($product) {
-			$this->db->where("stock_trans.product_id",$product);
-		}
-		if($category){
-			$this->db->where("products.category_id",$category);
-		}
-		$this->db->group_by("stock_trans.warehouse_id");
-		$q = $this->db->get("stock_trans");
-		if ($q->num_rows() > 0) {
+
+    public function getWarePur($wid,$warehouse,$product,$category,$biller=NULL){
+        $this->db->select("erp_warehouses.id,erp_warehouses.name")
+            ->join("erp_warehouses","erp_warehouses.id = stock_trans.warehouse_id","LEFT")
+            ->join("products","products.id = stock_trans.product_id","LEFT")
+            ->where('products.type !=', 'service');
+
+        if ($warehouse) {
+            $this->db->where("stock_trans.warehouse_id",$warehouse);
+        } else {
+            if($wid){
+                $this->db->where("stock_trans.warehouse_id IN ($wid)");
+            }
+        }
+        if ($product) {
+            $this->db->where("stock_trans.product_id",$product);
+        }
+        if($category){
+            $this->db->where("products.category_id",$category);
+        }
+        $this->db->group_by("stock_trans.warehouse_id");
+        $q = $this->db->get("stock_trans");
+        if ($q->num_rows() > 0) {
             foreach (($q->result()) as $row) {
                 $data[] = $row;
             }
             return $data;
         }
         return FALSE;
-	}
+    }
 	public function getWareFull(){	
 		$q = $this->db->get("erp_warehouses");
 		if ($q->num_rows() > 0) {
@@ -5158,30 +5722,52 @@ ORDER BY
         }
         return FALSE;
 	}
-	public function getProPur($wid,$cid,$product2=null,$biller,$start=null,$end=null){
-        $this->db->select("product_id,products.code,products.name,units.name as name_unit,products.category_id,stock_trans.warehouse_id, products.image")
+
+    public function getProPur($wid,$cid,$product2=null,$biller,$start=null,$end=null){
+        $this->db->select("product_id,products.code,products.name,units.name as name_unit,products.category_id,stock_trans.warehouse_id, products.image,erp_products.cost as product_cost")
             ->join("products","products.id = stock_trans.product_id","LEFT")
             ->join("units","units.id = products.unit","LEFT")
-            //->join("erp_purchases","erp_purchases.id=stock_trans.tran_id","LEFT")
-            ->where('stock_trans.tran_date >= "'.$start.'" AND stock_trans.tran_date <= "'.$end.'"')
-		    ->where('stock_trans.quantity_balance_unit !=', 0);
-		if($product2){
-			$this->db->where(array("stock_trans.product_id"=>$product2));
-		}
-        /*if($biller){
-            $this->db->where("erp_purchases.biller_id",$biller);
-        }*/
-		$this->db->where(array("stock_trans.warehouse_id"=>$wid,"products.category_id"=>$cid));
-		$this->db->group_by("stock_trans.product_id");
-		$q = $this->db->get("stock_trans");
-		if ($q->num_rows() > 0) {
+            ->where('products.type !=', 'service')
+            ->where('stock_trans.quantity_balance_unit !=', 0);
+
+        if($product2){
+            $this->db->where(array("stock_trans.product_id"=>$product2));
+        }
+
+        $this->db->where(array("stock_trans.warehouse_id"=>$wid,"products.category_id"=>$cid));
+        $this->db->group_by("stock_trans.product_id");
+        $q = $this->db->get("stock_trans");
+        if ($q->num_rows() > 0) {
             foreach (($q->result()) as $row) {
                 $data[] = $row;
             }
             return $data;
         }
         return FALSE;
-	}
+    }
+    public function getProPurs($product2=null,$biller,$start=null,$end=null){
+        $this->db->select("product_id,products.code,products.name,units.name as name_unit,products.category_id,stock_trans.warehouse_id,stock_trans.tran_type, products.image,erp_products.cost as product_cost")
+            ->join("products","products.id = stock_trans.product_id","LEFT")
+            ->join("units","units.id = products.unit","LEFT")
+            ->where('products.type !=', 'service')
+            ->where('stock_trans.quantity_balance_unit !=', 0);
+
+        if($product2){
+            $this->db->where(array("stock_trans.product_id"=>$product2));
+        }
+        $this->db->where('stock_trans.tran_date >="'.$start.'" AND stock_trans.tran_date<="'.$end.'"');
+        $this->db->group_by("stock_trans.product_id");
+        $q = $this->db->get("stock_trans");
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return FALSE;
+    }
+
+
 	public function getQtyINALL($id,$wid,$tr,$start,$end,$biller){
 		$this->db->select("SUM(COALESCE(quantity_balance_unit, 0)) as bqty");
 		$this->db->join("erp_purchases","erp_purchases.id = stock_trans.tran_id","LEFT");
@@ -5194,6 +5780,24 @@ ORDER BY
 		$q = $this->db->get("stock_trans");
 		if ($q->num_rows() > 0) {
             return $q->row();
+        }
+        return FALSE;
+	}
+	public function getQtyINALLS($id,$tr,$start,$end,$biller){
+		$this->db->select("quantity_balance_unit as bqty");
+		$this->db->join("erp_purchases","erp_purchases.id = stock_trans.tran_id","LEFT");
+		if($biller){
+			$this->db->where("erp_purchases.biller_id",$biller);
+		}
+		$this->db->where("quantity_balance_unit >",0);
+		$this->db->where('stock_trans.tran_date >="'.$start.'" AND stock_trans.tran_date<="'.$end.'"');
+		$this->db->where(array("product_id"=>$id));
+		$q = $this->db->get("stock_trans");
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
         }
         return FALSE;
 	}
@@ -5212,26 +5816,17 @@ ORDER BY
         }
         return FALSE;
 	}
-	
-	public function getProCat($wid,$category2,$product2,$biller){
-		$this->db->select("erp_categories.id,erp_categories.name")
-				 ->join("erp_categories","erp_categories.id=products.category_id","LEFT")
-				 ->join("stock_trans","stock_trans.product_id = products.id","LEFT")
-                ->join("erp_purchases","erp_purchases.id = stock_trans.tran_id","LEFT");
-		if($category2){
-			$this->db->where(array("products.category_id"=>$category2));
+	public function getQtyOUTALLS($id,$tr,$start,$end,$biller){
+		$this->db->select("((-1)*quantity_balance_unit) as bqty");
+		$this->db->join("erp_purchases","erp_purchases.id = stock_trans.tran_id","LEFT");
+		if($biller){
+			$this->db->where("erp_purchases.biller_id",$biller);
 		}
-		if($product2){
-			$this->db->where(array("products.id"=>$product2));
-		}
-        if($biller){
-            $this->db->where("erp_purchases.biller_id",$biller);
-        }
-		$this->db->where(array("stock_trans.warehouse_id"=>$wid));
-		$this->db->limit(2);
-		$this->db->group_by("products.category_id");
-		$q = $this->db->get("products");
-		if ($q->num_rows() > 0) {
+		$this->db->where("quantity_balance_unit <",0);
+		$this->db->where('stock_trans.tran_date >="'.$start.'" AND stock_trans.tran_date<="'.$end.'"');
+		$this->db->where(array("product_id"=>$id));
+		$q = $this->db->get("stock_trans");
+        if ($q->num_rows() > 0) {
             foreach (($q->result()) as $row) {
                 $data[] = $row;
             }
@@ -5239,6 +5834,36 @@ ORDER BY
         }
         return FALSE;
 	}
+
+    public function getProCat($wid,$category2,$product2,$biller=NULL){
+        $this->db->select("erp_categories.id,erp_categories.name")
+            ->join("erp_categories","erp_categories.id=products.category_id","LEFT")
+            ->join("stock_trans","stock_trans.product_id = products.id","LEFT")
+            ->join("erp_purchases","erp_purchases.id = stock_trans.tran_id","LEFT")
+            ->where('products.type !=', 'service');
+
+        if($category2){
+            $this->db->where(array("products.category_id"=>$category2));
+        }
+        if($product2){
+            $this->db->where(array("products.id"=>$product2));
+        }
+        if($biller){
+            $this->db->where("erp_purchases.biller_id",$biller);
+        }
+        $this->db->where(array("stock_trans.warehouse_id"=>$wid));
+        //$this->db->limit(2);
+        $this->db->group_by("products.category_id");
+        $q = $this->db->get("products");
+        if ($q->num_rows() > 0) {
+            foreach (($q->result()) as $row) {
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return FALSE;
+    }
+
 	public function getTransuctionsPurIN($product2,$warehouse2,$start,$end,$biller){
 		$this->db->select("tran_type");
 		$this->db->join("erp_purchases","erp_purchases.id = stock_trans.tran_id","LEFT");
@@ -5373,25 +5998,42 @@ ORDER BY
         }
         return FALSE;
 	}
-	public function getBeginQtyINALL($id,$wid,$start,$end,$biller){
-		$numMonth=1;
-		$startDate=date('Y-m-01',strtotime($start . " - $numMonth month"));
-		$endDate=date('Y-m-t',strtotime($start . " - $numMonth month"));
-		$this->db->select("SUM(COALESCE(quantity_balance_unit, 0)) as bqty");
-		$this->db->join("erp_purchases","erp_purchases.id = stock_trans.tran_id","LEFT");
-		$this->db->where("quantity_balance_unit >",0);
-		if($biller){
-			$this->db->where("erp_purchases.biller_id",$biller);
-		}
-		$this->db->where('stock_trans.tran_date >="'.$startDate.'" AND stock_trans.tran_date <="'.$endDate.'"');
-		$this->db->where(array("product_id"=>$id,"stock_trans.warehouse_id"=>$wid));
-		$q = $this->db->get("stock_trans");
-		if ($q->num_rows() > 0) {
+    public function getBeginQtyINALL($id,$wid,$start,$end,$biller, $from_date2){
+        $numMonth=1;
+        $startDate=date('Y-m-01',strtotime($start . " - $numMonth month"));
+        $endDate=date('Y-m-t',strtotime($start . " - $numMonth month"));
+        $this->db->select("SUM(COALESCE(quantity_balance_unit, 0)) as bqty");
+        $this->db->join("erp_purchases","erp_purchases.id = stock_trans.tran_id","LEFT");
+        $this->db->where("quantity_balance_unit >",0);
+        if($biller){
+            $this->db->where("erp_purchases.biller_id",$biller);
+        }
+        $this->db->where('stock_trans.tran_date <"'.$start.'"');
+        $this->db->where(array("product_id"=>$id,"stock_trans.warehouse_id"=>$wid));
+        $q = $this->db->get("stock_trans");
+        if ($q->num_rows() > 0) {
             return $q->row();
         }
         return FALSE;
-	}
-
+    }
+    public function getBeginQtyINALLS($id,$start,$end,$biller, $from_date2){
+        $numMonth=1;
+        $startDate=date('Y-m-01',strtotime($start . " - $numMonth month"));
+        $endDate=date('Y-m-t',strtotime($start . " - $numMonth month"));
+        $this->db->select("SUM(COALESCE(quantity_balance_unit, 0)) as bqty");
+        $this->db->join("erp_purchases","erp_purchases.id = stock_trans.tran_id","LEFT");
+        $this->db->where("quantity_balance_unit >",0);
+        if($biller){
+            $this->db->where("erp_purchases.biller_id",$biller);
+        }
+        $this->db->where('stock_trans.tran_date <"'.$start.'"');
+        $this->db->where(array("product_id"=>$id));
+        $q = $this->db->get("stock_trans");
+        if ($q->num_rows() > 0) {
+            return $q->row();
+        }
+        return FALSE;
+    }
 	public function getBeginQtyINALL2($id,$wid,$start,$end,$biller){
 		$numMonth=0;
 		$startDate=date('Y-m-01',strtotime($start . " - $numMonth month"));
@@ -5410,24 +6052,42 @@ ORDER BY
         }
         return FALSE;
 	}
-	public function getBeginQtyOUTALL($id,$wid,$start,$end,$biller){
-		$numMonth=1;
-		$startDate=date('Y-m-01',strtotime($start . " - $numMonth month"));
-		$endDate=date('Y-m-t',strtotime($start . " - $numMonth month"));
-		$this->db->select("SUM(COALESCE((-1)*quantity_balance_unit, 0)) as bqty");
-		$this->db->join("erp_purchases","erp_purchases.id = stock_trans.tran_id","LEFT");
-		$this->db->where("quantity_balance_unit <",0);
-		if($biller){
-			$this->db->where("erp_purchases.biller_id",$biller);
-		}
-		$this->db->where('stock_trans.tran_date >="'.$startDate.'" AND stock_trans.tran_date<="'.$endDate.'"');
-		$this->db->where(array("product_id"=>$id,"stock_trans.warehouse_id"=>$wid));
-		$q = $this->db->get("stock_trans");
-		if ($q->num_rows() > 0) {
+    public function getBeginQtyOUTALL($id,$wid,$start,$end,$biller){
+        $numMonth=1;
+        $startDate=date('Y-m-01',strtotime($start . " - $numMonth month"));
+        $endDate=date('Y-m-t',strtotime($start . " - $numMonth month"));
+        $this->db->select("SUM(COALESCE((-1)*quantity_balance_unit, 0)) as bqty");
+        $this->db->join("erp_purchases","erp_purchases.id = stock_trans.tran_id","LEFT");
+        $this->db->where("quantity_balance_unit <",0);
+        if($biller){
+            $this->db->where("erp_purchases.biller_id",$biller);
+        }
+        $this->db->where('stock_trans.tran_date <"'.$start.'" ');
+        $this->db->where(array("product_id"=>$id,"stock_trans.warehouse_id"=>$wid));
+        $q = $this->db->get("stock_trans");
+        if ($q->num_rows() > 0) {
             return $q->row();
         }
         return FALSE;
-	}
+    }
+    public function getBeginQtyOUTALLS($id,$start,$end,$biller){
+        $numMonth=1;
+        $startDate=date('Y-m-01',strtotime($start . " - $numMonth month"));
+        $endDate=date('Y-m-t',strtotime($start . " - $numMonth month"));
+        $this->db->select("SUM(COALESCE((-1)*quantity_balance_unit, 0)) as bqty");
+        $this->db->join("erp_purchases","erp_purchases.id = stock_trans.tran_id","LEFT");
+        $this->db->where("quantity_balance_unit <",0);
+        if($biller){
+            $this->db->where("erp_purchases.biller_id",$biller);
+        }
+        $this->db->where('stock_trans.tran_date <"'.$start.'" ');
+        $this->db->where(array("product_id"=>$id));
+        $q = $this->db->get("stock_trans");
+        if ($q->num_rows() > 0) {
+            return $q->row();
+        }
+        return FALSE;
+    }
 	public function getBeginQtyOUTALL2($id,$wid,$start,$end,$biller){
 		$numMonth=0;
 		$startDate=date('Y-m-01',strtotime($start . " - $numMonth month"));
@@ -5451,80 +6111,169 @@ ORDER BY
 	{
 		$user_warehouse = $this->session->userdata('warehouse_id');
 		$user_warehouses = explode(',', $user_warehouse);
-		if ($user_warehouse) {
-			$this->db->select("products.*,units.name as uname,purchase_items.expiry");
-			$this->db->join("units","units.id=products.unit","left");
-			$this->db->join("purchase_items","products.id = purchase_items.product_id","left");
-			$this->db->join('warehouses_products', 'purchase_items.product_id = warehouses_products.product_id', 'left');
-			$this->db->order_by('purchase_items.id', 'desc');
 
-			if ($this->Settings->product_expiry == 1) {
-				$this->db->group_by('purchase_items.expiry');
-			} else {
-				$this->db->group_by('products.id');
-				if (count($user_warehouses) >1) {
+        if ($user_warehouse) {
+
+            if ($this->Settings->product_expiry == 1) {
+                    $this->db->select("
+                    products.id,
+                    products.image,
+                    products.code,
+                    products.name,
+                    stock_trans.expired_date as expiry,
+                    units.name as uname,
+                    IF(erp_stock_trans.expired_date, SUM(erp_stock_trans.quantity), erp_stock_trans.quantity) as qty_balance")
+                ->join("products","stock_trans.product_id = products.id","left")
+                ->join('warehouses_products', 'products.id = warehouses_products.product_id', 'left')
+                ->join("units","units.id=products.unit","left")
+                ->where("products.type !=", "service")
+                ->group_by(array('stock_trans.product_id', 'stock_trans.expired_date'))
+                ->order_by('stock_trans.product_id', 'desc');
+
+                if (count($user_warehouses) >1) {
                     $this->db->where_in("warehouses_products.warehouse_id",$user_warehouses);
                 } else {
                     $this->db->where("warehouses_products.warehouse_id",$user_warehouse);
                 }
-				$this->db->where("warehouses_products.quantity <>", 0);
-			}
-			if($cid){
-				$this->db->where("category_id", $cid);
-			}
+                $this->db->where("warehouses_products.quantity <>", 0);
+                
+                if($cid){
+                    $this->db->where("category_id", $cid);
+                }
 
-			$this->db->where("products.type !=", "service");
-			
+                $this->db->where("products.type !=", "service");
+                
 
-			if($product_id){
-				$this->db->where('purchase_items.product_id', $product_id);
-			}
-			if ($start_date) {
-				$this->db->where($this->db->dbprefix('purchase_items').'.expiry BETWEEN "' . $start_date . '" AND "' . $end_date . '"');
-			}
-			
-			$this->db->limit($per_page, $ob_set); 
-			$q = $this->db->get('products');
-			if($q->num_rows()>0){
-				foreach($q->result() as $row){
-					$data[] = $row;
-				}
-				return $data;
-			}
-			return false;
+                if($product_id){
+                    $this->db->where('stock_trans.product_id', $product_id);
+                }
+                if ($start_date) {
+                    $this->db->where($this->db->dbprefix('stock_trans').'.expired_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"');
+                }
+                
+                $this->db->limit($per_page, $ob_set); 
+                $q = $this->db->get('stock_trans');
+                if($q->num_rows()>0){
+                    foreach($q->result() as $row){
+                        $data[] = $row;
+                    }
+                    return $data;
+                }
+                return false;
+            } else {
+                $this->db->select("products.*,units.name as uname,purchase_items.expiry");
+                $this->db->join("units","units.id=products.unit","left");
+                $this->db->join("purchase_items","products.id = purchase_items.product_id","left");
+                $this->db->join('warehouses_products', 'purchase_items.product_id = warehouses_products.product_id', 'left');
+                $this->db->order_by('purchase_items.id', 'desc');
+
+                if ($this->Settings->product_expiry == 1) {
+                    $this->db->group_by('purchase_items.expiry');
+                } else {
+                    $this->db->group_by('products.id');
+                    if (count($user_warehouses) >1) {
+                        $this->db->where_in("warehouses_products.warehouse_id",$user_warehouses);
+                    } else {
+                        $this->db->where("warehouses_products.warehouse_id",$user_warehouse);
+                    }
+                    $this->db->where("warehouses_products.quantity <>", 0);
+                }
+                if($cid){
+                    $this->db->where("category_id", $cid);
+                }
+
+                $this->db->where("products.type !=", "service");
+                
+
+                if($product_id){
+                    $this->db->where('purchase_items.product_id', $product_id);
+                }
+                if ($start_date) {
+                    $this->db->where($this->db->dbprefix('purchase_items').'.expiry BETWEEN "' . $start_date . '" AND "' . $end_date . '"');
+                }
+                
+                $this->db->limit($per_page, $ob_set); 
+                $q = $this->db->get('products');
+                if($q->num_rows()>0){
+                    foreach($q->result() as $row){
+                        $data[] = $row;
+                    }
+                    return $data;
+                }
+                return false;
+            }
 
 		} else {
-			$this->db->select("products.*,units.name as uname,purchase_items.expiry");
-			$this->db->join("units","units.id=products.unit","left");
-			$this->db->join("purchase_items","products.id = purchase_items.product_id","left");
-			$this->db->order_by('purchase_items.id', 'desc');
 
-			if ($this->Settings->product_expiry == 1) {
-				$this->db->group_by('purchase_items.expiry');
-			} else {
-				$this->db->group_by('products.id');
-			}
-			if($cid){
-				$this->db->where("category_id", $cid);
-			}
-			$this->db->where("products.type !=", "service");
+            if ($this->Settings->product_expiry == 1) {
+                    $this->db->select("
+                    products.id,
+                    products.image,
+                    products.code,
+                    products.name,
+                    stock_trans.expired_date as expiry,
+                    units.name as uname,
+                    IF(erp_stock_trans.expired_date, SUM(erp_stock_trans.quantity), erp_stock_trans.quantity) as qty_balance")
+                ->join("products","stock_trans.product_id = products.id","left")
+                ->join("units","units.id=products.unit","left")
+                ->where("products.type !=", "service")
+                ->group_by(array('stock_trans.product_id', 'stock_trans.expired_date'))
+                ->order_by('stock_trans.product_id', 'desc');
+                
+                if($cid){
+                    $this->db->where("category_id", $cid);
+                }
+                if($product_id){
+                    $this->db->where('stock_trans.product_id', $product_id);
+                }
+                if ($start_date) {
+                    $this->db->where($this->db->dbprefix('stock_trans').'.expired_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"');
+                }
+                
+                $this->db->limit($per_page, $ob_set); 
+                $q = $this->db->get('stock_trans');
+                if($q->num_rows()>0){
+                    foreach($q->result() as $row){
+                        $data[] = $row;
+                    }
+                    return $data;
+                }
+                return false;
+            } else {
+                $this->db->select("products.*,units.name as uname,purchase_items.expiry");
+                $this->db->join("units","units.id=products.unit","left");
+                $this->db->join("purchase_items","products.id = purchase_items.product_id","left");
+                $this->db->order_by('purchase_items.id', 'desc');
 
-			if($product_id){
-				$this->db->where('purchase_items.product_id', $product_id);
-			}
-			if ($start_date) {
-				$this->db->where($this->db->dbprefix('purchase_items').'.expiry BETWEEN "' . $start_date . '" AND "' . $end_date . '"');
-			}
+                if ($this->Settings->product_expiry == 1) {
+                    $this->db->group_by('purchase_items.expiry');
+                } else {
+                    $this->db->group_by('products.id');
+                }
+                if($cid){
+                    $this->db->where("category_id", $cid);
+                }
+                $this->db->where("products.type !=", "service");
+
+                if($product_id){
+                    $this->db->where('purchase_items.product_id', $product_id);
+                }
+                if ($start_date) {
+                    $this->db->where($this->db->dbprefix('purchase_items').'.expiry BETWEEN "' . $start_date . '" AND "' . $end_date . '"');
+                }
+                
+                $this->db->limit($per_page, $ob_set); 
+                $q = $this->db->get('products');
+                if($q->num_rows()>0){
+                    foreach($q->result() as $row){
+                        $data[] = $row;
+                    }
+                    return $data;
+                }
+                return false;
+            }
+
 			
-			$this->db->limit($per_page, $ob_set); 
-			$q = $this->db->get('products');
-			if($q->num_rows()>0){
-				foreach($q->result() as $row){
-					$data[] = $row;
-				}
-				return $data;
-			}
-			return false;
 		}
 	}
 
@@ -5532,83 +6281,145 @@ ORDER BY
 	{
 		$user_warehouses = $this->session->userdata('warehouse_id');
 		if ($user_warehouses) {
+            if ($this->Settings->product_expiry == 1) {
+                    $this->db->select("SUM(erp_stock_trans.quantity_balance_unit) as wqty")
+                        ->join('products', 'stock_trans.product_id = products.id', 'left')
+                        ->join('warehouses_products', 'products.id = warehouses_products.product_id', 'left')
+                        ->where("stock_trans.expired_date",$expiry)
+                        ->where("stock_trans.product_id",$pid)
+                        ->where("stock_trans.warehouse_id",$wid)
+                        ->group_by(array('stock_trans.expired_date', 'stock_trans.product_id'));
+                
+                $this->db->where("warehouses_products.product_id",$pid);
+                $this->db->where("warehouses_products.warehouse_id",$wid);
+                $this->db->where("warehouses_products.quantity <>", 0);
 
-			if ($this->Settings->product_expiry == 1) {
-				$this->db->select("SUM(COALESCE(erp_warehouses_products.quantity_balance,0)) as wqty");
-				$this->db->join('products', 'purchase_items.product_id = products.id', 'left');
-			} else {
-				$this->db->select("erp_warehouses_products.quantity as wqty");
-				$this->db->join('products', 'purchase_items.product_id = products.id', 'left');
-			} 
+                if($product2){
+                    $this->db->where('erp_warehouses_products.product_id', $product2);
+                }
+                if($category2){
+                    $this->db->where('products.category_id', $category2);
+                }
+                if($warehouse2){
+                    $this->db->where('erp_warehouses_products.warehouse_id', $warehouse2);
+                }
+                if ($start_date1) {
+                    $this->db->where($this->db->dbprefix('stock_trans').'.tran_date BETWEEN "' . $start_date1 . '" AND "' . $end_date1 . '"');
+                }
 
-			$this->db->where("purchase_items.status =", "received");
-			$this->db->join('warehouses_products', 'purchase_items.product_id = warehouses_products.product_id', 'left');
-			$this->db->join('purchases', 'purchase_items.purchase_id = purchases.id', 'left');
+                $q = $this->db->get("stock_trans");
+                if ($q->num_rows() > 0) {
+                    return $q->row();
+                }
+                return FALSE;
+            } else {
+                if ($this->Settings->product_expiry == 1) {
+                $this->db->select("SUM(COALESCE(erp_warehouses_products.quantity_balance,0)) as wqty");
+                $this->db->join('products', 'purchase_items.product_id = products.id', 'left');
+            } else {
+                $this->db->select("erp_warehouses_products.quantity as wqty");
+                $this->db->join('products', 'purchase_items.product_id = products.id', 'left');
+            } 
 
-			if ($this->Settings->product_expiry == 1) {
-				$this->db->group_by('purchase_items.expiry');
-				$this->db->where("purchase_items.expiry",$expiry);
-			} else {
-				$this->db->group_by('purchase_items.product_id');
-			}
+            $this->db->where("purchase_items.status =", "received");
+            $this->db->join('warehouses_products', 'purchase_items.product_id = warehouses_products.product_id', 'left');
+            $this->db->join('purchases', 'purchase_items.purchase_id = purchases.id', 'left');
+
+            if ($this->Settings->product_expiry == 1) {
+                $this->db->group_by('purchase_items.expiry');
+                $this->db->where("purchase_items.expiry",$expiry);
+            } else {
+                $this->db->group_by('purchase_items.product_id');
+            }
+            
+            $this->db->where("warehouses_products.product_id",$pid);
+            $this->db->where("warehouses_products.warehouse_id",$wid);
+            $this->db->where("warehouses_products.quantity <>", 0);
+
+            if($product2){
+                $this->db->where('erp_warehouses_products.product_id', $product2);
+            }
+            if($category2){
+                $this->db->where('products.category_id', $category2);
+            }
+            if($warehouse2){
+                $this->db->where('erp_warehouses_products.warehouse_id', $warehouse2);
+            }
+            if ($start_date1) {
+                $this->db->where($this->db->dbprefix('products').'.start_date BETWEEN "' . $start_date1 . '" AND "' . $end_date1 . '"');
+            }
+
+            $q = $this->db->get("purchase_items");
+            if ($q->num_rows() > 0) {
+                return $q->row();
+            }
+            return FALSE;
+            }
 			
-			$this->db->where("warehouses_products.product_id",$pid);
-			$this->db->where("warehouses_products.warehouse_id",$wid);
-			$this->db->where("warehouses_products.quantity <>", 0);
-
-			if($product2){
-				$this->db->where('erp_warehouses_products.product_id', $product2);
-			}
-			if($category2){
-				$this->db->where('products.category_id', $category2);
-			}
-			if($warehouse2){
-				$this->db->where('erp_warehouses_products.warehouse_id', $warehouse2);
-			}
-			if ($start_date1) {
-				$this->db->where($this->db->dbprefix('products').'.start_date BETWEEN "' . $start_date1 . '" AND "' . $end_date1 . '"');
-			}
-
-			$q = $this->db->get("purchase_items");
-			if ($q->num_rows() > 0) {
-	            return $q->row();
-	        }
-	        return FALSE;
 		} else {
-			$this->db->select("COALESCE(erp_warehouses_products.quantity,0) as wqty");
-			$this->db->join('products', 'purchase_items.product_id = products.id', 'left');
-			$this->db->join('purchases', 'purchase_items.purchase_id = purchases.id', 'left');
-			$this->db->join('erp_warehouses_products', 'purchase_items.product_id = erp_warehouses_products.product_id', 'left');
-			$this->db->where("purchase_items.status =", "received");
 
-			if ($this->Settings->product_expiry == 1) {
-				$this->db->group_by('purchase_items.expiry');
-				$this->db->where("purchase_items.expiry",$expiry);
-			} else {
-				$this->db->group_by('purchase_items.product_id');
-			}
+            if ($this->Settings->product_expiry == 1) {
+                    $this->db->select("SUM(erp_stock_trans.quantity_balance_unit) as wqty")
+                        ->join('products', 'stock_trans.product_id = products.id', 'left')
+                        ->where("stock_trans.expired_date",$expiry)
+                        ->where("stock_trans.product_id",$pid)
+                        ->where("stock_trans.warehouse_id",$wid)
+                        ->group_by(array('stock_trans.expired_date', 'stock_trans.product_id'));
 
-			$this->db->where("erp_warehouses_products.product_id",$pid);
-			$this->db->where("erp_warehouses_products.warehouse_id",$wid);
+                if($product2){
+                    $this->db->where('stock_trans.product_id', $product2);
+                }
+                if($category2){
+                    $this->db->where('products.category_id', $category2);
+                }
+                if($warehouse2){
+                    $this->db->where('stock_trans.warehouse_id', $warehouse2);
+                }
+                if ($start_date1) {
+                    $this->db->where($this->db->dbprefix('stock_trans').'.expired_date BETWEEN "' . $start_date1 . '" AND "' . $end_date1 . '"');
+                }
 
-			if($product2){
-				$this->db->where('erp_warehouses_products.product_id', $product2);
-			}
-			if($category2){
-				$this->db->where('products.category_id', $category2);
-			}
-			if($warehouse2){
-				$this->db->where('erp_warehouses_products.warehouse_id', $warehouse2);
-			}
-			if ($start_date1) {
-				$this->db->where($this->db->dbprefix('purchase_items').'.expiry BETWEEN "' . $start_date1 . '" AND "' . $end_date1 . '"');
-			}
+                $q = $this->db->get("stock_trans");
+                if ($q->num_rows() > 0) {
+                    return $q->row();
+                }
+                return FALSE;
+            } else {
+                $this->db->select("COALESCE(erp_warehouses_products.quantity,0) as wqty");
+                $this->db->join('products', 'purchase_items.product_id = products.id', 'left');
+                $this->db->join('purchases', 'purchase_items.purchase_id = purchases.id', 'left');
+                $this->db->join('erp_warehouses_products', 'purchase_items.product_id = erp_warehouses_products.product_id', 'left');
+                $this->db->where("purchase_items.status =", "received");
 
-			$q = $this->db->get("purchase_items");
-			if ($q->num_rows() > 0) {
-	            return $q->row();
-	        }
-	        return FALSE;
+                if ($this->Settings->product_expiry == 1) {
+                    $this->db->group_by('purchase_items.expiry');
+                    $this->db->where("purchase_items.expiry",$expiry);
+                } else {
+                    $this->db->group_by('purchase_items.product_id');
+                }
+
+                $this->db->where("erp_warehouses_products.product_id",$pid);
+                $this->db->where("erp_warehouses_products.warehouse_id",$wid);
+
+                if($product2){
+                    $this->db->where('erp_warehouses_products.product_id', $product2);
+                }
+                if($category2){
+                    $this->db->where('products.category_id', $category2);
+                }
+                if($warehouse2){
+                    $this->db->where('erp_warehouses_products.warehouse_id', $warehouse2);
+                }
+                if ($start_date1) {
+                    $this->db->where($this->db->dbprefix('purchase_items').'.expiry BETWEEN "' . $start_date1 . '" AND "' . $end_date1 . '"');
+                }
+
+                $q = $this->db->get("purchase_items");
+                if ($q->num_rows() > 0) {
+                    return $q->row();
+                }
+                return FALSE;
+            }
 		}
 	}
 	public function getQtyByPro($pid,$product2,$category2){
@@ -6297,6 +7108,84 @@ ORDER BY
             return $q->result();
         }
         return FALSE;
+    }
+    public function getProductsBeginAssetValue($warehouse_id,$category_id,$product_id,$stockType,$from_date,$to_date,$reference_no, $biller){
+        $this->db->select('
+                            stock_trans.*,
+                            products.name as product_name,
+                            companies.company AS biller_company,
+                            companies.name AS biller_name,
+                            products.image,
+                            CASE
+                                WHEN erp_stock_trans.tran_type = \'PURCHASE\' THEN
+                                    erp_purchases.reference_no
+                                WHEN erp_stock_trans.tran_type = \'SALE\' THEN
+                                    erp_sales.reference_no
+                                WHEN erp_stock_trans.tran_type = \'ADJUSTMENT\' THEN
+                                    erp_adjustments.reference_no
+                                WHEN erp_stock_trans.tran_type = \'USING STOCK\' THEN
+                                    erp_enter_using_stock.reference_no
+                                WHEN erp_stock_trans.tran_type = \'CONVERT\' THEN
+                                    erp_convert.reference_no
+                                WHEN erp_stock_trans.tran_type = \'TRANSFER\' THEN
+                                    erp_transfers.transfer_no
+                                WHEN erp_stock_trans.tran_type = \'SALE RETURN\' THEN
+                                    erp_return_sales.reference_no
+                                WHEN erp_stock_trans.tran_type = \'DELIVERY\' THEN
+                                    erp_deliveries.do_reference_no
+                                
+                            END as reference_no     
+                            ');
+        $this->db->join('companies', 'companies.id = stock_trans.biller_id', 'left');
+        $this->db->join('products', 'products.id = stock_trans.product_id', 'left');
+        $this->db->join('purchases', 'stock_trans.tran_id = purchases.id', 'left');
+        $this->db->join('sales', 'stock_trans.tran_id = sales.id', 'left');
+        $this->db->join('adjustments', 'stock_trans.tran_id = adjustments.id', 'left');
+        $this->db->join('enter_using_stock', 'stock_trans.tran_id = enter_using_stock.id', 'left');
+        $this->db->join('convert', 'stock_trans.tran_id = convert.id', 'left');
+        $this->db->join('transfers', 'stock_trans.tran_id = transfers.id', 'left');
+        $this->db->join('return_sales', 'stock_trans.tran_id = return_sales.id', 'left');
+        $this->db->join('deliveries', 'stock_trans.tran_id = deliveries.id', 'left');
+
+        /*if ($this->Settings->product_expiry == 1) {
+            $this->db->select('SUM(COALESCE(erp_stock_trans.quantity,0)) as quantity');
+            $this->db->group_by('stock_trans.expired_date');
+            $this->db->group_by('stock_trans.tran_type');
+        }*/
+
+        if($category_id){
+            $this->db->where('products.category_id', $category_id);
+        }
+        if($product_id){
+            $this->db->where('stock_trans.product_id', $product_id);
+        }
+
+        if($warehouse_id){
+            $this->db->where('stock_trans.warehouse_id', $warehouse_id);
+        }
+
+        if($stockType){
+            $this->db->where('stock_trans.tran_type', $stockType);
+        }
+        if($biller){
+            $this->db->where('stock_trans.biller_id', $biller);
+        }
+        if($reference_no){
+            $this->db->where('purchases.reference_no', $reference_no);
+        }
+        if($from_date && $to_date){
+            $this->db->where('date_format(erp_stock_trans.tran_date,"%Y-%m-%d") <"' . $from_date .'"');
+        }
+
+        $this->db->order_by('stock_trans.tran_date','ASC');
+        $q = $this->db->get('stock_trans');
+        if($q->num_rows() > 0 ) {
+            foreach($q->result() as $row){
+                $data[] = $row;
+            }
+            return $data;
+        }
+        return false;
     }
 	
 }

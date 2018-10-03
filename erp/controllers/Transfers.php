@@ -58,7 +58,12 @@ class Transfers extends MY_Controller
             . lang('actions') . ' <span class="caret"></span></button>
         <ul class="dropdown-menu pull-right" role="menu">
             <li>' . $detail_link . '</li>
+			<li>' . $view_document . '</li>
+			<li>' . $transfer_back . '</li>
             <li>' . $edit_link . '</li>
+            <li>' . $pdf_link . '</li>
+            <li>' . $email_link . '</li>
+            <li>' . $delete_link . '</li>
         </ul></div></div>';
 
         $this->load->library('datatables');
@@ -107,6 +112,10 @@ class Transfers extends MY_Controller
 			<!--<li>' . $view_document . '</li>-->'
 			
             .(($this->Owner || $this->Admin) ? '<li>'.$edit_link.'</li>' : ($this->GP['transfers-edit'] ? '<li>'.$edit_link.'</li>' : '')).
+			 (($this->Owner || $this->Admin) ? '<li>'.$pdf_link.'</li>' : ($this->GP['transfers-export'] ? '<li>'.$pdf_link.'</li>' : '')).            
+             (($this->Owner || $this->Admin) ? '<li>'.$email_link.'</li>' : ($this->GP['transfers-email'] ? '<li>'.$email_link.'</li>' : '')).
+             (($this->Owner || $this->Admin) ? '<li>'.$print_barcode.'</li>' : ($this->GP['products-print_barcodes'] ? '<li>'.$print_barcode.'</li>' : '')).
+			 (($this->Owner || $this->Admin) ? '<li>'.$delete_link.'</li>' : ($this->GP['transfers-delete'] ? '<li>'.$delete_link.'</li>' : '')).
 
         '</ul></div></div>';
 
@@ -187,6 +196,7 @@ class Transfers extends MY_Controller
             } else {
                 $date = date('Y-m-d H:i:s');
             }
+            isClosedDate($date);
             $authorize_id           = $this->input->post('authorize_id');
             $employee_id            = $this->input->post('employee_id');
             $biller_id              = $this->input->post('biller');
@@ -588,6 +598,7 @@ class Transfers extends MY_Controller
             } else {
                 $date = date('Y-m-d H:i:s');
             }
+            isClosedDate($date);
 			$authorize_id           = $this->input->post('authorize_id');
             $employee_id            = $this->input->post('employee_id');
             $biller_id              = $this->input->post('biller_id');
@@ -2402,7 +2413,8 @@ class Transfers extends MY_Controller
 
         $this->load->view($this->theme.'transfers/invoice_uy_sing', $this->data);
     }
-	 function invoice_transfer_kh_chea_kheng($transfer_id = null)
+
+    function invoice_transfer_kh_chea_kheng($transfer_id = null)
     {
        $this->erp->checkPermissions('index', TRUE);
         
@@ -2426,5 +2438,30 @@ class Transfers extends MY_Controller
         $this->data['to_warehouse'] = $this->site->getWarehouseByID($transfer->to_warehouse_id);
 
         $this->load->view($this->theme.'transfers/invoice_transfer_kh_chea_kheng', $this->data);
+    }
+    function invoice_transfer_mcar($id = null)
+    {
+        $this->erp->checkPermissions('index', TRUE);
+
+        if ($this->input->get('id')) {
+            $id = $this->input->get('id');
+        }
+
+        $inv = $this->transfers_model->getTransfersInvoiceByID($id);
+        $this->data['biller'] = $this->site->getCompanyByID($inv->biller_id);
+
+        $this->data['inv'] = $inv;
+        $this->data['error'] = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
+        $rows = $this->data['rows'] = $this->transfers_model->getAllTransfersInvoice($id);
+        $this->data['setting'] = $this->site->get_setting();
+        $this->data['page_title'] = lang("delivery_order");
+        $this->data['rows'] = $rows;
+
+        $transfer = $this->transfers_model->getTransfersInvoiceByID($id);
+        $this->data['from_warehouse'] = $this->site->getWarehouseByID($transfer->from_warehouse_id);
+        $this->data['to_warehouse'] = $this->site->getWarehouseByID($transfer->to_warehouse_id);
+        // $this->erp->print_arrays($this->data['from_warehouse']);
+
+        $this->load->view($this->theme.'transfers/invoice_transfer_mcar', $this->data);
     }
 }

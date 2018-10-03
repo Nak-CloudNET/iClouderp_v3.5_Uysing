@@ -51,6 +51,8 @@
 					<div class="form-group">
                        <input type="checkbox" name="bank_account" id="bank_account" class="form-control" value="1" <?php echo set_checkbox('bank_account', '1'); ?> >
 						<?= lang("bank_account", "bank_account"); ?>
+                        <input type="checkbox" id="inventory" class="form-control" name="inventory" value="1" <?php echo set_checkbox('inventory', '1', $supplier->bank==1?TRUE:FALSE); ?>>
+                        <?= lang("inventory", "inventory"); ?>
                     </div>
 				</div>
 			</div>

@@ -47,11 +47,13 @@
     .footer hr {
         margin-top: 5px;
         margin-bottom: 5px;
+
     }
     .logo .col-sm-4 {
         padding-left: 0;
         padding-right: 0;
     }
+
 
     .table > thead > tr > th, .table > tbody > tr > th, .table > tfoot > tr > th, .table > thead > tr > td, .table > tbody > tr > td, .table > tfoot > tr > td {
         padding: 4px !important;
@@ -91,16 +93,19 @@
             width: 70% !important;
             margin-left: 0 !important;
         }
+
     }
-	
-	
+
+
 </style>
 <body>
 <div class="container" style="width: 625px;">
     <div class="row logo" style="padding: 15px">
-        <div class="col-sm-4 col-xs-4">
-            <p>អាស័យដ្ឋាន: <?= $biller->address; ?></p>
-        </div>
+        <?php if($biller->address){?>
+            <div class="col-sm-4 col-xs-4">
+                <p>អាស័យដ្ឋាន: <?= $biller->address; ?></p>
+            </div>
+        <?php }  ?>
         <div class="col-sm-4 col-xs-4 text-center">
             <?php if (!empty($biller->logo)) { ?>
                 <img class="img-responsive myhide" src="<?= base_url() ?>assets/uploads/logos/<?= $biller->logo; ?>"
@@ -135,16 +140,27 @@
     ?>
     <table class="table table-bordered">
         <thead>
+        <?php
+        $total_discount=0;
+        $total_tax=0;
+        foreach ($rows as $row) {
+            $total_discount +=  $row->item_discount;
+            $total_tax +=  $row->item_tax;
+        }
+
+
+
+        ?>
         <tr>
             <th>ល.រ</th>
             <th style="width: 30%">ឈ្មោះទំនិញ</th>
             <th>ចំនួនកេស</th>
             <th>ចំនួនរាយ</th>
             <th>តម្លៃឯកតា</th>
-            <?php if ($totalDisc != 0) { ?>
+            <?php if ($total_discount) { ?>
                 <th>បញ្ចុះតម្លៃ</th>
             <?php } ?>
-            <?php if ($totalItemTax > 0) { ?>
+            <?php if ($total_tax) { ?>
                 <th style="width: 10%">ពន្ធទំនិញ</th>
             <?php } ?>
             <th style="width: 20%">ចំនួនទឹកប្រាក់</th>
@@ -193,11 +209,11 @@
                     }
                     ?>
                 </td>
-                <td><?= $this->erp->formatMoney($row->real_unit_price); ?></td>
-                <?php if ($totalDisc != 0) { ?>
+                <td><?= $this->erp->formatMoney($row->unit_price); ?></td>
+                <?php if ($total_discount) { ?>
                     <td>$<?= $this->erp->formatQuantity($row->item_discount); ?></td>
                 <?php } ?>
-                <?php if ($totalItemTax > 0) { ?>
+                <?php if ($total_tax) { ?>
                     <td>$<?= $this->erp->formatQuantity($row->item_tax); ?></td>
                 <?php } ?>
                 <td>
@@ -211,28 +227,48 @@
 
         }
 
-        if ($erow < 13) {
-            $k = 13 - $erow;
+        if ($erow < 11) {
+            $k = 11 - $erow;
             for ($j = 1; $j <= $k; $j++) {
-                if ($totalDisc != 0) {
-                    echo '<tr class="border">
-                                        <td height="26px" style="text-align: center; vertical-align: middle">' . $no . '</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                    </tr>';
+                if($total_discount && $total_tax) {
+                    echo  '<tr class="border" >
+                                   <td height="34px" style="text-align: center; vertical-align: middle;border-left: 1px solid black !important;border-right: 1px solid black;border-top: 1px solid white;  "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    
+                                </tr>';
+
                 } else {
-                    echo '<tr class="border">
-                                        <td height="26px" style="text-align: center; vertical-align: middle">' . $no . '</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                    </tr>';
+                    if ($total_tax || $total_discount){
+
+                        echo '<tr class="border" >
+                                   <td height="34px" style="text-align: center; vertical-align: middle;border-left: 1px solid black !important;border-right: 1px solid black;border-top: 1px solid white;  "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    
+                                    
+                                </tr>';
+                    }else {
+                        echo  '<tr class="border" >
+                                    <td height="34px" style="text-align: center; vertical-align: middle;border-left: 1px solid black !important;border-right: 1px solid black;border-top: 1px solid white;  "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                    <td style="border-right: 1px solid black;border-top: 1px solid white; "></td>
+                                   
+                                    
+                                </tr>';
+                    }
                 }
                 $no++;
             }
@@ -242,44 +278,48 @@
         <tfoot>
         <?php
         $row = 1;
-        $col = 2;
-        if ($totalDisc != 0) {
-            $col = 3;
+        $col =2;
+
+        if ($total_discount> 0) {
+            $col +=1;
         }
+
         if ($invs->grand_total != $invs->total) {
             $row++;
         }
-        if ($invs->order_discount != 0) {
+        if ($invs->order_discount > 0) {
             $row++;
-            $col = 3;
         }
-        if ($invs->shipping != 0) {
+        if ($invs->shipping> 0) {
             $row++;
-            $col = 3;
         }
-        if ($invs->order_tax != 0) {
+
+        if ($total_tax> 0) {
+            $col +=1;
+        }
+        if ($invs->order_tax > 0){
             $row++;
-            $col = 3;
         }
-        if ($invs->paid != 0 && $invs->deposit != 0) {
+        if($invs->paid != 0 && $invs->deposit != 0) {
             $row += 3;
-        } elseif ($invs->paid != 0 && $invs->deposit == 0) {
+        }elseif ($invs->paid != 0 && $invs->deposit == 0) {
             $row += 2;
-        } elseif ($invs->paid == 0 && $invs->deposit != 0) {
+        }elseif ($invs->paid == 0 && $invs->deposit != 0) {
             $row += 2;
         }
         ?>
 
         <?php
+
         if ($invs->grand_total != $invs->total) { ?>
             <tr class="border-foot">
                 <td rowspan="<?= $row; ?>" colspan="3"
                     style="vertical-align: top; border-left: 1px solid #FFF !important; border-bottom: 1px solid #FFF !important;">
                     <?php if (!empty($invs->invoice_footer)) { ?>
-                        <p style="margin-top:10px !important; line-height: 2; text-align: left"><?= nl2br($invs->invoice_footer); ?></p>
+                        <p style="text-align: left;line-height: 80%;"><?= nl2br($invs->invoice_footer); ?></p>
                     <?php } ?>
                 </td>
-                <td colspan="<?= $col; ?>" style="text-align: right">សរុប​</td>
+                <td colspan="<?= $col; ?>" style="text-align: right;">សរុប​</td>
                 <td align="right">
                     <strong><?= $default_currency->code . ' ' . $this->erp->formatMoney($invs->total); ?></strong></td>
             </tr>
@@ -317,7 +357,7 @@
                 <td rowspan="<?= $row; ?>" colspan="3"
                     style="border-left: 1px solid #FFF !important; border-bottom: 1px solid #FFF !important;">
                     <?php if (!empty($invs->invoice_footer)) { ?>
-                        <p style="margin-top: 10px; text-align: left"><?= nl2br($invs->invoice_footer); ?></p>
+                        <p style="margin-top: 10px; text-align: left;line-height: 80%;"><?= nl2br($invs->invoice_footer); ?></p>
                     <?php } ?>
                 </td>
             <?php } ?>
@@ -353,9 +393,10 @@
         <?php } ?>
         </tfoot>
     </table>
+    <br>
     <div class="row" id="footer">
         <div class="col-sm-4 col-xs-4 footer">
-            <p style="margin-bottom: 70px">ហត្ថលេខាអ្នកត្រួតពិនិត្យ</p>
+            <p style="margin-bottom: 80px">ហត្ថលេខាអ្នកត្រួតពិនិត្យ</p>
             <div class="panel panel-default">
                 <div class="panel-heading">ឈ្មោះ:</div>
                 <div class="panel-body">
@@ -365,7 +406,7 @@
             </div>
         </div>
         <div class="col-sm-4 col-xs-4 footer">
-            <p style="margin-bottom: 70px">ហត្ថលេខាអ្នកដឹកជញ្ជូន</p>
+            <p style="margin-bottom: 80px">ហត្ថលេខាអ្នកដឹកជញ្ជូន</p>
             <div class="panel panel-default">
                 <div class="panel-heading">ឈ្មោះ:</div>
                 <div class="panel-body">
@@ -375,7 +416,7 @@
             </div>
         </div>
         <div class="col-sm-4 col-xs-4 footer">
-            <p style="margin-bottom: 70px">ហត្ថលេខាអ្នកអតិថិជន</p>
+            <p style="margin-bottom: 80px">ហត្ថលេខាអ្នកអតិថិជន</p>
             <div class="panel panel-default">
                 <div class="panel-heading">ឈ្មោះ:</div>
                 <div class="panel-body">

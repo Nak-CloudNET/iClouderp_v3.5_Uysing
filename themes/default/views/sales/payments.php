@@ -54,8 +54,8 @@
                                         <a href="<?= site_url('sales/view_payment/' . $payment->id) ?>"
                                        data-toggle="modal" data-target="#myModal2"><i class="fa fa-file-text-o"></i></a> |
 
-                                        <!--<a href="<?= site_url('sales/official_invoice/' . $payment->id) ?>"
-                                           data-toggle="modal" data-target="#myModal2"><i class="fa fa-file-text-o"></i></a> | -->
+                                        <a href="<?= site_url('sales/payments_official_invoice/' . $payment->id) ?>"
+                                           data-toggle="modal" data-target="#myModal2"><i class="fa fa-file-text-o"></i></a> |
 
                                         <a href="<?= site_url('sales/payment_note/' . $payment->id) ?>"
                                            data-toggle="modal" data-target="#myModal2"><i class="fa fa-file-text-o"></i></a> |
