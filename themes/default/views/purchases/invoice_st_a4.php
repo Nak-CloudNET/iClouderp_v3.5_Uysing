@@ -353,7 +353,7 @@
                             <?php } ?>
 
                             <td style="vertical-align: middle; text-align: center">
-                                <?= $row->piece?round($row->piece,2):round($row->quantity,2);?>
+                                <?= $row->piece?round($row->piece,2):round($row->po_qty,2);?>
                             </td>
                             <td style="vertical-align: middle; text-align: right">
                                 <?= $row->unitcost_ton!=0?$this->erp->formatMoney($row->unitcost_ton):$this->erp->formatMoney($row->unit_cost); ?>
