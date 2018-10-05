@@ -796,7 +796,7 @@ class Purchases_model extends CI_Model
 							purchase_order_items.option_id,
 							purchase_order_items.net_unit_cost,
 							purchase_order_items.quantity as po_qty,
-							(erp_purchase_order_items.quantity - erp_purchase_order_items.quantity_po) AS quantity,
+							(erp_purchase_order_items.quantity - COALESCE(erp_purchase_order_items.quantity_po,0) ) AS quantity,
 							purchase_order_items.quantity_po,
 							purchase_order_items.warehouse_id,
 							purchase_order_items.item_tax,
